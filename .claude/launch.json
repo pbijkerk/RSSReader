@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "icon",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "7788", "--directory", "/Users/peterbijkerk/Documents/Claude projecten/RSSReader"],
+      "port": 7788
+    }
+  ]
+}

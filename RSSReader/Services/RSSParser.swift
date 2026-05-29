@@ -1,0 +1,217 @@
+import Foundation
+
+struct ParsedFeedItem {
+    var title: String = ""
+    var link: String = ""
+    var description: String = ""
+    var pubDate: Date?
+    var guid: String = ""
+    var enclosureURL: String? = nil
+    var enclosureMIMEType: String? = nil
+    var imageURL: String? = nil
+}
+
+struct ParsedFeed {
+    var title: String = ""
+    var description: String = ""
+    var items: [ParsedFeedItem] = []
+    var detectedMediaType: FeedMediaType = .unknown
+}
+
+class RSSParser: NSObject, XMLParserDelegate {
+    private var result = ParsedFeed()
+    private var currentItem: ParsedFeedItem?
+    private var currentText = ""
+    private var currentElement = ""
+    private var insideItem = false
+    private var insideChannel = false
+    private var channelTitleSet = false
+    private var channelDescSet = false
+
+    func parse(data: Data) -> ParsedFeed {
+        result = ParsedFeed()
+        currentItem = nil
+        currentText = ""
+        currentElement = ""
+        insideItem = false
+        insideChannel = false
+        channelTitleSet = false
+        channelDescSet = false
+
+        let parser = XMLParser(data: data)
+        parser.delegate = self
+        parser.parse()
+
+        // Detect media type from enclosures
+        if result.items.contains(where: { $0.enclosureMIMEType?.hasPrefix("audio/") == true }) {
+            result.detectedMediaType = .audio
+        } else if result.items.contains(where: { $0.enclosureMIMEType?.hasPrefix("video/") == true }) {
+            result.detectedMediaType = .video
+        }
+
+        return result
+    }
+
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
+        currentElement = elementName.lowercased()
+        currentText = ""
+
+        switch currentElement {
+        case "item", "entry":
+            insideItem = true
+            currentItem = ParsedFeedItem()
+            if currentElement == "entry", let link = attributeDict["href"] {
+                currentItem?.link = link
+            }
+        case "channel", "feed":
+            insideChannel = true
+        case "link":
+            if insideItem, let href = attributeDict["href"], !href.isEmpty {
+                currentItem?.link = href
+            } else if !insideItem, let href = attributeDict["href"], !href.isEmpty {
+                _ = href
+            }
+        case "enclosure":
+            if insideItem {
+                currentItem?.enclosureURL      = attributeDict["url"]
+                currentItem?.enclosureMIMEType = attributeDict["type"]
+                // Als de enclosure een afbeelding is, sla die op als imageURL
+                if let type = attributeDict["type"], type.hasPrefix("image/"),
+                   let url = attributeDict["url"] {
+                    currentItem?.imageURL = url
+                }
+            }
+        case "media:content", "media:thumbnail":
+            // RSS Media namespace: <media:content url="..." medium="image" />
+            if insideItem, currentItem?.imageURL == nil {
+                if let url = attributeDict["url"],
+                   (attributeDict["medium"] == "image" || elementName.contains("thumbnail")) {
+                    currentItem?.imageURL = url
+                }
+            }
+        default:
+            break
+        }
+    }
+
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        currentText += string
+    }
+
+    func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+        if let text = String(data: CDATABlock, encoding: .utf8) {
+            currentText += text
+        }
+    }
+
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?
+    ) {
+        let element = elementName.lowercased()
+        let text = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if insideItem {
+            switch element {
+            case "title":
+                currentItem?.title = text
+            case "link":
+                if let item = currentItem, item.link.isEmpty {
+                    currentItem?.link = text
+                }
+            case "description", "summary", "content", "content:encoded":
+                if let current = currentItem?.description, current.isEmpty || element == "content:encoded" {
+                    currentItem?.description = text
+                }
+            case "pubdate", "published", "updated", "dc:date":
+                currentItem?.pubDate = parseDate(text)
+            case "guid", "id":
+                currentItem?.guid = text
+            case "item", "entry":
+                if let item = currentItem {
+                    // Als we nog geen imageURL hebben, extraheer dan de eerste <img> uit description
+                    if item.imageURL == nil, !item.description.isEmpty {
+                        currentItem?.imageURL = extractImageURL(from: item.description)
+                    }
+                    result.items.append(item)
+                }
+                currentItem = nil
+                insideItem = false
+            default:
+                break
+            }
+        } else if insideChannel {
+            switch element {
+            case "title":
+                if !channelTitleSet {
+                    result.title = text
+                    channelTitleSet = true
+                }
+            case "description", "subtitle":
+                if !channelDescSet {
+                    result.description = text
+                    channelDescSet = true
+                }
+            default:
+                break
+            }
+        }
+    }
+
+    private func parseDate(_ string: String) -> Date? {
+        let formats = [
+            "EEE, dd MMM yyyy HH:mm:ss Z",
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "EEE, d MMM yyyy HH:mm:ss Z",
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+            "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+            "yyyy-MM-dd"
+        ]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: string) { return date }
+        }
+        return nil
+    }
+
+    /// Extraheer de eerste afbeelding-URL uit HTML-content
+    private func extractImageURL(from html: String) -> String? {
+        // Zoek naar <img src="..." /> tags met regex
+        let pattern = "<img[^>]+src=\"([^\"]+)\""
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+            return nil
+        }
+        
+        let range = NSRange(html.startIndex..., in: html)
+        guard let match = regex.firstMatch(in: html, options: [], range: range),
+              match.numberOfRanges > 1 else {
+            return nil
+        }
+        
+        let srcRange = match.range(at: 1)
+        guard let swiftRange = Range(srcRange, in: html) else { return nil }
+        let imageURL = String(html[swiftRange])
+        
+        // Filter out tracking pixels en kleine afbeeldingen
+        if imageURL.contains("1x1") || 
+           imageURL.contains("pixel") ||
+           imageURL.contains("tracker") ||
+           imageURL.hasSuffix(".gif") && imageURL.count < 50 {
+            return nil
+        }
+        
+        return imageURL
+    }
+}

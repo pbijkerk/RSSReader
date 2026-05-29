@@ -1,0 +1,332 @@
+import SwiftUI
+import SwiftData
+
+struct FeedListView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \FeedFolder.sortOrder) private var folders: [FeedFolder]
+    @Query(sort: \Feed.title) private var feeds: [Feed]
+
+    var refreshService: FeedRefreshService
+    var onRefreshComplete: () async -> Void
+
+    @State private var showAddFeed = false
+    @State private var showOPMLImport = false
+    @State private var showFolderManagement = false
+    @State private var feedToDelete: Feed?
+    @State private var showDeleteConfirm = false
+    @AppStorage("uncategorizedExpanded") private var uncategorizedExpanded = true
+    @State private var feedForSettings: Feed? = nil
+
+    var uncategorized: [Feed] {
+        feeds.filter { $0.folder == nil }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if feeds.isEmpty {
+                    emptyState
+                } else {
+                    feedList
+                }
+            }
+            .navigationTitle("Feeds")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Feed toevoegen", systemImage: "plus") {
+                            showAddFeed = true
+                        }
+                        Button("OPML importeren", systemImage: "square.and.arrow.down") {
+                            showOPMLImport = true
+                        }
+                        Divider()
+                        Button("Folders beheren", systemImage: "folder.badge.gear") {
+                            showFolderManagement = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    if refreshService.isRefreshing {
+                        ProgressView()
+                    } else {
+                        Button("Vernieuwen", systemImage: "arrow.clockwise") {
+                            Task { await refreshFeeds() }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showAddFeed) {
+                AddFeedView(refreshService: refreshService) {
+                    Task { await onRefreshComplete() }
+                }
+            }
+            .sheet(isPresented: $showOPMLImport) {
+                OPMLImportView(refreshService: refreshService) {
+                    Task { await onRefreshComplete() }
+                }
+            }
+            .sheet(isPresented: $showFolderManagement) {
+                FolderManagementView()
+            }
+            .alert("Feed verwijderen", isPresented: $showDeleteConfirm, presenting: feedToDelete) { feed in
+                Button("Verwijderen", role: .destructive) { delete(feed: feed) }
+                Button("Annuleren", role: .cancel) {}
+            } message: { feed in
+                Text("Wil je \"\(feed.title)\" en alle artikelen verwijderen?")
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "newspaper")
+                .font(.system(size: 60))
+                .foregroundStyle(.secondary)
+            Text("Nog geen feeds")
+                .font(.title2.bold())
+            Text("Voeg RSS-feeds toe of importeer een OPML-bestand.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+            HStack(spacing: 16) {
+                Button("Feed toevoegen") { showAddFeed = true }
+                    .buttonStyle(.borderedProminent)
+                Button("OPML importeren") { showOPMLImport = true }
+                    .buttonStyle(.bordered)
+            }
+        }
+        .padding()
+    }
+
+    private var feedList: some View {
+        List {
+            ForEach(folders) { folder in
+                folderSection(folder)
+            }
+
+            if !uncategorized.isEmpty {
+                Section {
+                    if uncategorizedExpanded {
+                        ForEach(uncategorized) { feed in
+                            feedRow(feed)
+                        }
+                    }
+                } header: {
+                    SectionHeaderView(
+                        title: "Overig",
+                        icon: "tray",
+                        count: uncategorized.count,
+                        isExpanded: $uncategorizedExpanded
+                    )
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .animation(.default, value: folders.map { $0.id })
+    }
+
+    @ViewBuilder
+    private func folderSection(_ folder: FeedFolder) -> some View {
+        let isExpanded = Binding(
+            get: { folder.isExpanded },
+            set: { folder.isExpanded = $0; try? modelContext.save() }
+        )
+        let sortedFeeds = folder.feeds.sorted { $0.title < $1.title }
+
+        Section {
+            if isExpanded.wrappedValue {
+                ForEach(sortedFeeds) { feed in
+                    feedRow(feed)
+                }
+            }
+        } header: {
+            SectionHeaderView(
+                title: folder.name,
+                icon: folder.icon,
+                count: folder.feeds.count,
+                isExpanded: isExpanded,
+                folder: folder
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func feedRow(_ feed: Feed) -> some View {
+        NavigationLink(destination: FeedItemsView(feed: feed, refreshService: refreshService)) {
+            FeedRowView(feed: feed)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                feedToDelete = feed
+                showDeleteConfirm = true
+            } label: {
+                Label("Verwijderen", systemImage: "trash")
+            }
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                Task {
+                    await refreshService.refresh(feed: feed, context: modelContext)
+                    await onRefreshComplete()
+                }
+            } label: {
+                Label("Vernieuwen", systemImage: "arrow.clockwise")
+            }
+            .tint(.blue)
+        }
+        .contextMenu {
+            Menu("Verplaats naar folder") {
+                Button {
+                    feed.folder = nil
+                    try? modelContext.save()
+                } label: {
+                    Label("Overig (geen folder)", systemImage: "tray")
+                }
+                Divider()
+                ForEach(folders) { folder in
+                    Button {
+                        feed.folder = folder
+                        try? modelContext.save()
+                    } label: {
+                        Label(folder.name, systemImage: folder.icon)
+                    }
+                }
+            }
+            Divider()
+            Button {
+                feedForSettings = feed
+            } label: {
+                Label("Instellingen", systemImage: "gearshape")
+            }
+        }
+        .sheet(item: $feedForSettings) { feed in
+            FeedSettingsView(feed: feed)
+        }
+    }
+
+    private func refreshFeeds() async {
+        await refreshService.refreshAll(feeds: feeds, context: modelContext)
+        await onRefreshComplete()
+    }
+
+    private func delete(feed: Feed) {
+        modelContext.delete(feed)
+        try? modelContext.save()
+    }
+}
+
+struct SectionHeaderView: View {
+    let title: String
+    let icon: String
+    let count: Int
+    @Binding var isExpanded: Bool
+    var folder: FeedFolder? = nil
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if let folder {
+                // Naam + icoon: NavigationLink naar FolderItemsView
+                NavigationLink(destination: FolderItemsView(folder: folder)) {
+                    HStack(spacing: 8) {
+                        Image(systemName: icon)
+                            .foregroundStyle(.blue)
+                            .frame(width: 20)
+                        Text(title)
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Overig: alleen visueel, geen navigatie
+                Image(systemName: icon)
+                    .foregroundStyle(.blue)
+                    .frame(width: 20)
+                Text(title)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            // Chevron + teller: expand/collapse
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text("\(count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+struct FeedRowView: View {
+    let feed: Feed
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
+
+    private var badgeCount: Int {
+        feedCountMode == "unread"
+            ? feed.items.filter { !$0.isRead }.count
+            : feed.items.count
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            // Favicon
+            AsyncImage(url: feed.faviconImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .failure, .empty:
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                @unknown default:
+                    Color.secondary.opacity(0.2)
+                }
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(feed.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                Text(feed.url)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                if feedCountMode == "total" || badgeCount > 0 {
+                    Text("\(badgeCount)")
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.blue, in: Capsule())
+                }
+                if let date = feed.lastRefreshed {
+                    Text(date, style: .relative)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}

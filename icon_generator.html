@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1024px; height: 1024px; overflow: hidden; background: #000; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1024" height="1024"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const S = 1024;
+
+// ── Background: deep navy → rich indigo gradient ──────────────────────────
+const bg = ctx.createLinearGradient(0, 0, S, S);
+bg.addColorStop(0,   '#0F2044');
+bg.addColorStop(0.5, '#1A3A6C');
+bg.addColorStop(1,   '#0A1628');
+
+// Rounded rect clip (iOS corner radius ≈ 22.5 % of size)
+const r = 230;
+ctx.beginPath();
+ctx.roundRect(0, 0, S, S, r);
+ctx.fillStyle = bg;
+ctx.fill();
+ctx.clip();
+
+// ── Subtle radial glow in centre ──────────────────────────────────────────
+const glow = ctx.createRadialGradient(S*0.5, S*0.42, 0, S*0.5, S*0.42, S*0.65);
+glow.addColorStop(0,   'rgba(99,179,255,0.18)');
+glow.addColorStop(1,   'rgba(0,0,0,0)');
+ctx.fillStyle = glow;
+ctx.fillRect(0, 0, S, S);
+
+// ── RSS signal waves ──────────────────────────────────────────────────────
+// Origin: bottom-left anchor of the waves
+const ox = 260, oy = 748;
+
+// White with a very slight blue tint
+ctx.strokeStyle = 'rgba(255,255,255,0.97)';
+ctx.lineCap    = 'round';
+ctx.lineJoin   = 'round';
+
+// Dot
+ctx.beginPath();
+ctx.arc(ox, oy, 52, 0, Math.PI * 2);
+ctx.fillStyle = 'rgba(255,255,255,0.97)';
+ctx.fill();
+
+// Wave 1
+const w1 = 205;
+ctx.beginPath();
+ctx.lineWidth = 88;
+ctx.arc(ox, oy, w1, -Math.PI * 0.88, -Math.PI * 0.12);
+ctx.stroke();
+
+// Wave 2
+const w2 = 415;
+ctx.beginPath();
+ctx.lineWidth = 88;
+ctx.arc(ox, oy, w2, -Math.PI * 0.88, -Math.PI * 0.12);
+ctx.stroke();
+
+// Wave 3
+const w3 = 625;
+ctx.beginPath();
+ctx.lineWidth = 88;
+ctx.arc(ox, oy, w3, -Math.PI * 0.88, -Math.PI * 0.12);
+ctx.stroke();
+
+// ── Horizontal rule / divider line under waves (subtle) ───────────────────
+// (none — keeping it clean)
+
+// ── "RSS" label – small, minimal, bottom area ─────────────────────────────
+ctx.fillStyle = 'rgba(255,255,255,0.30)';
+ctx.font = 'bold 72px -apple-system, SF Pro Rounded, sans-serif';
+ctx.textAlign   = 'center';
+ctx.textBaseline = 'middle';
+// No text — icon speaks for itself
+
+// ── Soft inner highlight (top edge shimmer) ───────────────────────────────
+const shine = ctx.createLinearGradient(0, 0, 0, S * 0.45);
+shine.addColorStop(0,   'rgba(255,255,255,0.10)');
+shine.addColorStop(1,   'rgba(255,255,255,0)');
+ctx.fillStyle = shine;
+ctx.fillRect(0, 0, S, S);
+
+console.log('Icon rendered ✓');
+</script>
+</body>
+</html>
