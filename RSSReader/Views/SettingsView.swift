@@ -29,8 +29,11 @@ struct SettingsView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
     @AppStorage(AppConfiguration.UserDefaultsKeys.showArticleThumbnails) private var showArticleThumbnails = true
     
-    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize)
     private var articleFontSize = AppConfiguration.defaultArticleFontSize
+
+    @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLanguage)
+    private var summaryLanguage = "nl"
     
     @State private var showAPIKey = false
     @State private var savedConfirmation = false
@@ -92,6 +95,13 @@ struct SettingsView: View {
                         )
                     }
                     .padding(.vertical, 4)
+                }
+
+                Section("Samenvattingen") {
+                    Picker("Taal", selection: $summaryLanguage) {
+                        Text("Nederlands").tag("nl")
+                        Text("English").tag("en")
+                    }
                 }
 
                 Section {

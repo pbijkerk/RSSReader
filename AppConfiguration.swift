@@ -45,6 +45,7 @@ enum AppConfiguration {
         static let feedCountMode       = "feedCountMode"
         static let previewLineCount    = "previewLineCount"
         static let showArticleThumbnails = "showArticleThumbnails"
+        static let summaryLanguage     = "summaryLanguage"
     }
 
     // MARK: - Keychain Keys

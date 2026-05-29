@@ -145,9 +145,12 @@ class TopicClusteringService {
             return snippet.isEmpty ? s.title : "\(s.title): \(snippet)"
         }
         let joined = snippets.joined(separator: ". ")
-        return "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en). "
-            + joined
-            + (joined.hasSuffix(".") ? "" : ".")
+        let isEnglish = (UserDefaults.standard.string(
+            forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
+        let intro = isEnglish
+            ? "Recent coverage of \(topicName) includes \(snapshots.count) article(s). "
+            : "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en). "
+        return intro + joined + (joined.hasSuffix(".") ? "" : ".")
     }
 
     private func generateSummaryWithClaude(
@@ -164,13 +167,19 @@ class TopicClusteringService {
             }
             .joined(separator: "\n\n")
 
+        let isEnglish = (UserDefaults.standard.string(
+            forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
+        let instruction = isEnglish
+            ? "Write a summary of 4 to 6 sentences in English describing the main themes and developments. Be factual and objective."
+            : "Schrijf een samenvatting van 4 tot 6 zinnen in het Nederlands die de belangrijkste thema's en ontwikkelingen beschrijft. Wees feitelijk en objectief."
+
         let prompt = """
         You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
 
         Here are the articles:
         \(articleList)
 
-        Schrijf een samenvatting van 4 tot 6 zinnen in het Nederlands die de belangrijkste thema's en ontwikkelingen beschrijft. Wees feitelijk en objectief.
+        \(instruction)
         """
 
         struct Msg:  Encodable { let role: String; let content: String }
