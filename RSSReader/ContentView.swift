@@ -32,12 +32,12 @@ struct ContentView: View {
                 .tabItem { Label("Topics", systemImage: "tag") }
                 .tag(2)
 
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gear") }
-                .tag(3)
-
             SavedArticlesView()
                 .tabItem { Label("Bewaard", systemImage: "bookmark") }
+                .tag(3)
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(4)
         }
         .task {

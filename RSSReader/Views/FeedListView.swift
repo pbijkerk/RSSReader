@@ -126,6 +126,7 @@ struct FeedListView: View {
         }
         .listStyle(.insetGrouped)
         .animation(.default, value: folders.map { $0.id })
+        .refreshable { await refreshFeeds() }
     }
 
     @ViewBuilder

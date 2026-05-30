@@ -14,23 +14,40 @@ struct FeedItemsView: View {
     }
 
     var body: some View {
-        List(sortedItems) { item in
-            NavigationLink(destination: ItemDetailView(item: item)) {
-                FeedItemRowView(item: item)
-            }
-            .listRowBackground(item.isRead ? Color.clear : Color.blue.opacity(0.05))
-            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                Button {
-                    item.isSaved.toggle()
-                    try? modelContext.save()
-                } label: {
-                    Label(
-                        item.isSaved ? "Niet bewaard" : "Bewaar",
-                        systemImage: item.isSaved ? "bookmark.slash" : "bookmark"
-                    )
+        List {
+            ForEach(Array(sortedItems.enumerated()), id: \.element.id) { index, item in
+                NavigationLink(destination: ArticlePageView(items: sortedItems, initialIndex: index)) {
+                    FeedItemRowView(item: item)
                 }
-                .tint(.blue)
+                .listRowBackground(item.isRead ? Color.clear : Color.blue.opacity(0.05))
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button {
+                        item.isRead.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(
+                            item.isRead ? "Ongelezen" : "Gelezen",
+                            systemImage: item.isRead ? "envelope.badge" : "envelope.open"
+                        )
+                    }
+                    .tint(.gray)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button {
+                        item.isSaved.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(
+                            item.isSaved ? "Niet bewaard" : "Bewaar",
+                            systemImage: item.isSaved ? "bookmark.slash" : "bookmark"
+                        )
+                    }
+                    .tint(.blue)
+                }
             }
+        }
+        .refreshable {
+            await refreshService.refresh(feed: feed, context: modelContext)
         }
         .navigationTitle(feed.title)
         .navigationBarTitleDisplayMode(.large)
@@ -64,8 +81,22 @@ struct FeedItemRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Linker kolom: Titel + beschrijving + metadata
+            // Linker kolom: Metadata + Titel + beschrijving
             VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    if let feedTitle = item.feed?.title {
+                        Text(feedTitle)
+                            .font(.system(size: metaSize))
+                            .foregroundStyle(.blue)
+                    }
+                    Spacer()
+                    if let date = item.pubDate {
+                        Text(Self.relativeTime(for: date))
+                            .font(.system(size: metaSize))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 HStack(alignment: .top, spacing: 6) {
                     Text(item.title)
                         .font(.system(size: titleSize, weight: item.isRead ? .regular : .bold))
@@ -83,20 +114,6 @@ struct FeedItemRowView: View {
                         .font(.system(size: captionSize))
                         .foregroundStyle(.secondary)
                         .lineLimit(previewLineCount)
-                }
-
-                HStack {
-                    if let feedTitle = item.feed?.title {
-                        Text(feedTitle)
-                            .font(.system(size: metaSize))
-                            .foregroundStyle(.blue)
-                    }
-                    Spacer()
-                    if let date = item.pubDate {
-                        Text(Self.relativeTime(for: date))
-                            .font(.system(size: metaSize))
-                            .foregroundStyle(.secondary)
-                    }
                 }
             }
             
@@ -147,5 +164,26 @@ struct FeedItemRowView: View {
                 Image(systemName: "photo")
                     .foregroundStyle(.secondary.opacity(0.5))
             }
+    }
+}
+
+struct ArticlePageView: View {
+    let items: [FeedItem]
+    @State private var currentIndex: Int
+
+    init(items: [FeedItem], initialIndex: Int) {
+        self.items = items
+        self._currentIndex = State(initialValue: initialIndex)
+    }
+
+    var body: some View {
+        TabView(selection: $currentIndex) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                ItemDetailView(item: item)
+                    .tag(index)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .ignoresSafeArea(edges: .bottom)
     }
 }
