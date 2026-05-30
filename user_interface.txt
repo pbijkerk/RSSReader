@@ -1,0 +1,55 @@
+Voor een RSS-nieuwslezer die vanaf nul wordt opgebouwd, draait alles om **leesbaarheid, rust en een intuïtieve navigatiestructuur**. Apple's *Human Interface Guidelines* (HIG) bieden hiervoor het perfecte fundament.
+
+Hier zijn de belangrijkste best practices voor de visuele lay-out en navigatie van jouw iOS RSS-app:
+
+## 1. De Navigatiestructuur (Informatie-architectuur)
+
+Voor een nieuws-app is een **hiërarchische navigatie** gecombineerd met een **Tab Bar** de absolute standaard op iOS. Dit houdt de app herkenbaar en makkelijk bedienbaar met één hand.
+
+* **De Tab Bar (Onderaan):** Gebruik maximaal 3 tot 5 tabbladen. Voor een RSS-lezer werkt deze indeling vaak het best:
+* *Tijdslijn / Overzicht:* Alle ongelezen artikelen chronologisch gesorteerd.
+* *Feeds / Bronnen:* Een lijst met de door de gebruiker toegevoegde RSS-kanalen en mappen.
+* *Bladwijzers / Bewaard:* Artikelen die zijn opgeslagen voor later.
+* *Instellingen:* Voor het beheren van feeds en accountopties.
+
+
+* **Navigation Bar (Bovenaan):** Gebruik Apple's standaard *Large Titles* (grote koppen) die bij het naar boven scrollen soepel inklappen naar een compacte, gecentreerde titel. Dit geeft een premium, native gevoel.
+
+---
+
+## 2. Visuele Lay-out & Content-hiërarchie
+
+Nieuwslezers zijn tekst-zwaar. De lay-out moet daarom rust uitstralen en de content laten ademen.
+
+* **Voldoende witruimte (Padding):** Geef artikelen in de overzichtslijst de ruimte. Gebruik een minimale marge van 16pt aan de linker- en rechterkant van het scherm zodat tekst niet tegen de randen plakt.
+* **De Artikelkaart (List Item):** Zorg voor een duidelijke visuele hiërarchie in je overzichtslijst.
+1. *Bron & Tijd:* Klein en subtiel bovenaan (bijv. "NOS • 10m geleden").
+2. *Koptekst (Title):* Dikgedrukt en prominent (Semi-Bold of Bold).
+3. *Snippet / Intro:* Maximaal 2 tot 3 regels in een lichtere tint of kleiner lettertype.
+4. *Afbeelding (Optioneel):* Een compacte, vierkante thumbnail aan de rechterzijde, of een grote visual boven de koptekst als het artikel een 'feature' is.
+
+
+
+---
+
+## 3. Typografie & Leesbaarheid
+
+Omdat gebruikers langdurig tekst consumeren in jouw app, is de typografie cruciaal.
+
+* **Systeemlettertype:** Gebruik het standaard iOS-lettertype **SF Pro** (of *SF Pro Serif* voor een klassiek krantengevoel in het artikelscherm). Dit lettertype is door Apple specifiek geoptimaliseerd voor perfecte leesbaarheid op schermen.
+* **Dynamic Type:** Dit is een harde Apple-richtlijn. Bouw de app zo op dat de tekst meeschaalt wanneer een gebruiker de lettergrootte in de iOS-systeeminstellingen aanpast.
+* **Regelafstand en -lengte:** Houd in het uiteindelijke artikelscherm een regelafstand aan van circa 140-150% van de lettergrootte. Voorkom te brede regels; een tekstbreedte van rond de 60-70 tekens per regel leest het prettigst.
+
+---
+
+## 4. Native iOS Interacties
+
+Maak gebruik van de vertrouwde interacties die iOS-gebruikers verwachten:
+
+* **Swipe-acties (Swipe Actions):** Laat gebruikers in de overzichtslijst een artikel naar rechts swipen om het direct als 'gelezen' te markeren, of naar links om het op te slaan.
+* **Pull-to-Refresh:** De standaardmanier op iOS om een lijst te verversen. Onmisbaar voor een RSS-feeder om nieuwe artikelen op te halen.
+* **Paginering via Swipen:** Laat gebruikers in het artikelscherm horizontaal swipen (naar links of rechts) om direct naar het volgende of vorige artikel in de feed te springen.
+
+---
+
+> **Belangrijke HIG-Designtip:** Zorg vanaf dag één voor een perfecte **Dark Mode**. Veel nieuwslezers worden 's ochtends vroeg in bed of 's avonds laat gebruikt. Gebruik hiervoor Apple's semantische kleuren (zoals `systemBackground` en `secondarySystemBackground`), zodat de app automatisch correct meekleurt met het systeem.
