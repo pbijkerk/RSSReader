@@ -313,7 +313,7 @@ struct ItemDetailView: View {
         body {
             font-family: -apple-system, 'SF Pro Text', Georgia, 'Times New Roman', serif;
             font-size: \(fontSize)px;
-            line-height: 1.75;
+            line-height: 1.5;
             color: var(--text);
             background: var(--bg);
             padding: 20px 20px 48px;
