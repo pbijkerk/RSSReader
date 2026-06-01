@@ -111,6 +111,13 @@ struct FeedListView: View {
 
     private var feedList: some View {
         List {
+            Section {
+                NavigationLink(destination: AllArticlesView()) {
+                    Label("All", systemImage: "tray.full")
+                        .font(.headline)
+                }
+            }
+
             ForEach(folders) { folder in
                 folderSection(folder)
             }
