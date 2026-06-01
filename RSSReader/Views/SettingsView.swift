@@ -32,6 +32,9 @@ struct SettingsView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize)
     private var articleFontSize = AppConfiguration.defaultArticleFontSize
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily)
+    private var articleFontFamily = AppConfiguration.defaultArticleFontFamily
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLanguage)
     private var summaryLanguage = "nl"
     
@@ -95,6 +98,11 @@ struct SettingsView: View {
                         )
                     }
                     .padding(.vertical, 4)
+                    Picker("Lettertype", selection: $articleFontFamily) {
+                        Text("SF Pro").tag("system")
+                        Text("New York").tag("newyork")
+                        Text("Georgia").tag("georgia")
+                    }
                 }
 
                 Section("Samenvattingen") {

@@ -34,13 +34,17 @@ enum AppConfiguration {
     
     /// Standaard fontsize voor artikel-weergave
     static let defaultArticleFontSize = 17
-    
+
+    /// Standaard lettertypefamilie voor artikel-weergave
+    static let defaultArticleFontFamily = "system"
+
     // MARK: - UserDefaults Keys
 
     enum UserDefaultsKeys {
         static let retentionDays       = "defaultRetentionDays"
         static let claudeAPIKey        = "claudeAPIKey"          // legacy – gebruik Keychain
         static let articleFontSize     = "articleFontSize"
+        static let articleFontFamily   = "articleFontFamily"
         static let hideReadArticles    = "hideReadArticles"
         static let feedCountMode       = "feedCountMode"
         static let previewLineCount    = "previewLineCount"

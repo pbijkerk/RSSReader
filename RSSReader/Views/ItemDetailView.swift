@@ -8,6 +8,7 @@ struct ItemDetailView: View {
     let item: FeedItem
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration.defaultArticleFontSize
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily) private var articleFontFamily = AppConfiguration.defaultArticleFontFamily
 
     @State private var displayHTML: String = ""
     @State private var isExtracting = false
@@ -206,7 +207,8 @@ struct ItemDetailView: View {
             title: item.title,
             feedName: item.feed?.title,
             date: item.pubDate,
-            fontSize: articleFontSize
+            fontSize: articleFontSize,
+            fontFamily: articleFontFamily
         )
     }
 
@@ -232,7 +234,8 @@ struct ItemDetailView: View {
                 feedName: item.feed?.title,
                 date: item.pubDate,
                 articleLink: articleLink,
-                fontSize: articleFontSize
+                fontSize: articleFontSize,
+                fontFamily: articleFontFamily
             )
         } else {
             // Geen RSS-content — hint dat de gebruiker op de titel kan tikken
@@ -242,7 +245,8 @@ struct ItemDetailView: View {
                 feedName: item.feed?.title,
                 date: item.pubDate,
                 articleLink: articleLink,
-                fontSize: articleFontSize
+                fontSize: articleFontSize,
+                fontFamily: articleFontFamily
             )
         }
     }
@@ -258,7 +262,8 @@ struct ItemDetailView: View {
                 title: item.title,
                 feedName: item.feed?.title,
                 date: item.pubDate,
-                fontSize: articleFontSize
+                fontSize: articleFontSize,
+                fontFamily: articleFontFamily
             )
         } catch {
             extractionFailed = true
@@ -269,7 +274,7 @@ struct ItemDetailView: View {
     // MARK: - HTML-template
 
     static func readerHTML(content: String, title: String, feedName: String?, date: Date?,
-                           articleLink: String? = nil, fontSize: Int = 17) -> String {
+                           articleLink: String? = nil, fontSize: Int = 17, fontFamily: String = "system") -> String {
         let dateStr: String
         if let date {
             let fmt = DateFormatter()
@@ -311,7 +316,7 @@ struct ItemDetailView: View {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { background: var(--bg); }
         body {
-            font-family: -apple-system, 'SF Pro Text', Georgia, 'Times New Roman', serif;
+            font-family: \(fontFamily == "newyork" ? "'New York', Georgia, serif" : fontFamily == "georgia" ? "Georgia, 'Times New Roman', serif" : "-apple-system, 'SF Pro Text', sans-serif");
             font-size: \(fontSize)px;
             line-height: 1.5;
             color: var(--text);
