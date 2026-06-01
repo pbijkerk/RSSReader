@@ -16,6 +16,7 @@ struct FeedListView: View {
     @State private var showDeleteConfirm = false
     @AppStorage("uncategorizedExpanded") private var uncategorizedExpanded = true
     @State private var feedForSettings: Feed? = nil
+    @State private var editMode: EditMode = .inactive
 
     var uncategorized: [Feed] {
         feeds.filter { $0.folder == nil }
@@ -44,12 +45,19 @@ struct FeedListView: View {
                         Button("Folders beheren", systemImage: "folder.badge.gear") {
                             showFolderManagement = true
                         }
+                        Button("Volgorde wijzigen", systemImage: "arrow.up.arrow.down") {
+                            withAnimation { editMode = .active }
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    if refreshService.isRefreshing {
+                    if editMode == .active {
+                        Button("Gereed") {
+                            withAnimation { editMode = .inactive }
+                        }
+                    } else if refreshService.isRefreshing {
                         ProgressView()
                     } else {
                         Button("Vernieuwen", systemImage: "arrow.clockwise") {
@@ -106,6 +114,7 @@ struct FeedListView: View {
             ForEach(folders) { folder in
                 folderSection(folder)
             }
+            .onMove(perform: moveFolders)
 
             if !uncategorized.isEmpty {
                 Section {
@@ -127,6 +136,7 @@ struct FeedListView: View {
         .listStyle(.insetGrouped)
         .animation(.default, value: folders.map { $0.id })
         .refreshable { await refreshFeeds() }
+        .environment(\.editMode, $editMode)
     }
 
     @ViewBuilder
@@ -215,6 +225,15 @@ struct FeedListView: View {
 
     private func delete(feed: Feed) {
         modelContext.delete(feed)
+        try? modelContext.save()
+    }
+
+    private func moveFolders(from source: IndexSet, to destination: Int) {
+        var reordered = folders
+        reordered.move(fromOffsets: source, toOffset: destination)
+        for (index, folder) in reordered.enumerated() {
+            folder.sortOrder = index
+        }
         try? modelContext.save()
     }
 }
