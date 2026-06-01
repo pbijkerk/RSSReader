@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 struct ParsedFeedItem {
     var title: String = ""
@@ -28,6 +29,17 @@ class RSSParser: NSObject, XMLParserDelegate {
     private var channelTitleSet = false
     private var channelDescSet = false
 
+    private let logger = Logger(
+        subsystem: AppConfiguration.LogSubsystem.main,
+        category: AppConfiguration.LogSubsystem.Category.feed
+    )
+
+    // Gecachede regex — eenmalig aangemaakt voor de klasse
+    private static let imgSrcRegex = try? NSRegularExpression(
+        pattern: "<img[^>]+src=\"([^\"]+)\"",
+        options: .caseInsensitive
+    )
+
     func parse(data: Data) -> ParsedFeed {
         result = ParsedFeed()
         currentItem = nil
@@ -42,7 +54,6 @@ class RSSParser: NSObject, XMLParserDelegate {
         parser.delegate = self
         parser.parse()
 
-        // Detect media type from enclosures
         if result.items.contains(where: { $0.enclosureMIMEType?.hasPrefix("audio/") == true }) {
             result.detectedMediaType = .audio
         } else if result.items.contains(where: { $0.enclosureMIMEType?.hasPrefix("video/") == true }) {
@@ -74,21 +85,17 @@ class RSSParser: NSObject, XMLParserDelegate {
         case "link":
             if insideItem, let href = attributeDict["href"], !href.isEmpty {
                 currentItem?.link = href
-            } else if !insideItem, let href = attributeDict["href"], !href.isEmpty {
-                _ = href
             }
         case "enclosure":
             if insideItem {
                 currentItem?.enclosureURL      = attributeDict["url"]
                 currentItem?.enclosureMIMEType = attributeDict["type"]
-                // Als de enclosure een afbeelding is, sla die op als imageURL
                 if let type = attributeDict["type"], type.hasPrefix("image/"),
                    let url = attributeDict["url"] {
                     currentItem?.imageURL = url
                 }
             }
         case "media:content", "media:thumbnail":
-            // RSS Media namespace: <media:content url="..." medium="image" />
             if insideItem, currentItem?.imageURL == nil {
                 if let url = attributeDict["url"],
                    (attributeDict["medium"] == "image" || elementName.contains("thumbnail")) {
@@ -137,7 +144,6 @@ class RSSParser: NSObject, XMLParserDelegate {
                 currentItem?.guid = text
             case "item", "entry":
                 if let item = currentItem {
-                    // Als we nog geen imageURL hebben, extraheer dan de eerste <img> uit description
                     if item.imageURL == nil, !item.description.isEmpty {
                         currentItem?.imageURL = extractImageURL(from: item.description)
                     }
@@ -166,6 +172,18 @@ class RSSParser: NSObject, XMLParserDelegate {
         }
     }
 
+    // MARK: - Foutafhandeling
+
+    func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
+        logger.error("XML parse error: \(parseError.localizedDescription)")
+    }
+
+    func parser(_ parser: XMLParser, validationErrorOccurred validationError: Error) {
+        logger.warning("XML validation error: \(validationError.localizedDescription)")
+    }
+
+    // MARK: - Hulpfuncties
+
     private func parseDate(_ string: String) -> Date? {
         let formats = [
             "EEE, dd MMM yyyy HH:mm:ss Z",
@@ -186,32 +204,18 @@ class RSSParser: NSObject, XMLParserDelegate {
         return nil
     }
 
-    /// Extraheer de eerste afbeelding-URL uit HTML-content
     private func extractImageURL(from html: String) -> String? {
-        // Zoek naar <img src="..." /> tags met regex
-        let pattern = "<img[^>]+src=\"([^\"]+)\""
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
-            return nil
-        }
-        
+        guard let regex = Self.imgSrcRegex else { return nil }
         let range = NSRange(html.startIndex..., in: html)
         guard let match = regex.firstMatch(in: html, options: [], range: range),
-              match.numberOfRanges > 1 else {
-            return nil
-        }
-        
-        let srcRange = match.range(at: 1)
-        guard let swiftRange = Range(srcRange, in: html) else { return nil }
+              match.numberOfRanges > 1,
+              let swiftRange = Range(match.range(at: 1), in: html) else { return nil }
+
         let imageURL = String(html[swiftRange])
-        
-        // Filter out tracking pixels en kleine afbeeldingen
-        if imageURL.contains("1x1") || 
-           imageURL.contains("pixel") ||
-           imageURL.contains("tracker") ||
-           imageURL.hasSuffix(".gif") && imageURL.count < 50 {
+        if imageURL.contains("1x1") || imageURL.contains("pixel") ||
+           imageURL.contains("tracker") || (imageURL.hasSuffix(".gif") && imageURL.count < 50) {
             return nil
         }
-        
         return imageURL
     }
 }

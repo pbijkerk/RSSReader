@@ -11,6 +11,9 @@ struct ContentView: View {
 
     @State private var clusters: [TopicCluster] = []
     @State private var selectedTab = 0
+    @State private var lastClusteredAt: Date? = nil
+
+    private let clusteringDebounce: TimeInterval = 120 // 2 minuten
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -44,19 +47,23 @@ struct ContentView: View {
             await refreshAndCluster()
         }
         .onOpenURL { url in
-            // Mastodon OAuth callback: rssreader://oauth/mastodon?code=...
             OAuthCallbackHandler.shared.handle(url: url)
         }
     }
 
     private func refreshAndCluster() async {
         await refreshService.refreshAll(feeds: feeds, context: modelContext)
+
+        let now = Date()
+        let shouldCluster = lastClusteredAt.map { now.timeIntervalSince($0) > clusteringDebounce } ?? true
+        guard shouldCluster else { return }
+
         await regenerateSummaries()
+        lastClusteredAt = now
     }
 
     private func regenerateSummaries() async {
         let allItems = feeds.flatMap { $0.items }
-        // Lees API-sleutel uit Keychain (veilig), val terug op UserDefaults (legacy)
         let apiKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
             ?? ""
@@ -65,5 +72,6 @@ struct ContentView: View {
             savedTopics: topics,
             claudeAPIKey: apiKey.isEmpty ? nil : apiKey
         )
+        lastClusteredAt = Date()
     }
 }

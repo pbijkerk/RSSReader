@@ -128,7 +128,7 @@ final class MastodonSetupViewModel {
     @MainActor
     private func launchOAuthSession(url: URL) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
-            OAuthCallbackHandler.shared.pendingContinuation = continuation
+            OAuthCallbackHandler.shared.setPendingContinuation(continuation)
             pendingOAuthURL = url
             showSafari = true
         }
@@ -148,8 +148,8 @@ final class MastodonSetupViewModel {
             displayName: creds.displayName,
             avatarURL:   creds.avatar,
             clientID:    reg.clientId,
-            clientSecret: reg.clientSecret,
-            accessToken: token.accessToken
+            clientSecret: "",   // niet in SwiftData opslaan; clientSecret is alleen nodig tijdens setup
+            accessToken: ""     // niet in SwiftData opslaan; token staat uitsluitend in Keychain
         )
         context.insert(account)
 

@@ -16,6 +16,9 @@ class FeedItem {
     var imageURL: String?
     var feed: Feed?
 
+    // Transient cache — niet bewaard, opnieuw berekend na SwiftData fault
+    @Transient private var _cachedPlainDescription: String? = nil
+
     init(
         title: String,
         link: String? = nil,
@@ -39,16 +42,22 @@ class FeedItem {
     }
 
     var plainDescription: String {
-        guard let desc = itemDescription else { return "" }
-        return desc
+        if let cached = _cachedPlainDescription { return cached }
+        guard let desc = itemDescription else {
+            _cachedPlainDescription = ""
+            return ""
+        }
+        let result = desc
             .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .htmlEntityDecoded
+        _cachedPlainDescription = result
+        return result
     }
 
     // MARK: - Cached regexes voor performance
-    
+
     private static let scriptRegex = try! NSRegularExpression(
         pattern: "(?i)<script[^>]*>[\\s\\S]*?</script>", options: []
     )
@@ -61,34 +70,20 @@ class FeedItem {
     private static let iframeRegex = try! NSRegularExpression(
         pattern: "(?i)<iframe[^>]*>[\\s\\S]*?</iframe>", options: []
     )
-    
-    /// RSS-content gestript van <script> en <style> blokken, maar met overige HTML intact.
+
     var sanitisedHTML: String {
         guard let html = itemDescription, !html.isEmpty else { return "" }
         var result = html
-        
-        // Gebruik cached regexes voor betere performance
-        let regexes = [
-            Self.scriptRegex,
-            Self.styleRegex,
-            Self.noscriptRegex,
-            Self.iframeRegex
-        ]
-        
+
+        let regexes = [Self.scriptRegex, Self.styleRegex, Self.noscriptRegex, Self.iframeRegex]
         for regex in regexes {
             let range = NSRange(result.startIndex..., in: result)
-            result = regex.stringByReplacingMatches(
-                in: result,
-                options: [],
-                range: range,
-                withTemplate: ""
-            )
+            result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "")
         }
-        
+
         return result
     }
 
-    /// Voldoende RSS-content voor reader mode
     var hasSubstantialContent: Bool {
         plainDescription.count > AppConfiguration.minimumContentLength
     }
@@ -99,62 +94,48 @@ class FeedItem {
 
     // MARK: - Video detectie
 
-    /// YouTube video-ID extraheren uit het artikel-link.
     var youtubeVideoID: String? {
         guard let link, link.contains("youtube.com") || link.contains("youtu.be") else { return nil }
         guard let url = URL(string: link) else { return nil }
-        // youtube.com/watch?v=ID
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let v = components.queryItems?.first(where: { $0.name == "v" })?.value {
             return v
         }
-        // youtu.be/ID
         if url.host?.contains("youtu.be") == true {
             return url.pathComponents.dropFirst().first
         }
         return nil
     }
 
-    /// Vimeo video-ID (numeriek) extraheren uit het artikel-link.
     var vimeoVideoID: String? {
         guard let link, link.contains("vimeo.com") else { return nil }
         guard let url = URL(string: link) else { return nil }
-        // Zoek het eerste numerieke path-component (van achter naar voren)
         return url.pathComponents.reversed().first { Int($0) != nil }
     }
 
-    /// Directe video-URL vanuit enclosure (MP4, WebM, etc.).
     var directVideoURL: URL? {
         guard let mime = enclosureMIMEType, mime.hasPrefix("video/"),
               let urlStr = enclosureURL else { return nil }
         return URL(string: urlStr)
     }
 
-    /// `true` als dit item een afspeelbare video bevat.
     var isVideoItem: Bool {
         youtubeVideoID != nil || vimeoVideoID != nil || directVideoURL != nil
     }
 
     // MARK: - Audio detectie
 
-    /// Directe audio-URL vanuit enclosure (MP3, AAC, etc.).
     var directAudioURL: URL? {
         guard let mime = enclosureMIMEType, mime.hasPrefix("audio/"),
               let urlStr = enclosureURL else { return nil }
         return URL(string: urlStr)
     }
 
-    /// `true` als dit item een afspeelbare audio-enclosure bevat.
     var isAudioItem: Bool { directAudioURL != nil }
 
-    /// Watch-URL voor YouTube / Vimeo (voor SFSafariViewController — geen embed).
     var videoPlayerURL: URL? {
-        if let id = youtubeVideoID {
-            return URL(string: "https://youtu.be/\(id)")
-        }
-        if let id = vimeoVideoID {
-            return URL(string: "https://vimeo.com/\(id)")
-        }
+        if let id = youtubeVideoID { return URL(string: "https://youtu.be/\(id)") }
+        if let id = vimeoVideoID   { return URL(string: "https://vimeo.com/\(id)") }
         return nil
     }
 }
@@ -162,11 +143,12 @@ class FeedItem {
 // MARK: - HTML-entiteiten decoderen
 
 private extension String {
-    /// Decodeert HTML-entiteiten: named (bv. &amp;, &mdash;) én numeriek (bv. &#8271;, &#x203F;).
+    // Gecachede regex — wordt eenmalig aangemaakt voor de gehele app-sessie
+    private static let numericEntityRegex = try? NSRegularExpression(pattern: "&#(x?)([0-9a-fA-F]+);")
+
     var htmlEntityDecoded: String {
         guard self.contains("&") else { return self }
         var s = self
-        // Veelvoorkomende named entities
         let named: [(String, String)] = [
             ("&amp;",    "&"),  ("&lt;",    "<"),  ("&gt;",    ">"),
             ("&quot;",   "\""), ("&apos;",  "'"),  ("&nbsp;",  " "),
@@ -178,10 +160,7 @@ private extension String {
         for (entity, char) in named {
             s = s.replacingOccurrences(of: entity, with: char)
         }
-        // Numerieke entiteiten: decimaal &#NNN; en hex &#xHHH;
-        guard s.contains("&#"),
-              let regex = try? NSRegularExpression(pattern: "&#(x?)([0-9a-fA-F]+);")
-        else { return s }
+        guard s.contains("&#"), let regex = Self.numericEntityRegex else { return s }
         let matches = regex.matches(in: s, range: NSRange(s.startIndex..., in: s))
         for match in matches.reversed() {
             guard let range = Range(match.range, in: s),

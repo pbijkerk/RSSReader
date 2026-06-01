@@ -76,49 +76,20 @@ struct ItemDetailView: View {
     @ViewBuilder
     private var videoLayout: some View {
         if let videoURL = item.directVideoURL {
-            // Directe MP4/WebM: native AVPlayer inline
             nativePlayerLayout(videoURL: videoURL)
         } else if let playerURL = item.videoPlayerURL {
-            // YouTube / Vimeo: afspeelknop → SFSafariViewController
             safariPlayerLayout(playerURL: playerURL)
         }
     }
 
-    /// YouTube / Vimeo: afspeelkaart + beschrijving; video opent in SFSafariViewController
     private func safariPlayerLayout(playerURL: URL) -> some View {
         VStack(spacing: 0) {
-            // Afspeelkaart
-            Button {
-                showingVideoPlayer = true
-            } label: {
-                ZStack {
-                    Rectangle()
-                        .fill(Color.black)
-                        .aspectRatio(16 / 9, contentMode: .fit)
-                    VStack(spacing: 10) {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.4), radius: 8)
-                        Text("Tik om af te spelen")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .fullScreenCover(isPresented: $showingVideoPlayer) {
-                SafariVideoPlayer(url: playerURL)
-                    .ignoresSafeArea()
-            }
-
-            // Beschrijving
+            VideoPlayButton(isPresented: $showingVideoPlayer, playerURL: playerURL)
             ReaderWebView(html: descriptionHTML, baseURL: articleURL, onOpenURL: openInAppBrowser)
         }
         .ignoresSafeArea(edges: .bottom)
     }
 
-    /// Directe MP4: native AVPlayer bovenaan, beschrijving eronder
     private func nativePlayerLayout(videoURL: URL) -> some View {
         VStack(spacing: 0) {
             NativeVideoPlayer(url: videoURL)
@@ -130,7 +101,7 @@ struct ItemDetailView: View {
         .ignoresSafeArea(edges: .bottom)
     }
 
-    // MARK: - Reader layout (bestaand)
+    // MARK: - Reader layout
 
     private var readerLayout: some View {
         ZStack {
@@ -143,14 +114,7 @@ struct ItemDetailView: View {
             .ignoresSafeArea(edges: .bottom)
 
             if isExtracting {
-                VStack(spacing: 12) {
-                    ProgressView()
-                    Text("Artikel laden…")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(24)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                LoadingOverlay(message: "Artikel laden…")
             }
         }
     }
@@ -163,7 +127,6 @@ struct ItemDetailView: View {
     private var toolbarContent: some ToolbarContent {
         if let url = articleURL {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                // Opnieuw laden bij extractiefout
                 if extractionFailed {
                     Button {
                         Task { await extractFromWeb() }
@@ -173,7 +136,6 @@ struct ItemDetailView: View {
                     .disabled(isExtracting)
                 }
 
-                // Bewaar artikel
                 Button {
                     item.isSaved.toggle()
                     try? modelContext.save()
@@ -182,14 +144,12 @@ struct ItemDetailView: View {
                 }
                 .accessibilityLabel(item.isSaved ? "Verwijder uit bewaard" : "Bewaar artikel")
 
-                // Open in browser (in-app)
                 Button {
                     safariItem = IdentifiableURL(url: url)
                 } label: {
                     Label("Open in browser", systemImage: "safari")
                 }
 
-                // Delen
                 ShareLink(item: url) {
                     Label("Delen", systemImage: "square.and.arrow.up")
                 }
@@ -200,7 +160,7 @@ struct ItemDetailView: View {
     // MARK: - HTML helpers
 
     private var descriptionHTML: String {
-        Self.readerHTML(
+        ArticleHTMLBuilder.build(
             content: item.sanitisedHTML.isEmpty
                 ? "<p><em>Geen beschrijving beschikbaar.</em></p>"
                 : item.sanitisedHTML,
@@ -216,19 +176,15 @@ struct ItemDetailView: View {
 
     private func loadContent() async {
         guard !item.isVideoItem else { return }
-        // Mastodon-posts hebben geen apart "volledig artikel" — link niet klikbaar maken
         let articleLink = item.feed?.isMastodonFeed == true ? nil : item.link
         var rssHTML = item.sanitisedHTML
-        // Mastodon: afbeelding toevoegen als die nog niet in de HTML staat
-        // (items opgehaald vóór de img-fix hebben enclosureURL maar geen <img> in itemDescription)
         if item.feed?.isMastodonFeed == true,
            let imgURL = item.enclosureURL,
            !rssHTML.contains(imgURL) {
             rssHTML += "\n<img src=\"\(imgURL)\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
         }
         if !rssHTML.isEmpty {
-            // Toon RSS-samenvatting; titel is tappable voor volledig artikel (niet bij Mastodon)
-            displayHTML = Self.readerHTML(
+            displayHTML = ArticleHTMLBuilder.build(
                 content: rssHTML,
                 title: item.title,
                 feedName: item.feed?.title,
@@ -238,8 +194,7 @@ struct ItemDetailView: View {
                 fontFamily: articleFontFamily
             )
         } else {
-            // Geen RSS-content — hint dat de gebruiker op de titel kan tikken
-            displayHTML = Self.readerHTML(
+            displayHTML = ArticleHTMLBuilder.build(
                 content: "<p><em>Geen samenvatting beschikbaar. Tik op de titel om het volledige artikel te lezen.</em></p>",
                 title: item.title,
                 feedName: item.feed?.title,
@@ -257,7 +212,7 @@ struct ItemDetailView: View {
         extractionFailed = false
         do {
             let html = try await extractor.extract(from: url)
-            displayHTML = Self.readerHTML(
+            displayHTML = ArticleHTMLBuilder.build(
                 content: html.isEmpty ? "<p><em>Geen inhoud gevonden.</em></p>" : html,
                 title: item.title,
                 feedName: item.feed?.title,
@@ -270,11 +225,23 @@ struct ItemDetailView: View {
         }
         isExtracting = false
     }
+}
 
-    // MARK: - HTML-template
+// MARK: - ArticleHTMLBuilder
 
-    static func readerHTML(content: String, title: String, feedName: String?, date: Date?,
-                           articleLink: String? = nil, fontSize: Int = 17, fontFamily: String = "system") -> String {
+/// Bouwt het volledige HTML-document voor de reader-weergave.
+/// Geïsoleerd van de view zodat dit los getest en hergebruikt kan worden.
+enum ArticleHTMLBuilder {
+
+    static func build(
+        content: String,
+        title: String,
+        feedName: String?,
+        date: Date?,
+        articleLink: String? = nil,
+        fontSize: Int = AppConfiguration.defaultArticleFontSize,
+        fontFamily: String = AppConfiguration.defaultArticleFontFamily
+    ) -> String {
         let dateStr: String
         if let date {
             let fmt = DateFormatter()
@@ -287,6 +254,12 @@ struct ItemDetailView: View {
         }
 
         let meta = [feedName, dateStr].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · ")
+        let bodyFont: String
+        switch fontFamily {
+        case "newyork": bodyFont = "'New York', Georgia, serif"
+        case "georgia":  bodyFont = "Georgia, 'Times New Roman', serif"
+        default:         bodyFont = "-apple-system, 'SF Pro Text', sans-serif"
+        }
 
         return """
         <!DOCTYPE html>
@@ -316,7 +289,7 @@ struct ItemDetailView: View {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { background: var(--bg); }
         body {
-            font-family: \(fontFamily == "newyork" ? "'New York', Georgia, serif" : fontFamily == "georgia" ? "Georgia, 'Times New Roman', serif" : "-apple-system, 'SF Pro Text', sans-serif");
+            font-family: \(bodyFont);
             font-size: \(fontSize)px;
             line-height: 1.5;
             color: var(--text);
@@ -327,80 +300,23 @@ struct ItemDetailView: View {
             word-break: break-word;
             -webkit-text-size-adjust: 100%;
         }
-        .article-title {
-            font-size: 1.55em;
-            font-weight: 700;
-            line-height: 1.25;
-            margin-bottom: 0.3em;
-            letter-spacing: -0.02em;
-        }
-        .article-meta {
-            font-size: 0.82em;
-            color: var(--secondary);
-            margin-bottom: 1.6em;
-            padding-bottom: 1.2em;
-            border-bottom: 1px solid var(--border);
-        }
-        h1, h2, h3, h4, h5, h6 {
-            font-weight: 700;
-            line-height: 1.3;
-            margin: 1.4em 0 0.4em;
-            letter-spacing: -0.01em;
-        }
-        h1 { font-size: 1.4em; }
-        h2 { font-size: 1.2em; }
-        h3 { font-size: 1.05em; }
+        .article-title { font-size: 1.55em; font-weight: 700; line-height: 1.25; margin-bottom: 0.3em; letter-spacing: -0.02em; }
+        .article-meta { font-size: 0.82em; color: var(--secondary); margin-bottom: 1.6em; padding-bottom: 1.2em; border-bottom: 1px solid var(--border); }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.3; margin: 1.4em 0 0.4em; letter-spacing: -0.01em; }
+        h1 { font-size: 1.4em; } h2 { font-size: 1.2em; } h3 { font-size: 1.05em; }
         p { margin: 0.85em 0; }
         a { color: var(--link); text-decoration: none; }
         a:hover { text-decoration: underline; }
-        img, video {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 0.6em 0;
-            display: block;
-        }
+        img, video { max-width: 100%; height: auto; border-radius: 8px; margin: 0.6em 0; display: block; }
         figure { margin: 1.2em 0; }
-        figcaption, .wp-caption-text, .caption {
-            font-size: 0.82em;
-            color: var(--secondary);
-            text-align: center;
-            margin-top: 0.4em;
-        }
-        blockquote {
-            border-left: 3px solid var(--secondary);
-            padding: 0.2em 0 0.2em 1em;
-            color: var(--secondary);
-            margin: 1em 0;
-            font-style: italic;
-        }
-        pre {
-            background: var(--code-bg);
-            padding: 14px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 0.85em;
-            line-height: 1.5;
-            margin: 1em 0;
-        }
-        code {
-            font-family: 'SF Mono', Menlo, monospace;
-            font-size: 0.875em;
-            background: var(--code-bg);
-            padding: 2px 5px;
-            border-radius: 4px;
-        }
+        figcaption, .wp-caption-text, .caption { font-size: 0.82em; color: var(--secondary); text-align: center; margin-top: 0.4em; }
+        blockquote { border-left: 3px solid var(--secondary); padding: 0.2em 0 0.2em 1em; color: var(--secondary); margin: 1em 0; font-style: italic; }
+        pre { background: var(--code-bg); padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 0.85em; line-height: 1.5; margin: 1em 0; }
+        code { font-family: 'SF Mono', Menlo, monospace; font-size: 0.875em; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; }
         pre code { background: none; padding: 0; border-radius: 0; }
         ul, ol { padding-left: 1.4em; margin: 0.8em 0; }
         li { margin: 0.3em 0; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-            margin: 1em 0;
-            overflow-x: auto;
-            display: block;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin: 1em 0; overflow-x: auto; display: block; }
         th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
         th { background: var(--code-bg); font-weight: 600; }
         hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
@@ -411,32 +327,75 @@ struct ItemDetailView: View {
         </head>
         <body>
         \(articleLink != nil ? "<a href=\"rssreader://load-full-article\" class=\"article-title-link\">" : "")
-        <h1 class="article-title">\(escapeHTML(title))</h1>
+        <h1 class="article-title">\(escape(title))</h1>
         \(articleLink != nil ? "<p class=\"read-full-hint\">Tik voor het volledige artikel ›</p></a>" : "")
-        \(meta.isEmpty ? "" : "<p class=\"article-meta\">\(escapeHTML(meta))</p>")
+        \(meta.isEmpty ? "" : "<p class=\"article-meta\">\(escape(meta))</p>")
         \(content)
         </body>
         </html>
         """
     }
 
-    private static func escapeHTML(_ text: String) -> String {
+    static func escape(_ text: String) -> String {
         text
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "&",  with: "&amp;")
+            .replacingOccurrences(of: "<",  with: "&lt;")
+            .replacingOccurrences(of: ">",  with: "&gt;")
             .replacingOccurrences(of: "\"", with: "&quot;")
     }
 }
 
-// MARK: - IdentifiableURL (voor .sheet(item:) zonder race condition)
+// MARK: - Hulp-views
+
+private struct VideoPlayButton: View {
+    @Binding var isPresented: Bool
+    let playerURL: URL
+
+    var body: some View {
+        Button { isPresented = true } label: {
+            ZStack {
+                Rectangle()
+                    .fill(Color.black)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                VStack(spacing: 10) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.4), radius: 8)
+                    Text("Tik om af te spelen")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .fullScreenCover(isPresented: $isPresented) {
+            SafariVideoPlayer(url: playerURL).ignoresSafeArea()
+        }
+    }
+}
+
+private struct LoadingOverlay: View {
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(24)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
 
 private struct IdentifiableURL: Identifiable {
     let id = UUID()
     let url: URL
 }
 
-// MARK: - SafariVideoPlayer (YouTube / Vimeo — volwaardige Safari binnen de app)
+// MARK: - SafariVideoPlayer
 
 struct SafariVideoPlayer: UIViewControllerRepresentable {
     let url: URL
@@ -463,7 +422,7 @@ struct ReaderWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let prefs = WKWebpagePreferences()
-        prefs.allowsContentJavaScript = false      // geen scripts in RSS-HTML
+        prefs.allowsContentJavaScript = false
 
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences = prefs
@@ -478,10 +437,9 @@ struct ReaderWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ wv: WKWebView, context: Context) {
-        // Herlaad alleen als de HTML veranderd is
         guard html != context.coordinator.lastHTML else { return }
         context.coordinator.lastHTML = html
-        context.coordinator.initialLoadDone = false   // reset vóór nieuwe lading
+        context.coordinator.initialLoadDone = false
         wv.loadHTMLString(html, baseURL: baseURL)
     }
 
@@ -517,12 +475,9 @@ struct ReaderWebView: UIViewRepresentable {
                 decisionHandler(.allow); return
             }
             if url.scheme == "rssreader" {
-                // Tik op artikel-titel → volledig artikel laden
                 onLoadFullArticle?()
                 decisionHandler(.cancel)
             } else if (url.scheme == "https" || url.scheme == "http") && initialLoadDone {
-                // Alle http(s)-navigaties ná de initiële lading openen in in-app browser
-                // (onderschept zowel .linkActivated als .other, bijv. Mastodon-redirects)
                 if let onOpenURL {
                     onOpenURL(url)
                 } else {
