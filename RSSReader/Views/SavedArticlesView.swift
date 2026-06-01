@@ -22,8 +22,8 @@ struct SavedArticlesView: View {
                     )
                 } else {
                     List {
-                        ForEach(savedItems) { item in
-                            NavigationLink(destination: ItemDetailView(item: item)) {
+                        ForEach(Array(savedItems.enumerated()), id: \.element.id) { index, item in
+                            NavigationLink(destination: ArticlePageView(items: savedItems, initialIndex: index)) {
                                 FeedItemRowView(item: item)
                             }
                             .listRowBackground(item.isRead ? Color.clear : Color.blue.opacity(0.05))
