@@ -31,6 +31,8 @@ struct FeedListView: View {
                     feedList
                 }
             }
+            .background(Theme.background.ignoresSafeArea())
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .navigationTitle("Feeds")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -141,6 +143,7 @@ struct FeedListView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .animation(.default, value: folders.map { $0.id })
         .refreshable { await refreshFeeds() }
         .environment(\.editMode, $editMode)
@@ -303,6 +306,8 @@ struct FeedRowView: View {
     let feed: Feed
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
 
+    private var brand: Color { Theme.brandColor(for: feed.title.isEmpty ? feed.url : feed.title) }
+
     private var badgeCount: Int {
         feedCountMode == "unread"
             ? feed.items.filter { !$0.isRead }.count
@@ -311,7 +316,7 @@ struct FeedRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Favicon
+            // Favicon met brand-accent
             AsyncImage(url: feed.faviconImageURL) { phase in
                 switch phase {
                 case .success(let image):
@@ -319,18 +324,18 @@ struct FeedRowView: View {
                 case .failure, .empty:
                     Image(systemName: "antenna.radiowaves.left.and.right")
                         .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(brand)
                 @unknown default:
-                    Color.secondary.opacity(0.2)
+                    brand.opacity(0.2)
                 }
             }
-            .frame(width: 28, height: 28)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+            .frame(width: 30, height: 30)
+            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(brand.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(feed.title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
                     .lineLimit(1)
                 Text(feed.url)
                     .font(.caption)
@@ -343,9 +348,9 @@ struct FeedRowView: View {
                     Text("\(badgeCount)")
                         .font(.caption.bold())
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 2)
-                        .background(.blue, in: Capsule())
+                        .background(brand, in: Capsule())
                 }
                 if let date = feed.lastRefreshed {
                     Text(date, style: .relative)

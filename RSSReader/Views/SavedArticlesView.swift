@@ -23,10 +23,16 @@ struct SavedArticlesView: View {
                 } else {
                     List {
                         ForEach(Array(savedItems.enumerated()), id: \.element.id) { index, item in
-                            NavigationLink(destination: ArticlePageView(items: savedItems, initialIndex: index)) {
-                                FeedItemRowView(item: item)
+                            ZStack {
+                                FeedItemCard(item: item)
+                                NavigationLink(destination: ArticlePageView(items: savedItems, initialIndex: index)) {
+                                    EmptyView()
+                                }
+                                .opacity(0)
                             }
-                            .listRowBackground(item.isRead ? Color.clear : Color.blue.opacity(0.05))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     item.isSaved = false
@@ -38,10 +44,13 @@ struct SavedArticlesView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(Theme.background.ignoresSafeArea())
                 }
             }
             .navigationTitle("Bewaard")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         }
     }
 }

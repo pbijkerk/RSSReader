@@ -99,6 +99,7 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 4)
                     Picker("Lettertype", selection: $articleFontFamily) {
+                        Text("Charter").tag("charter")
                         Text("SF Pro").tag("system")
                         Text("New York").tag("newyork")
                         Text("Georgia").tag("georgia")
