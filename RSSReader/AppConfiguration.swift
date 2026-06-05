@@ -36,7 +36,7 @@ enum AppConfiguration {
     static let defaultArticleFontSize = 17
 
     /// Standaard lettertypefamilie voor artikel-weergave
-    static let defaultArticleFontFamily = "system"
+    static let defaultArticleFontFamily = "charter"
 
     // MARK: - UserDefaults Keys
 

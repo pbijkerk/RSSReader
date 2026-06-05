@@ -21,28 +21,25 @@ struct ContentView: View {
                 refreshService: refreshService,
                 onRefreshComplete: { await regenerateSummaries() }
             )
-            .tabItem { Label("Feeds", systemImage: "list.bullet.rectangle") }
             .tag(0)
 
             SummaryListView(
                 clusters: $clusters,
                 isLoading: clusteringService.isClustering || refreshService.isRefreshing
             )
-            .tabItem { Label("Summaries", systemImage: "newspaper") }
             .tag(1)
 
             TopicsManagementView()
-                .tabItem { Label("Topics", systemImage: "tag") }
                 .tag(2)
 
             SavedArticlesView()
-                .tabItem { Label("Bewaard", systemImage: "bookmark") }
                 .tag(3)
 
             SettingsView()
-                .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(4)
         }
+        .floatingTabBar(selection: $selectedTab)
+        .tint(Theme.accent)
         .task {
             await refreshAndCluster()
         }

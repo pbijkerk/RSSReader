@@ -16,10 +16,17 @@ struct FeedItemsView: View {
     var body: some View {
         List {
             ForEach(Array(sortedItems.enumerated()), id: \.element.id) { index, item in
-                NavigationLink(destination: ArticlePageView(items: sortedItems, initialIndex: index)) {
-                    FeedItemRowView(item: item)
+                ZStack {
+                    FeedItemCard(item: item)
+                    // Onzichtbare NavigationLink zonder disclosure-chevron
+                    NavigationLink(destination: ArticlePageView(items: sortedItems, initialIndex: index)) {
+                        EmptyView()
+                    }
+                    .opacity(0)
                 }
-                .listRowBackground(item.isRead ? Color.clear : Color.blue.opacity(0.05))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button {
                         item.isRead.toggle()
@@ -42,15 +49,38 @@ struct FeedItemsView: View {
                             systemImage: item.isSaved ? "bookmark.slash" : "bookmark"
                         )
                     }
-                    .tint(.blue)
+                    .tint(Theme.accentSecondary)
+                }
+                .contextMenu {
+                    Button {
+                        item.isSaved.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(item.isSaved ? "Verwijder uit bewaard" : "Bewaar",
+                              systemImage: item.isSaved ? "bookmark.slash" : "bookmark")
+                    }
+                    Button {
+                        item.isRead.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(item.isRead ? "Markeer als ongelezen" : "Markeer als gelezen",
+                              systemImage: item.isRead ? "envelope.badge" : "envelope.open")
+                    }
+                    if let link = item.link, let url = URL(string: link) {
+                        ShareLink(item: url) { Label("Delen", systemImage: "square.and.arrow.up") }
+                    }
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
         .refreshable {
             await refreshService.refresh(feed: feed, context: modelContext)
         }
         .navigationTitle(feed.title)
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Refresh", systemImage: "arrow.clockwise") {
@@ -64,85 +94,130 @@ struct FeedItemsView: View {
     }
 }
 
+/// Dunne wrapper zodat bestaande aanroepen (`FeedItemRowView`) de nieuwe card tonen.
 struct FeedItemRowView: View {
+    let item: FeedItem
+    var body: some View { FeedItemCard(item: item) }
+}
+
+/// Magazine-card voor één artikel — "Glass Magazine"-stijl uit de PDF.
+/// Afbeelding als banner bovenaan (indien aanwezig), Charter-titel, brand-accent per bron.
+struct FeedItemCard: View {
     let item: FeedItem
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
     @AppStorage(AppConfiguration.UserDefaultsKeys.showArticleThumbnails) private var showArticleThumbnails = true
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration.defaultArticleFontSize
 
-    /// Basisschaal die meebeweegt met de iOS-toegankelijkheidslettergrootte (Dynamic Type).
-    /// De verhouding met `articleFontSize` blijft behouden, zodat gebruikersvoorkeur én
-    /// systeemvoorkeur samen werken.
+    /// Basisschaal die meebeweegt met Dynamic Type, met behoud van de gebruikersvoorkeur.
     @ScaledMetric(relativeTo: .body) private var scaledBase: CGFloat = 17
 
     private var titleSize:   CGFloat { scaledBase * CGFloat(articleFontSize) / 17 }
     private var captionSize: CGFloat { max(titleSize - 4, 9) }
     private var metaSize:    CGFloat { max(titleSize - 5, 8) }
 
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Linker kolom: Metadata + Titel + beschrijving
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    if let feedTitle = item.feed?.title {
-                        Text(feedTitle)
-                            .font(.system(size: metaSize))
-                            .foregroundStyle(.blue)
-                    }
-                    Spacer()
-                    if let date = item.pubDate {
-                        Text(Self.relativeTime(for: date))
-                            .font(.system(size: metaSize))
-                            .foregroundStyle(.secondary)
-                    }
-                }
+    private var brand: Color {
+        Theme.brandColor(for: item.feed?.title ?? item.feed?.url ?? "")
+    }
 
-                HStack(alignment: .top, spacing: 6) {
-                    Text(item.title)
-                        .font(.system(size: titleSize, weight: item.isRead ? .regular : .bold))
-                        .lineLimit(3)
+    private var hasBanner: Bool {
+        showArticleThumbnails && item.imageURL.flatMap { URL(string: $0) } != nil
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if hasBanner, let urlString = item.imageURL, let url = URL(string: urlString) {
+                bannerImage(url: url)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                // Categorie- / bron-label + ongelezen-indicator
+                HStack(spacing: 6) {
+                    if !item.isRead {
+                        Circle().fill(brand).frame(width: 7, height: 7)
+                    }
+                    if let feedTitle = item.feed?.title {
+                        Text(feedTitle.uppercased())
+                            .font(Theme.categoryLabel(metaSize))
+                            .tracking(0.8)
+                            .foregroundStyle(brand)
+                            .lineLimit(1)
+                    }
                     if item.isVideoItem {
                         Image(systemName: "play.circle.fill")
-                            .foregroundStyle(.blue)
-                            .font(.system(size: captionSize))
-                            .padding(.top, 2)
+                            .font(.system(size: metaSize))
+                            .foregroundStyle(brand)
+                    }
+                    if item.isAudioItem {
+                        Image(systemName: "waveform")
+                            .font(.system(size: metaSize))
+                            .foregroundStyle(brand)
+                    }
+                    Spacer(minLength: 0)
+                    if item.isSaved {
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: metaSize))
+                            .foregroundStyle(Theme.accentSecondary)
                     }
                 }
 
-                if !item.plainDescription.isEmpty {
+                // Titel in Charter (serif magazine-look)
+                Text(item.title)
+                    .font(Theme.title(titleSize + 1, relativeTo: .headline))
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                // Korte beschrijving
+                if previewLineCount > 0, !item.plainDescription.isEmpty {
                     Text(item.plainDescription)
                         .font(.system(size: captionSize))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                         .lineLimit(previewLineCount)
                 }
-            }
-            
-            // Rechter kolom: Thumbnail afbeelding (indien beschikbaar en instelling aan)
-            if showArticleThumbnails, let imageURLString = item.imageURL,
-               let imageURL = URL(string: imageURLString) {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    case .failure:
-                        placeholderImage
-                    case .empty:
-                        ProgressView()
-                            .frame(width: 80, height: 80)
-                    @unknown default:
-                        placeholderImage
-                    }
+
+                // Metadata
+                if let date = item.pubDate {
+                    Text(Self.relativeTime(for: date))
+                        .font(.system(size: metaSize))
+                        .foregroundStyle(Theme.textSecondary)
                 }
-                .frame(width: 80, height: 80)
+            }
+            .padding(16)
+        }
+        .background(Theme.card)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 3)
+        .opacity(item.isRead ? 0.72 : 1)
+    }
+
+    @ViewBuilder
+    private func bannerImage(url: URL) -> some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            case .empty:
+                ZStack { brand.opacity(0.12); ProgressView() }
+            case .failure:
+                ZStack {
+                    brand.opacity(0.12)
+                    Image(systemName: "photo").foregroundStyle(brand.opacity(0.5))
+                }
+            @unknown default:
+                brand.opacity(0.12)
             }
         }
-        .padding(.vertical, 4)
+        .frame(height: 168)
+        .frame(maxWidth: .infinity)
+        .clipped()
     }
-    
+
     /// Relatieve tijd zonder seconden: onder een minuut → "Zojuist".
     private static let relativeDateFormatter: RelativeDateTimeFormatter = {
         let f = RelativeDateTimeFormatter()
@@ -153,17 +228,6 @@ struct FeedItemRowView: View {
     private static func relativeTime(for date: Date) -> String {
         guard abs(date.timeIntervalSinceNow) >= 60 else { return "Zojuist" }
         return relativeDateFormatter.localizedString(for: date, relativeTo: .now)
-    }
-
-    @ViewBuilder
-    private var placeholderImage: some View {
-        RoundedRectangle(cornerRadius: 8)
-            .fill(Color.secondary.opacity(0.1))
-            .frame(width: 80, height: 80)
-            .overlay {
-                Image(systemName: "photo")
-                    .foregroundStyle(.secondary.opacity(0.5))
-            }
     }
 }
 
