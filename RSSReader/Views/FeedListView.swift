@@ -255,34 +255,42 @@ struct SectionHeaderView: View {
     @Binding var isExpanded: Bool
     var folder: FeedFolder? = nil
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale)
+    private var feedListScale = AppConfiguration.defaultFeedListScale
+
+    private var iconSize: CGFloat { 15 * feedListScale }
+    private var iconFrame: CGFloat { 20 * feedListScale }
+    private var titleFont: Font { .system(size: 15 * feedListScale, weight: .bold) }
+    private var captionFont: Font { .system(size: 12 * feedListScale, weight: .regular) }
+    private var captionBoldFont: Font { .system(size: 12 * feedListScale, weight: .bold) }
+
     var body: some View {
         HStack(spacing: 8) {
             if let folder {
-                // Naam + icoon: NavigationLink naar FolderItemsView
                 NavigationLink(destination: FolderItemsView(folder: folder)) {
                     HStack(spacing: 8) {
                         Image(systemName: icon)
+                            .font(.system(size: iconSize))
                             .foregroundStyle(.blue)
-                            .frame(width: 20)
+                            .frame(width: iconFrame)
                         Text(title)
-                            .font(.subheadline.bold())
+                            .font(titleFont)
                             .foregroundStyle(.primary)
                     }
                 }
                 .buttonStyle(.plain)
             } else {
-                // Overig: alleen visueel, geen navigatie
                 Image(systemName: icon)
+                    .font(.system(size: iconSize))
                     .foregroundStyle(.blue)
-                    .frame(width: 20)
+                    .frame(width: iconFrame)
                 Text(title)
-                    .font(.subheadline.bold())
+                    .font(titleFont)
                     .foregroundStyle(.primary)
             }
 
             Spacer()
 
-            // Chevron + teller: expand/collapse
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isExpanded.toggle()
@@ -290,10 +298,10 @@ struct SectionHeaderView: View {
             } label: {
                 HStack(spacing: 4) {
                     Text("\(count)")
-                        .font(.caption)
+                        .font(captionFont)
                         .foregroundStyle(.secondary)
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.caption.bold())
+                        .font(captionBoldFont)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -305,6 +313,7 @@ struct SectionHeaderView: View {
 struct FeedRowView: View {
     let feed: Feed
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale) private var feedListScale = AppConfiguration.defaultFeedListScale
 
     private var brand: Color { Theme.brandColor(for: feed.title.isEmpty ? feed.url : feed.title) }
 
@@ -314,31 +323,37 @@ struct FeedRowView: View {
             : feed.items.count
     }
 
+    private var faviconSize: CGFloat { 30 * feedListScale }
+    private var faviconRadius: CGFloat { 7 * feedListScale }
+    private var titleFont: Font { .system(size: 17 * feedListScale, weight: .semibold, design: .rounded) }
+    private var urlFont: Font { .system(size: 12 * feedListScale) }
+    private var badgeFont: Font { .system(size: 12 * feedListScale, weight: .bold) }
+    private var dateFont: Font { .system(size: 11 * feedListScale) }
+
     var body: some View {
         HStack(spacing: 10) {
-            // Favicon met brand-accent
             AsyncImage(url: feed.faviconImageURL) { phase in
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFill()
                 case .failure, .empty:
                     Image(systemName: "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 14))
+                        .font(.system(size: 14 * feedListScale))
                         .foregroundStyle(brand)
                 @unknown default:
                     brand.opacity(0.2)
                 }
             }
-            .frame(width: 30, height: 30)
-            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .background(brand.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .frame(width: faviconSize, height: faviconSize)
+            .clipShape(RoundedRectangle(cornerRadius: faviconRadius, style: .continuous))
+            .background(brand.opacity(0.12), in: RoundedRectangle(cornerRadius: faviconRadius, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(feed.title)
-                    .font(.system(.headline, design: .rounded))
+                    .font(titleFont)
                     .lineLimit(1)
                 Text(feed.url)
-                    .font(.caption)
+                    .font(urlFont)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -346,7 +361,7 @@ struct FeedRowView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 if feedCountMode == "total" || badgeCount > 0 {
                     Text("\(badgeCount)")
-                        .font(.caption.bold())
+                        .font(badgeFont)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
@@ -354,7 +369,7 @@ struct FeedRowView: View {
                 }
                 if let date = feed.lastRefreshed {
                     Text(date, style: .relative)
-                        .font(.caption2)
+                        .font(dateFont)
                         .foregroundStyle(.secondary)
                 }
             }
