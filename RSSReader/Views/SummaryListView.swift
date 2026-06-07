@@ -55,29 +55,37 @@ struct SummaryListView: View {
 struct TopicClusterRowView: View {
     let cluster: TopicCluster
 
+    private var accent: Color { Theme.brandColor(for: cluster.topicName) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(cluster.topicName)
-                    .font(.headline)
-                Spacer()
-                Text("\(cluster.items.count) articles")
-                    .font(.caption)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(.blue, in: Capsule())
-            }
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(accent)
+                .frame(width: 4)
 
-            Text(cluster.summary)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(cluster.topicName)
+                        .font(.headline)
+                    Spacer()
+                    Text("\(cluster.items.count) articles")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(accent, in: Capsule())
+                }
 
-            if let latest = cluster.items.first?.pubDate {
-                Text("Latest: \(latest, style: .relative)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Text(cluster.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+
+                if let latest = cluster.items.first?.pubDate {
+                    Text("Latest: \(latest, style: .relative)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .padding(.vertical, 6)
