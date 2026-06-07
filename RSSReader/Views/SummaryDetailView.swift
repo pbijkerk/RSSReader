@@ -7,6 +7,23 @@ struct SummaryDetailView: View {
 
     let cluster: TopicCluster
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize)
+    private var fontSize = AppConfiguration.defaultArticleFontSize
+
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily)
+    private var fontFamily = AppConfiguration.defaultArticleFontFamily
+
+    private var accent: Color { Theme.brandColor(for: cluster.topicName) }
+
+    private var summaryFont: Font {
+        switch fontFamily {
+        case "charter":   return .custom("Charter", size: CGFloat(fontSize))
+        case "newyork":   return .custom("New York", size: CGFloat(fontSize))
+        case "georgia":   return .custom("Georgia", size: CGFloat(fontSize))
+        default:          return .system(size: CGFloat(fontSize))
+        }
+    }
+
     @State private var showTopicPrompt = false
     @State private var topicAlreadySaved = false
     @State private var savedTopic: Topic?
@@ -70,10 +87,17 @@ struct SummaryDetailView: View {
             Label("Summary", systemImage: "doc.text")
                 .font(.headline)
 
-            Text(cluster.summary)
-                .font(.body)
-                .padding()
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 4)
+
+                Text(cluster.summary)
+                    .font(summaryFont)
+                    .lineSpacing(4)
+            }
+            .padding()
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
