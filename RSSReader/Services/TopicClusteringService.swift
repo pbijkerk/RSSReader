@@ -145,8 +145,15 @@ class TopicClusteringService {
 
     // MARK: - Summary helpers
 
+    private func currentSummaryLength() -> AppConfiguration.SummaryLength {
+        let raw = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.summaryLength)
+            ?? AppConfiguration.defaultSummaryLength
+        return AppConfiguration.SummaryLength(rawValue: raw) ?? .normaal
+    }
+
     private func localSummary(topicName: String, snapshots: [ItemSnapshot]) -> String {
-        let snippets = snapshots.prefix(5).map { s -> String in
+        let length = currentSummaryLength()
+        let snippets = snapshots.prefix(length.localSnippetCount).map { s -> String in
             let snippet = String(s.plainDescription.prefix(200))
             return snippet.isEmpty ? s.title : "\(s.title): \(snippet)"
         }
@@ -164,6 +171,7 @@ class TopicClusteringService {
         snapshots: [ItemSnapshot],
         apiKey: String
     ) async -> String {
+        let length = currentSummaryLength()
         let articleList = snapshots
             .prefix(AppConfiguration.maxArticlesPerSummary)
             .enumerated()
@@ -175,9 +183,7 @@ class TopicClusteringService {
 
         let isEnglish = (UserDefaults.standard.string(
             forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
-        let instruction = isEnglish
-            ? "Write a summary of 4 to 6 sentences in English describing the main themes and developments. Be factual and objective."
-            : "Schrijf een samenvatting van 4 tot 6 zinnen in het Nederlands die de belangrijkste thema's en ontwikkelingen beschrijft. Wees feitelijk en objectief."
+        let instruction = isEnglish ? length.sentenceInstruction.en : length.sentenceInstruction.nl
 
         let prompt = """
         You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
@@ -208,7 +214,7 @@ class TopicClusteringService {
             request.httpBody = try JSONEncoder().encode(
                 Req(
                     model: "claude-haiku-4-5-20251001",
-                    max_tokens: AppConfiguration.claudeMaxTokens,
+                    max_tokens: length.maxTokens,
                     messages: [Msg(role: "user", content: prompt)]
                 )
             )

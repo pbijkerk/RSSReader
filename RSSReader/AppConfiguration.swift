@@ -54,7 +54,62 @@ enum AppConfiguration {
         static let showArticleThumbnails = "showArticleThumbnails"
         static let summaryLanguage     = "summaryLanguage"
         static let feedListScale       = "feedListScale"
+        static let summaryLength       = "summaryLength"
     }
+
+    // MARK: - Summary length
+
+    enum SummaryLength: String, CaseIterable {
+        case kort      = "kort"
+        case normaal   = "normaal"
+        case uitgebreid = "uitgebreid"
+
+        var label: String {
+            switch self {
+            case .kort:       return "Kort (2–3 zinnen)"
+            case .normaal:    return "Normaal (4–6 zinnen)"
+            case .uitgebreid: return "Uitgebreid (8–10 zinnen)"
+            }
+        }
+
+        var sentenceInstruction: (nl: String, en: String) {
+            switch self {
+            case .kort:
+                return (
+                    "Schrijf een samenvatting van 2 tot 3 zinnen in het Nederlands die de kern beschrijft. Wees feitelijk en objectief.",
+                    "Write a summary of 2 to 3 sentences in English describing the core theme. Be factual and objective."
+                )
+            case .normaal:
+                return (
+                    "Schrijf een samenvatting van 4 tot 6 zinnen in het Nederlands die de belangrijkste thema's en ontwikkelingen beschrijft. Wees feitelijk en objectief.",
+                    "Write a summary of 4 to 6 sentences in English describing the main themes and developments. Be factual and objective."
+                )
+            case .uitgebreid:
+                return (
+                    "Schrijf een samenvatting van 8 tot 10 zinnen in het Nederlands die de belangrijkste thema's, ontwikkelingen en achtergronden uitgebreid beschrijft. Wees feitelijk en objectief.",
+                    "Write a summary of 8 to 10 sentences in English describing the main themes, developments and context in detail. Be factual and objective."
+                )
+            }
+        }
+
+        var maxTokens: Int {
+            switch self {
+            case .kort:       return 300
+            case .normaal:    return 600
+            case .uitgebreid: return 1000
+            }
+        }
+
+        var localSnippetCount: Int {
+            switch self {
+            case .kort:       return 2
+            case .normaal:    return 5
+            case .uitgebreid: return 8
+            }
+        }
+    }
+
+    static let defaultSummaryLength = SummaryLength.normaal.rawValue
 
     // MARK: - Keychain Keys
 
