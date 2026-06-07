@@ -63,12 +63,18 @@ class TopicClusteringService {
             ItemSnapshot(title: $0.title, plainDescription: $0.plainDescription)
         }
 
-        var topicMap: [(name: String, keywords: [String])] = savedTopics.map {
-            ($0.name, $0.keywords)
-        }
-        let savedNames = Set(savedTopics.map { $0.name.lowercased() })
-        for dt in defaultTopics where !savedNames.contains(dt.name.lowercased()) {
-            topicMap.append(dt)
+        let likedTopics = savedTopics.filter { $0.isLiked }
+        let usingLikedOnly = !likedTopics.isEmpty
+
+        var topicMap: [(name: String, keywords: [String])]
+        if usingLikedOnly {
+            topicMap = likedTopics.map { ($0.name, $0.keywords) }
+        } else {
+            topicMap = savedTopics.map { ($0.name, $0.keywords) }
+            let savedNames = Set(savedTopics.map { $0.name.lowercased() })
+            for dt in defaultTopics where !savedNames.contains(dt.name.lowercased()) {
+                topicMap.append(dt)
+            }
         }
         
         logger.debug("Using \(topicMap.count) topics for clustering")
