@@ -40,6 +40,9 @@ struct SettingsView: View {
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLanguage)
     private var summaryLanguage = "nl"
+
+    @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLength)
+    private var summaryLength = AppConfiguration.defaultSummaryLength
     
     @State private var showAPIKey = false
     @State private var savedConfirmation = false
@@ -135,6 +138,11 @@ struct SettingsView: View {
                     Picker("Taal", selection: $summaryLanguage) {
                         Text("Nederlands").tag("nl")
                         Text("English").tag("en")
+                    }
+                    Picker("Lengte", selection: $summaryLength) {
+                        ForEach(AppConfiguration.SummaryLength.allCases, id: \.rawValue) { option in
+                            Text(option.label).tag(option.rawValue)
+                        }
                     }
                 }
 
