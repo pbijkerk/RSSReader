@@ -28,7 +28,10 @@ struct SettingsView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
     @AppStorage(AppConfiguration.UserDefaultsKeys.showArticleThumbnails) private var showArticleThumbnails = true
-    
+
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale)
+    private var feedListScale = AppConfiguration.defaultFeedListScale
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize)
     private var articleFontSize = AppConfiguration.defaultArticleFontSize
 
@@ -86,6 +89,28 @@ struct SettingsView: View {
                     }
                     Stepper("Regels voorvertoning: \(previewLineCount)", value: $previewLineCount, in: 1...5)
                     Toggle("Toon miniatuurafbeeldingen", isOn: $showArticleThumbnails)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Tekstgrootte Feeds-lijst")
+                            Spacer()
+                            Text("\(Int(feedListScale * 100))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        HStack(spacing: 6) {
+                            Image(systemName: "textformat.size.smaller")
+                                .foregroundStyle(.secondary)
+                            Slider(value: $feedListScale, in: 0.8...1.5, step: 0.05)
+                            Image(systemName: "textformat.size.larger")
+                                .foregroundStyle(.secondary)
+                        }
+                        Button("Herstel standaard") {
+                            feedListScale = AppConfiguration.defaultFeedListScale
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Lettergrootte artikelen: \(articleFontSize)pt")
                         Slider(

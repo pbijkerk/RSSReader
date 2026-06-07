@@ -31,12 +31,15 @@ enum AppConfiguration {
     static let claudeMaxTokens = 600
     
     // MARK: - UI
-    
+
     /// Standaard fontsize voor artikel-weergave
     static let defaultArticleFontSize = 17
 
     /// Standaard lettertypefamilie voor artikel-weergave
     static let defaultArticleFontFamily = "charter"
+
+    /// Standaard schaalfactor voor de Feeds-lijst (tekst + iconen)
+    static let defaultFeedListScale: Double = 1.0
 
     // MARK: - UserDefaults Keys
 
@@ -50,6 +53,7 @@ enum AppConfiguration {
         static let previewLineCount    = "previewLineCount"
         static let showArticleThumbnails = "showArticleThumbnails"
         static let summaryLanguage     = "summaryLanguage"
+        static let feedListScale       = "feedListScale"
     }
 
     // MARK: - Keychain Keys
