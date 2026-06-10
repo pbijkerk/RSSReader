@@ -107,6 +107,7 @@ struct FeedItemCard: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
     @AppStorage(AppConfiguration.UserDefaultsKeys.showArticleThumbnails) private var showArticleThumbnails = true
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration.defaultArticleFontSize
+    @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators) private var showBiasIndicators = true
 
     /// Basisschaal die meebeweegt met Dynamic Type, met behoud van de gebruikersvoorkeur.
     @ScaledMetric(relativeTo: .body) private var scaledBase: CGFloat = 17
@@ -180,6 +181,27 @@ struct FeedItemCard: View {
                     Text(Self.relativeTime(for: date))
                         .font(.system(size: metaSize))
                         .foregroundStyle(Theme.textSecondary)
+                }
+
+                // Bronanalyse: bias-balk + betrouwbaarheidsbadge
+                if showBiasIndicators, let feed = item.feed, let score = feed.biasScore {
+                    HStack(alignment: .center, spacing: 8) {
+                        BiasBarView(
+                            biasScore: score,
+                            feedName: feed.title,
+                            reliabilityLevel: feed.reliabilityLevel,
+                            ratingSource: feed.ratingSource,
+                            biasRatedAt: feed.biasRatedAt
+                        )
+                        ReliabilityBadgeView(level: feed.reliabilityLevel)
+                    }
+                    .padding(.top, 2)
+                }
+
+                // Fact-check chip — alleen als resultaten beschikbaar zijn
+                if showBiasIndicators, !item.factCheckResults.isEmpty {
+                    FactCheckChipView(results: item.factCheckResults)
+                        .padding(.top, 2)
                 }
             }
             .padding(16)

@@ -146,6 +146,12 @@ class FeedRefreshService {
 
         feed.lastRefreshed = Date()
 
+        // Pas bronbeoordeling toe als nog niet beoordeeld of ouder dan 30 dagen
+        let ratingAge = feed.biasRatedAt.map { Date().timeIntervalSince($0) } ?? .infinity
+        if ratingAge > 30 * 24 * 3_600 {
+            SourceRatingService.shared.applyRating(to: feed)
+        }
+
         // Auto-assign to system folder if not already in a folder
         if feed.folder == nil {
             detectAndAssignFolder(feed: feed, parsed: parsed, context: context)

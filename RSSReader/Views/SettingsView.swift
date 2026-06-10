@@ -44,7 +44,12 @@ struct SettingsView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLength)
     private var summaryLength = AppConfiguration.defaultSummaryLength
     
+    @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators)
+    private var showBiasIndicators = true
+
+    @State private var googleFactCheckAPIKey = ""
     @State private var showAPIKey = false
+    @State private var showGoogleKey = false
     @State private var savedConfirmation = false
     @State private var showMastodonSetup = false
     @State private var showingClaudeConsole = false
@@ -131,6 +136,37 @@ struct SettingsView: View {
                         Text("SF Pro").tag("system")
                         Text("New York").tag("newyork")
                         Text("Georgia").tag("georgia")
+                    }
+                }
+
+                Section {
+                    Toggle("Toon bronanalyse op artikelkaarten", isOn: $showBiasIndicators)
+                    HStack {
+                        if showGoogleKey {
+                            TextField("AIzaSy…", text: $googleFactCheckAPIKey)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        } else {
+                            SecureField("AIzaSy…", text: $googleFactCheckAPIKey)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        }
+                        Button { showGoogleKey.toggle() } label: {
+                            Image(systemName: showGoogleKey ? "eye.slash" : "eye")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Bronanalyse & Fact-check")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("De bronanalyse toont de politieke positie en betrouwbaarheid van nieuwsbronnen (AllSides, MBFC). Een Google Fact Check API-sleutel activeert claim-verificatie per artikel via de Google Fact Check Tools API.")
+                        if !googleFactCheckAPIKey.isEmpty {
+                            Label("Fact-check actief", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                                .padding(.top, 2)
+                        }
                     }
                 }
 
@@ -236,15 +272,17 @@ struct SettingsView: View {
             .navigationTitle("Settings")
         }
         .onAppear {
-            // Lees uit Keychain; fall-back op UserDefaults voor bestaande installaties
             claudeAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
                 ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
                 ?? ""
+            googleFactCheckAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey) ?? ""
         }
         .onChange(of: claudeAPIKey) { _, newValue in
             KeychainService.save(newValue, forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
-            // Verwijder legacy UserDefaults-waarde na migratie
             UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
+        }
+        .onChange(of: googleFactCheckAPIKey) { _, newValue in
+            KeychainService.save(newValue, forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey)
         }
     }
 }
