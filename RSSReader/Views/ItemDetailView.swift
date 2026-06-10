@@ -53,8 +53,9 @@ struct ItemDetailView: View {
             SafariVideoPlayer(url: item.url).ignoresSafeArea()
         }
         .task {
-            await loadContent()
-            await FactCheckService.shared.checkItem(item, context: modelContext)
+            async let content: Void = loadContent()
+            async let factCheck: Void = FactCheckService.shared.checkItem(item, context: modelContext)
+            _ = await (content, factCheck)
         }
         .onAppear {
             if !item.isRead {

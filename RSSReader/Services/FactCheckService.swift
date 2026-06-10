@@ -14,14 +14,14 @@ final class FactCheckService {
     private init() {}
 
     func checkItem(_ item: FeedItem, context: ModelContext) async {
+        // Sla over als recent gecontroleerd — vóór Keychain-read om onnodige I/O te vermijden
+        if let checkedAt = item.factCheckCheckedAt,
+           Date().timeIntervalSince(checkedAt) < AppConfiguration.factCheckCacheDays * 86_400 { return }
+
         guard
             let apiKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey),
             !apiKey.isEmpty
         else { return }
-
-        // Sla over als recent gecontroleerd
-        if let checkedAt = item.factCheckCheckedAt,
-           Date().timeIntervalSince(checkedAt) < AppConfiguration.factCheckCacheDays * 86_400 { return }
 
         var components = URLComponents(string: "https://factchecktools.googleapis.com/v1alpha1/claims:search")!
         components.queryItems = [
@@ -53,9 +53,9 @@ final class FactCheckService {
                         rater: review.publisher.name,
                         resultURL: review.url
                     )
+                    context.insert(result)  // insert vóór relationship voor SwiftData-garantie
                     result.feedItem = item
                     item.factCheckResults.append(result)
-                    context.insert(result)
                 }
             }
 
@@ -72,7 +72,7 @@ final class FactCheckService {
 // MARK: - Google Fact Check Tools API response
 
 private struct FCAPIResponse: Decodable {
-    let claims: [FCClaim]
+    var claims: [FCClaim] = []  // default [] zodat {} (lege API-response) niet gooit
     struct FCClaim: Decodable {
         let text: String
         let claimReview: [FCReview]

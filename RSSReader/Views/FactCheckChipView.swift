@@ -7,8 +7,14 @@ struct FactCheckChipView: View {
     let results: [FactCheckResult]
     @State private var isExpanded = false
 
+    private var raterSummary: String {
+        var seen = Set<String>()
+        let unique = results.map { $0.rater }.filter { seen.insert($0).inserted }
+        return unique.count == 1 ? unique[0] : "\(unique.count) beoordelaars"
+    }
+
     var body: some View {
-        if let first = results.first {
+        if !results.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 // Collapsed header — altijd zichtbaar
                 Button {
@@ -18,7 +24,7 @@ struct FactCheckChipView: View {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.system(size: 11))
                             .foregroundStyle(.green)
-                        Text("Fact-checked · \(first.rater)")
+                        Text("Fact-checked · \(raterSummary)")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                         Spacer(minLength: 0)

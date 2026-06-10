@@ -66,19 +66,32 @@ struct BiasBarView: View {
         }
     }
 
-    private func dotColor(_ score: Int) -> Color {
-        switch score {
-        case -2: return Color(light: 0x2558A0, dark: 0x5B90D0)
-        case -1: return Color(light: 0x5B8DB8, dark: 0x89B8E0)
-        case  0: return Color(.systemGray3)
-        case  1: return Theme.accent
-        case  2: return Theme.accentSecondary
-        default: return Color(.systemGray3)
-        }
-    }
+    private func dotColor(_ score: Int) -> Color { biasColor(for: score) }
 }
 
 // MARK: - Helpers
+
+/// Gedeelde kleur-mapping bias-score → Color (BiasBarView + TransparencySheetView).
+private func biasColor(for score: Int) -> Color {
+    switch score {
+    case -2: return Color(light: 0x2558A0, dark: 0x5B90D0)
+    case -1: return Color(light: 0x5B8DB8, dark: 0x89B8E0)
+    case  0: return Color(.systemGray3)
+    case  1: return Theme.accent
+    case  2: return Theme.accentSecondary
+    default: return Color(.systemGray3)
+    }
+}
+
+/// Gedeelde vertaling reliability-string → Nederlandse label (TransparencySheetView + ReliabilityBadgeView).
+func reliabilityLabel(_ level: String) -> String {
+    switch level.lowercased() {
+    case "high":  return "Hoog"
+    case "mixed": return "Gemiddeld"
+    case "low":   return "Laag"
+    default:      return level
+    }
+}
 
 func biasLabel(_ score: Int) -> String {
     switch score {
@@ -152,23 +165,7 @@ struct TransparencySheetView: View {
         }
     }
 
-    private var positionColor: Color {
-        switch biasScore {
-        case -2: return Color(light: 0x2558A0, dark: 0x5B90D0)
-        case -1: return Color(light: 0x5B8DB8, dark: 0x89B8E0)
-        case  0: return Color(.systemGray3)
-        case  1: return Theme.accent
-        case  2: return Theme.accentSecondary
-        default: return Color(.systemGray3)
-        }
-    }
+    private var positionColor: Color { biasColor(for: biasScore) }
 
-    private func reliabilityLocalised(_ level: String) -> String {
-        switch level.lowercased() {
-        case "high":  return "Hoog"
-        case "mixed": return "Gemiddeld"
-        case "low":   return "Laag"
-        default:      return level
-        }
-    }
+    private func reliabilityLocalised(_ level: String) -> String { reliabilityLabel(level) }
 }

@@ -29,12 +29,5 @@ struct ReliabilityBadgeView: View {
         }
     }
 
-    private func localised(_ level: String) -> String {
-        switch level.lowercased() {
-        case "high":  return "Hoog"
-        case "mixed": return "Gemiddeld"
-        case "low":   return "Laag"
-        default:      return level
-        }
-    }
+    private func localised(_ level: String) -> String { reliabilityLabel(level) }
 }

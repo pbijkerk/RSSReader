@@ -42,7 +42,7 @@ final class SourceRatingService: Sendable {
         struct Root: Decodable { let sources: [SourceRating] }
         do {
             let root = try JSONDecoder().decode(Root.self, from: data)
-            ratings = Dictionary(uniqueKeysWithValues: root.sources.map { ($0.domain, $0) })
+            ratings = Dictionary(root.sources.map { ($0.domain, $0) }, uniquingKeysWith: { first, _ in first })
             logger.info("Geladen: \(root.sources.count) bronbeoordelingen")
         } catch {
             logger.error("Decoderen source_ratings.json mislukt: \(error)")
