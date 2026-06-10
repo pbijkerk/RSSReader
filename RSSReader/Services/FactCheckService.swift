@@ -47,6 +47,7 @@ final class FactCheckService {
             for claim in parsed.claims.prefix(3) {
                 guard !claim.text.isEmpty else { continue }
                 for review in claim.claimReview.prefix(1) {
+                    guard !review.textualRating.isEmpty else { continue }
                     let result = FactCheckResult(
                         claim: claim.text,
                         verdict: review.textualRating,
@@ -63,6 +64,15 @@ final class FactCheckService {
             try? context.save()
             logger.info("Fact-check klaar voor '\(item.title.prefix(40))': \(item.factCheckResults.count) claim(s)")
 
+        } catch let error as DecodingError {
+            switch error {
+            case .keyNotFound(let key, _):
+                logger.error("Fact-check decode fout: veld '\(key.stringValue)' ontbreekt in API-response")
+            case .typeMismatch(_, let ctx), .valueNotFound(_, let ctx), .dataCorrupted(let ctx):
+                logger.error("Fact-check decode fout: \(ctx.debugDescription)")
+            @unknown default:
+                logger.error("Fact-check decode fout: \(error.localizedDescription)")
+            }
         } catch {
             logger.error("Fact-check fout: \(error.localizedDescription)")
         }
@@ -75,12 +85,12 @@ private struct FCAPIResponse: Decodable {
     var claims: [FCClaim] = []  // default [] zodat {} (lege API-response) niet gooit
     struct FCClaim: Decodable {
         let text: String
-        let claimReview: [FCReview]
+        var claimReview: [FCReview] = []  // afwezig als claim geen reviews heeft
     }
     struct FCReview: Decodable {
         let publisher: FCPublisher
         let url: String?
-        let textualRating: String
+        var textualRating: String = ""    // optioneel in Google API
     }
     struct FCPublisher: Decodable {
         let name: String
