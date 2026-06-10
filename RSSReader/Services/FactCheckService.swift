@@ -81,18 +81,50 @@ final class FactCheckService {
 
 // MARK: - Google Fact Check Tools API response
 
+// Swift's gesynthesiseerde Decodable negeert default-waarden bij ontbrekende sleutels;
+// decodeIfPresent is vereist voor alle optionele velden in de Google API-response.
 private struct FCAPIResponse: Decodable {
-    var claims: [FCClaim] = []  // default [] zodat {} (lege API-response) niet gooit
+    let claims: [FCClaim]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        claims = (try? c.decodeIfPresent([FCClaim].self, forKey: .claims)) ?? []
+    }
+    private enum CodingKeys: String, CodingKey { case claims }
+
     struct FCClaim: Decodable {
         let text: String
-        var claimReview: [FCReview] = []  // afwezig als claim geen reviews heeft
+        let claimReview: [FCReview]
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            text = (try? c.decodeIfPresent(String.self, forKey: .text)) ?? ""
+            claimReview = (try? c.decodeIfPresent([FCReview].self, forKey: .claimReview)) ?? []
+        }
+        private enum CodingKeys: String, CodingKey { case text, claimReview }
     }
+
     struct FCReview: Decodable {
         let publisher: FCPublisher
         let url: String?
-        var textualRating: String = ""    // optioneel in Google API
+        let textualRating: String
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            publisher = try c.decode(FCPublisher.self, forKey: .publisher)
+            url = try? c.decodeIfPresent(String.self, forKey: .url)
+            textualRating = (try? c.decodeIfPresent(String.self, forKey: .textualRating)) ?? ""
+        }
+        private enum CodingKeys: String, CodingKey { case publisher, url, textualRating }
     }
+
     struct FCPublisher: Decodable {
         let name: String
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? ""
+        }
+        private enum CodingKeys: String, CodingKey { case name }
     }
 }
