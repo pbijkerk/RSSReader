@@ -15,6 +15,8 @@ class FeedItem {
     var enclosureMIMEType: String?
     var imageURL: String?
     var feed: Feed?
+    @Relationship(deleteRule: .cascade) var factCheckResults: [FactCheckResult] = []
+    var factCheckCheckedAt: Date?    // nil = nooit gecontroleerd
 
     // Transient cache — niet bewaard, opnieuw berekend na SwiftData fault
     @Transient private var _cachedPlainDescription: String? = nil

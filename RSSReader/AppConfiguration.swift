@@ -55,6 +55,7 @@ enum AppConfiguration {
         static let summaryLanguage     = "summaryLanguage"
         static let feedListScale       = "feedListScale"
         static let summaryLength       = "summaryLength"
+        static let showBiasIndicators  = "showBiasIndicators"
     }
 
     // MARK: - Summary length
@@ -113,8 +114,12 @@ enum AppConfiguration {
 
     // MARK: - Keychain Keys
 
+    /// Aantal dagen dat een fact-check resultaat geldig blijft vóór hercontrole
+    static let factCheckCacheDays: Double = 7
+
     enum KeychainKeys {
-        static let claudeAPIKey = "claudeAPIKey"
+        static let claudeAPIKey           = "claudeAPIKey"
+        static let googleFactCheckAPIKey  = "googleFactCheckAPIKey"
         static func mastodonToken(instanceURL: String, accountID: String) -> String {
             "mastodon.token.\(instanceURL).\(accountID)"
         }

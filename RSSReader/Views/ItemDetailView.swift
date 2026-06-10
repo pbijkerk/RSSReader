@@ -52,7 +52,10 @@ struct ItemDetailView: View {
         .sheet(item: $safariItem) { item in
             SafariVideoPlayer(url: item.url).ignoresSafeArea()
         }
-        .task { await loadContent() }
+        .task {
+            await loadContent()
+            await FactCheckService.shared.checkItem(item, context: modelContext)
+        }
         .onAppear {
             if !item.isRead {
                 item.isRead = true
