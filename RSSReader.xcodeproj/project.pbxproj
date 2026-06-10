@@ -38,6 +38,8 @@
 		AA1B2C3D4E5F6789ABCD0008 /* BiasBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */; };
 		AA1B2C3D4E5F6789ABCD000A /* FactCheckChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */; };
 		AA1B2C3D4E5F6789ABCD000C /* ReliabilityBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */; };
+		BB1C2D3E4F5A6B7C8D9E0F02 /* EventClusteringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1C2D3E4F5A6B7C8D9E0F01 /* EventClusteringService.swift */; };
+		BB1C2D3E4F5A6B7C8D9E0F04 /* StoryGroupHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */; };
 		AA1B2C3D4E5F6789ABCD000E /* source_ratings.json in Resources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */; };
 		ADEC4E4ACCA8BBB347082135 /* Feed.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B2F855DCD670437438628 /* Feed.swift */; };
 		B5CD2DF8689A1E43068A441E /* SummaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A87078DD7CF82B951C07E7 /* SummaryListView.swift */; };
@@ -79,6 +81,8 @@
 		AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiasBarView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactCheckChipView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReliabilityBadgeView.swift; sourceTree = "<group>"; };
+		BB1C2D3E4F5A6B7C8D9E0F01 /* EventClusteringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClusteringService.swift; sourceTree = "<group>"; };
+		BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryGroupHeaderView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = source_ratings.json; sourceTree = "<group>"; };
 		AA9D8C93D74D35F80D99FFA1 /* MastodonAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MastodonAccount.swift; sourceTree = "<group>"; };
 		B6735B0D697C7DAF1A5E2AD4 /* TopicEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicEditView.swift; sourceTree = "<group>"; };
@@ -153,6 +157,7 @@
 				AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */,
 				AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */,
 				AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */,
+				BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +201,7 @@
 				92B82D7E4C762A9ECA05CB92 /* TopicClusteringService.swift */,
 				AA1B2C3D4E5F6789ABCD0003 /* FactCheckService.swift */,
 				AA1B2C3D4E5F6789ABCD0005 /* SourceRatingService.swift */,
+				BB1C2D3E4F5A6B7C8D9E0F01 /* EventClusteringService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -312,6 +318,8 @@
 				AA1B2C3D4E5F6789ABCD0008 /* BiasBarView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000A /* FactCheckChipView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000C /* ReliabilityBadgeView.swift in Sources */,
+				BB1C2D3E4F5A6B7C8D9E0F02 /* EventClusteringService.swift in Sources */,
+				BB1C2D3E4F5A6B7C8D9E0F04 /* StoryGroupHeaderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
