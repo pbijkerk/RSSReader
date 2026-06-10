@@ -43,7 +43,7 @@ struct FactCheckChipView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(results) { result in
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("„\(result.claim)"")
+                                Text("\"\(result.claim)\"")
                                     .font(.system(size: 11))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(3)
