@@ -125,9 +125,8 @@
 				744B093F3B071BF152628219 /* FeedItem.swift */,
 				AA9D8C93D74D35F80D99FFA1 /* MastodonAccount.swift */,
 				457EE1E9844FD311E3F6A7EF /* Topic.swift */,
-							AA1B2C3D4E5F6789ABCD0001 /* FactCheckResult.swift */,
-				AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */,
-);
+				AA1B2C3D4E5F6789ABCD0001 /* FactCheckResult.swift */,
+			);
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -151,10 +150,10 @@
 				B6735B0D697C7DAF1A5E2AD4 /* TopicEditView.swift */,
 				89FA9E6817FEC2215C98EB09 /* TopicsManagementView.swift */,
 				786FA3600FE09498F1AB870B /* VideoPlayerView.swift */,
-							AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */,
+				AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */,
 				AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */,
 				AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */,
-);
+			);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -172,6 +171,7 @@
 			children = (
 				9233396FD8879518C66E9EC5 /* AppConfiguration.swift */,
 				9312ACF4202C413584AA86DA /* Assets.xcassets */,
+				AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */,
 				F2F8D1A8F0C712A3618C68BE /* ContentView.swift */,
 				E5F19EC6A02B5ADC08591340 /* Info.plist */,
 				C6BF2F18B82E74EC86A709EA /* RSSReaderApp.swift */,
@@ -194,9 +194,9 @@
 				ECD01B4DAB6E21F374F66E76 /* OPMLParser.swift */,
 				F706F1D0689160C666814841 /* RSSParser.swift */,
 				92B82D7E4C762A9ECA05CB92 /* TopicClusteringService.swift */,
-							AA1B2C3D4E5F6789ABCD0003 /* FactCheckService.swift */,
+				AA1B2C3D4E5F6789ABCD0003 /* FactCheckService.swift */,
 				AA1B2C3D4E5F6789ABCD0005 /* SourceRatingService.swift */,
-);
+			);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -261,8 +261,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A6752328F81DF8D2EFDE96BF /* Assets.xcassets in Resources */,
-			);
 				AA1B2C3D4E5F6789ABCD000E /* source_ratings.json in Resources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -307,13 +307,13 @@
 				DE0F7DE9452522FBD160CC49 /* TopicEditView.swift in Sources */,
 				7C288435F8EDD51DC9157C31 /* TopicsManagementView.swift in Sources */,
 				DB2E754FE503311902D21A9B /* VideoPlayerView.swift in Sources */,
-			);
 				AA1B2C3D4E5F6789ABCD0002 /* FactCheckResult.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD0004 /* FactCheckService.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD0006 /* SourceRatingService.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD0008 /* BiasBarView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000A /* FactCheckChipView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000C /* ReliabilityBadgeView.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
