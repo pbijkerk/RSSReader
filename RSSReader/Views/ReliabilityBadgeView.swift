@@ -5,14 +5,22 @@ import SwiftUI
 struct ReliabilityBadgeView: View {
     let level: String?  // "high", "mixed", "low" of nil
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.analysisTextSize)
+    private var analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+
+    /// Schaalt mee met Dynamic Type; verhouding met de gebruikersinstelling blijft behouden.
+    @ScaledMetric(relativeTo: .caption) private var scaledBase: CGFloat = 12
+
+    private var base: CGFloat { scaledBase * CGFloat(analysisTextSize) / 12 }
+
     var body: some View {
         if let level {
             HStack(spacing: 3) {
                 Image(systemName: "shield.fill")
-                    .font(.system(size: 9))
+                    .font(.system(size: max(base - 3, 8)))
                     .foregroundStyle(shieldColor(level))
                 Text(localised(level))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: max(base - 2, 9), weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .fixedSize()

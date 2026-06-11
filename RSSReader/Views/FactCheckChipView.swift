@@ -7,6 +7,14 @@ struct FactCheckChipView: View {
     let results: [FactCheckResult]
     @State private var isExpanded = false
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.analysisTextSize)
+    private var analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+
+    /// Schaalt mee met Dynamic Type; verhouding met de gebruikersinstelling blijft behouden.
+    @ScaledMetric(relativeTo: .caption) private var scaledBase: CGFloat = 12
+
+    private var base: CGFloat { scaledBase * CGFloat(analysisTextSize) / 12 }
+
     private var raterSummary: String {
         var seen = Set<String>()
         let unique = results.map { $0.rater }.filter { seen.insert($0).inserted }
@@ -22,14 +30,14 @@ struct FactCheckChipView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.shield.fill")
-                            .font(.system(size: 11))
+                            .font(.system(size: base))
                             .foregroundStyle(.green)
                         Text("Fact-checked · \(raterSummary)")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: base, weight: .medium))
                             .foregroundStyle(.secondary)
                         Spacer(minLength: 0)
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 9))
+                            .font(.system(size: max(base - 2, 8)))
                             .foregroundStyle(Color.secondary.opacity(0.5))
                     }
                     .contentShape(Rectangle())
@@ -44,25 +52,25 @@ struct FactCheckChipView: View {
                         ForEach(results) { result in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("\"\(result.claim)\"")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: base))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(3)
 
                                 HStack(spacing: 4) {
                                     Text("Beoordeeld als")
-                                        .font(.system(size: 11))
+                                        .font(.system(size: base))
                                         .foregroundStyle(.secondary)
                                     Text(result.verdict)
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(.system(size: base, weight: .semibold))
                                         .foregroundStyle(verdictColor(result.verdict))
                                     Text("door \(result.rater)")
-                                        .font(.system(size: 11))
+                                        .font(.system(size: base))
                                         .foregroundStyle(.tertiary)
                                 }
 
                                 if let urlStr = result.resultURL, let url = URL(string: urlStr) {
                                     Link("Bekijk beoordeling →", destination: url)
-                                        .font(.system(size: 11))
+                                        .font(.system(size: base))
                                         .tint(Theme.accent)
                                 }
                             }

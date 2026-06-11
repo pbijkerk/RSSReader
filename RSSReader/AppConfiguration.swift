@@ -41,6 +41,9 @@ enum AppConfiguration {
     /// Standaard schaalfactor voor de Feeds-lijst (tekst + iconen)
     static let defaultFeedListScale: Double = 1.0
 
+    /// Standaard tekstgrootte voor bronanalyse (bias-balk, betrouwbaarheid, fact-check)
+    static let defaultAnalysisTextSize = 12
+
     // MARK: - UserDefaults Keys
 
     enum UserDefaultsKeys {
@@ -56,6 +59,7 @@ enum AppConfiguration {
         static let feedListScale       = "feedListScale"
         static let summaryLength       = "summaryLength"
         static let showBiasIndicators  = "showBiasIndicators"
+        static let analysisTextSize    = "analysisTextSize"
     }
 
     // MARK: - Summary length
