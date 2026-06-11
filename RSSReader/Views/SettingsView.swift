@@ -56,30 +56,30 @@ struct SettingsView: View {
     @State private var showMastodonSetup = false
     @State private var showingClaudeConsole = false
 
-    // MARK: - Percentage-bindings (uniforme tekstgrootte-regelaars)
+    // MARK: - Percentage-state (uniforme tekstgrootte-regelaars)
+    //
+    // De sliders werken op lokale @State-percentages als bron van waarheid.
+    // Direct terugrekenen vanuit de opgeslagen pt-waarde zou de slider na
+    // loslaten laten verspringen (85% → 14pt → 82%); met lokale state op het
+    // 5%-raster blijft de thumb staan waar de gebruiker hem zet.
 
-    /// Feeds-lijst: schaalfactor (0,8–1,5) ↔ procenten.
-    private var feedListPercent: Binding<Double> {
-        Binding(
-            get: { feedListScale * 100 },
-            set: { feedListScale = $0 / 100 }
-        )
+    @State private var feedListPercent: Double = 100
+    @State private var articlePercent: Double = 100
+    @State private var analysisPercent: Double = 100
+
+    /// Klemt een ruw percentage binnen het sliderbereik en zet het op het 5%-raster.
+    private static func percentOnGrid(_ raw: Double) -> Double {
+        let clamped = min(max(raw, 80), 150)
+        return (clamped / 5).rounded() * 5
     }
 
-    /// Artikelen: puntgrootte ↔ procenten t.o.v. de standaard (17pt = 100%).
-    private var articlePercent: Binding<Double> {
-        Binding(
-            get: { Double(articleFontSize) / Double(AppConfiguration.defaultArticleFontSize) * 100 },
-            set: { articleFontSize = Int((Double(AppConfiguration.defaultArticleFontSize) * $0 / 100).rounded()) }
-        )
-    }
-
-    /// Bronanalyse: puntgrootte ↔ procenten t.o.v. de standaard (12pt = 100%).
-    private var analysisPercent: Binding<Double> {
-        Binding(
-            get: { Double(analysisTextSize) / Double(AppConfiguration.defaultAnalysisTextSize) * 100 },
-            set: { analysisTextSize = Int((Double(AppConfiguration.defaultAnalysisTextSize) * $0 / 100).rounded()) }
-        )
+    /// Laadt de drie percentages uit de opgeslagen waarden.
+    private func loadPercentages() {
+        feedListPercent = Self.percentOnGrid(feedListScale * 100)
+        articlePercent  = Self.percentOnGrid(
+            Double(articleFontSize) / Double(AppConfiguration.defaultArticleFontSize) * 100)
+        analysisPercent = Self.percentOnGrid(
+            Double(analysisTextSize) / Double(AppConfiguration.defaultAnalysisTextSize) * 100)
     }
 
     var body: some View {
@@ -95,19 +95,45 @@ struct SettingsView: View {
             }
             .navigationTitle("Instellingen")
         }
-        .onAppear {
-            claudeAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
-                ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
-                ?? ""
-            googleFactCheckAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey) ?? ""
-        }
-        .onChange(of: claudeAPIKey) { _, newValue in
-            KeychainService.save(newValue, forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
-            UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
-        }
-        .onChange(of: googleFactCheckAPIKey) { _, newValue in
-            KeychainService.save(newValue, forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey)
-        }
+        .onAppear(perform: loadStoredValues)
+        .onChange(of: feedListPercent) { persistFeedListPercent() }
+        .onChange(of: articlePercent) { persistArticlePercent() }
+        .onChange(of: analysisPercent) { persistAnalysisPercent() }
+        .onChange(of: claudeAPIKey) { persistClaudeKey() }
+        .onChange(of: googleFactCheckAPIKey) { persistGoogleKey() }
+    }
+
+    // MARK: - Laden & persisteren
+
+    private func loadStoredValues() {
+        claudeAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
+            ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
+            ?? ""
+        googleFactCheckAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey) ?? ""
+        loadPercentages()
+    }
+
+    private func persistFeedListPercent() {
+        feedListScale = feedListPercent / 100
+    }
+
+    private func persistArticlePercent() {
+        let pt = Double(AppConfiguration.defaultArticleFontSize) * articlePercent / 100
+        articleFontSize = Int(pt.rounded())
+    }
+
+    private func persistAnalysisPercent() {
+        let pt = Double(AppConfiguration.defaultAnalysisTextSize) * analysisPercent / 100
+        analysisTextSize = Int(pt.rounded())
+    }
+
+    private func persistClaudeKey() {
+        KeychainService.save(claudeAPIKey, forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
+        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
+    }
+
+    private func persistGoogleKey() {
+        KeychainService.save(googleFactCheckAPIKey, forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey)
     }
 
     // MARK: - 1. Weergave
@@ -128,9 +154,9 @@ struct SettingsView: View {
 
     private var tekstgrootteSection: some View {
         Section {
-            TextSizePercentRow(title: "Feeds-lijst", percent: feedListPercent)
-            TextSizePercentRow(title: "Artikelen", percent: articlePercent)
-            TextSizePercentRow(title: "Bronanalyse", percent: analysisPercent)
+            TextSizePercentRow(title: "Feeds-lijst", percent: $feedListPercent)
+            TextSizePercentRow(title: "Artikelen", percent: $articlePercent)
+            TextSizePercentRow(title: "Bronanalyse", percent: $analysisPercent)
             Picker("Lettertype artikelen", selection: $articleFontFamily) {
                 Text("Charter").tag("charter")
                 Text("SF Pro").tag("system")
@@ -138,9 +164,9 @@ struct SettingsView: View {
                 Text("Georgia").tag("georgia")
             }
             Button("Herstel standaardwaarden") {
-                feedListScale = AppConfiguration.defaultFeedListScale
-                articleFontSize = AppConfiguration.defaultArticleFontSize
-                analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+                feedListPercent = 100
+                articlePercent = 100
+                analysisPercent = 100
             }
             .foregroundStyle(Theme.accent)
         } header: {
