@@ -11,4 +11,11 @@ De toon is zakelijk, kort en bondig.
 - Begin altijd met werken vanuit de werkmap '/home/peter/Projects/claude-projects/', tenzij ik expliciet anders aangeef
 
 #Swift best practices en guide lines
-insert 
+@IOS_swift.md
+
+#Versiebeheer
+@Versiebeheer.md
+
+#Workflow feature afronden
+@Workflow-feature.md
+- Voer deze workflow automatisch en volledig uit zodra de gebruiker aangeeft dat een feature af, klaar of gereed is — of vraagt om te committen na afgerond featurewerk.
