@@ -13,7 +13,7 @@ let appTabs: [FloatingTab] = [
     FloatingTab(id: 1, icon: "newspaper",             title: "Samenvatting"),
     FloatingTab(id: 2, icon: "tag",                   title: "Topics"),
     FloatingTab(id: 3, icon: "bookmark",              title: "Bewaard"),
-    FloatingTab(id: 4, icon: "gearshape",             title: "Settings"),
+    FloatingTab(id: 4, icon: "gearshape",             title: "Instellingen"),
 ]
 
 // MARK: - Zwevende tab bar

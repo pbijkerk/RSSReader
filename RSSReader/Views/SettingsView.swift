@@ -18,12 +18,13 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var mastodonAccounts: [MastodonAccount]
 
-    /// API-sleutel uit Keychain — geladen via .onAppear, opgeslagen via .onChange
+    /// API-sleutels uit Keychain — geladen via .onAppear, opgeslagen via .onChange
     @State private var claudeAPIKey = ""
-    
-    @AppStorage(AppConfiguration.UserDefaultsKeys.retentionDays) 
+    @State private var googleFactCheckAPIKey = ""
+
+    @AppStorage(AppConfiguration.UserDefaultsKeys.retentionDays)
     private var defaultRetentionDays = AppConfiguration.defaultRetentionDays
-    
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.hideReadArticles) private var hideReadArticles = false
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
@@ -43,239 +44,56 @@ struct SettingsView: View {
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.summaryLength)
     private var summaryLength = AppConfiguration.defaultSummaryLength
-    
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators)
     private var showBiasIndicators = true
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.analysisTextSize)
     private var analysisTextSize = AppConfiguration.defaultAnalysisTextSize
 
-    @State private var googleFactCheckAPIKey = ""
     @State private var showAPIKey = false
     @State private var showGoogleKey = false
-    @State private var savedConfirmation = false
     @State private var showMastodonSetup = false
     @State private var showingClaudeConsole = false
+
+    // MARK: - Percentage-bindings (uniforme tekstgrootte-regelaars)
+
+    /// Feeds-lijst: schaalfactor (0,8–1,5) ↔ procenten.
+    private var feedListPercent: Binding<Double> {
+        Binding(
+            get: { feedListScale * 100 },
+            set: { feedListScale = $0 / 100 }
+        )
+    }
+
+    /// Artikelen: puntgrootte ↔ procenten t.o.v. de standaard (17pt = 100%).
+    private var articlePercent: Binding<Double> {
+        Binding(
+            get: { Double(articleFontSize) / Double(AppConfiguration.defaultArticleFontSize) * 100 },
+            set: { articleFontSize = Int((Double(AppConfiguration.defaultArticleFontSize) * $0 / 100).rounded()) }
+        )
+    }
+
+    /// Bronanalyse: puntgrootte ↔ procenten t.o.v. de standaard (12pt = 100%).
+    private var analysisPercent: Binding<Double> {
+        Binding(
+            get: { Double(analysisTextSize) / Double(AppConfiguration.defaultAnalysisTextSize) * 100 },
+            set: { analysisTextSize = Int((Double(AppConfiguration.defaultAnalysisTextSize) * $0 / 100).rounded()) }
+        )
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    HStack {
-                        if showAPIKey {
-                            TextField("sk-ant-…", text: $claudeAPIKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        } else {
-                            SecureField("sk-ant-…", text: $claudeAPIKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        }
-                        Button {
-                            showAPIKey.toggle()
-                        } label: {
-                            Image(systemName: showAPIKey ? "eye.slash" : "eye")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Claude API Key (Optional)")
-                } footer: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Adding an API key enables AI-powered article summaries using Claude. Without it, summaries are generated locally.")
-                        if !claudeAPIKey.isEmpty {
-                            Label("AI summaries enabled", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                                .padding(.top, 2)
-                        }
-                    }
-                }
-
-                Section("Weergave") {
-                    Toggle("Verberg gelezen artikelen", isOn: $hideReadArticles)
-                    Picker("Teller per feed", selection: $feedCountMode) {
-                        Text("Totaal aantal artikelen").tag("total")
-                        Text("Ongelezen artikelen").tag("unread")
-                    }
-                    Stepper("Regels voorvertoning: \(previewLineCount)", value: $previewLineCount, in: 1...5)
-                    Toggle("Toon miniatuurafbeeldingen", isOn: $showArticleThumbnails)
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Tekstgrootte Feeds-lijst")
-                            Spacer()
-                            Text("\(Int(feedListScale * 100))%")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-                        HStack(spacing: 6) {
-                            Image(systemName: "textformat.size.smaller")
-                                .foregroundStyle(.secondary)
-                            Slider(value: $feedListScale, in: 0.8...1.5, step: 0.05)
-                            Image(systemName: "textformat.size.larger")
-                                .foregroundStyle(.secondary)
-                        }
-                        Button("Herstel standaard") {
-                            feedListScale = AppConfiguration.defaultFeedListScale
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Lettergrootte artikelen: \(articleFontSize)pt")
-                        Slider(
-                            value: Binding(
-                                get: { Double(articleFontSize) },
-                                set: { articleFontSize = Int($0) }
-                            ),
-                            in: 13...23,
-                            step: 1
-                        )
-                    }
-                    .padding(.vertical, 4)
-                    Picker("Lettertype", selection: $articleFontFamily) {
-                        Text("Charter").tag("charter")
-                        Text("SF Pro").tag("system")
-                        Text("New York").tag("newyork")
-                        Text("Georgia").tag("georgia")
-                    }
-                }
-
-                Section {
-                    Toggle("Toon bronanalyse op artikelkaarten", isOn: $showBiasIndicators)
-                    Stepper("Tekstgrootte bronanalyse: \(analysisTextSize)pt",
-                            value: $analysisTextSize, in: 10...18)
-                        .disabled(!showBiasIndicators)
-                    HStack {
-                        if showGoogleKey {
-                            TextField("AIzaSy…", text: $googleFactCheckAPIKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        } else {
-                            SecureField("AIzaSy…", text: $googleFactCheckAPIKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        }
-                        Button { showGoogleKey.toggle() } label: {
-                            Image(systemName: showGoogleKey ? "eye.slash" : "eye")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Bronanalyse & Fact-check")
-                } footer: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("De bronanalyse toont de politieke positie en betrouwbaarheid van nieuwsbronnen (AllSides, MBFC). Een Google Fact Check API-sleutel activeert claim-verificatie per artikel via de Google Fact Check Tools API.")
-                        if !googleFactCheckAPIKey.isEmpty {
-                            Label("Fact-check actief", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                                .padding(.top, 2)
-                        }
-                    }
-                }
-
-                Section("Samenvattingen") {
-                    Picker("Taal", selection: $summaryLanguage) {
-                        Text("Nederlands").tag("nl")
-                        Text("English").tag("en")
-                    }
-                    Picker("Lengte", selection: $summaryLength) {
-                        ForEach(AppConfiguration.SummaryLength.allCases, id: \.rawValue) { option in
-                            Text(option.label).tag(option.rawValue)
-                        }
-                    }
-                }
-
-                Section {
-                    Picker("Standaard bewaarperiode", selection: $defaultRetentionDays) {
-                        ForEach(retentionOptions, id: \.days) { opt in
-                            Text(opt.label).tag(opt.days)
-                        }
-                    }
-                } header: {
-                    Text("Bewaarperiode artikelen")
-                } footer: {
-                    Text("Feeds zonder eigen instelling gebruiken deze periode. De instelling gaat in bij de volgende verversing.")
-                        .font(.caption)
-                }
-
-                Section("Mastodon") {
-                    ForEach(mastodonAccounts) { account in
-                        HStack(spacing: 12) {
-                            AsyncImage(url: URL(string: account.avatarURL)) { phase in
-                                switch phase {
-                                case .success(let img): img.resizable().scaledToFill()
-                                default:
-                                    Image(systemName: "person.circle.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .frame(width: 36, height: 36)
-                            .clipShape(Circle())
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    Text(account.displayName)
-                                        .font(.body)
-                                    if account.needsReauth {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundStyle(.orange)
-                                            .font(.caption)
-                                    }
-                                }
-                                Text("@\(account.username)@\(URL(string: account.instanceURL)?.host ?? account.instanceURL)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            if let last = account.lastRefreshed {
-                                Text(last, style: .relative)
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                    .onDelete { indexSet in
-                        for index in indexSet {
-                            let account = mastodonAccounts[index]
-                            if let feed = account.feed { modelContext.delete(feed) }
-                            modelContext.delete(account)
-                        }
-                        try? modelContext.save()
-                    }
-
-                    Button {
-                        showMastodonSetup = true
-                    } label: {
-                        Label("Mastodon account toevoegen", systemImage: "plus")
-                    }
-                }
-                .sheet(isPresented: $showMastodonSetup) {
-                    MastodonSetupView()
-                }
-
-                Section("About") {
-                    LabeledContent("App", value: "RSS Reader")
-                    LabeledContent("Version", value: "1.0.0")
-                }
-
-                Section {
-                    Button("Get a Claude API Key") {
-                        showingClaudeConsole = true
-                    }
-                } footer: {
-                    Text("API keys are stored securely in your device's local storage and never shared.")
-                }
-                .sheet(isPresented: $showingClaudeConsole) {
-                    SafariVideoPlayer(url: URL(string: "https://console.anthropic.com")!)
-                        .ignoresSafeArea()
-                }
+                weergaveSection
+                tekstgrootteSection
+                samenvattingenSection
+                bronanalyseSection
+                bewaarperiodeSection
+                mastodonSection
+                overSection
             }
-            .navigationTitle("Settings")
+            .navigationTitle("Instellingen")
         }
         .onAppear {
             claudeAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
@@ -289,6 +107,262 @@ struct SettingsView: View {
         }
         .onChange(of: googleFactCheckAPIKey) { _, newValue in
             KeychainService.save(newValue, forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey)
+        }
+    }
+
+    // MARK: - 1. Weergave
+
+    private var weergaveSection: some View {
+        Section("Weergave") {
+            Toggle("Verberg gelezen artikelen", isOn: $hideReadArticles)
+            Toggle("Toon miniatuurafbeeldingen", isOn: $showArticleThumbnails)
+            Picker("Teller per feed", selection: $feedCountMode) {
+                Text("Totaal aantal artikelen").tag("total")
+                Text("Ongelezen artikelen").tag("unread")
+            }
+            Stepper("Regels voorvertoning: \(previewLineCount)", value: $previewLineCount, in: 1...5)
+        }
+    }
+
+    // MARK: - 2. Tekstgrootte
+
+    private var tekstgrootteSection: some View {
+        Section {
+            TextSizePercentRow(title: "Feeds-lijst", percent: feedListPercent)
+            TextSizePercentRow(title: "Artikelen", percent: articlePercent)
+            TextSizePercentRow(title: "Bronanalyse", percent: analysisPercent)
+            Picker("Lettertype artikelen", selection: $articleFontFamily) {
+                Text("Charter").tag("charter")
+                Text("SF Pro").tag("system")
+                Text("New York").tag("newyork")
+                Text("Georgia").tag("georgia")
+            }
+            Button("Herstel standaardwaarden") {
+                feedListScale = AppConfiguration.defaultFeedListScale
+                articleFontSize = AppConfiguration.defaultArticleFontSize
+                analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+            }
+            .foregroundStyle(Theme.accent)
+        } header: {
+            Text("Tekstgrootte")
+        } footer: {
+            Text("100% is de standaardgrootte. Alle tekst schaalt daarnaast mee met de iOS-instelling voor tekstgrootte (Dynamic Type).")
+        }
+    }
+
+    // MARK: - 3. Samenvattingen
+
+    private var samenvattingenSection: some View {
+        Section {
+            Picker("Taal", selection: $summaryLanguage) {
+                Text("Nederlands").tag("nl")
+                Text("English").tag("en")
+            }
+            Picker("Lengte", selection: $summaryLength) {
+                ForEach(AppConfiguration.SummaryLength.allCases, id: \.rawValue) { option in
+                    Text(option.label).tag(option.rawValue)
+                }
+            }
+            apiKeyField(
+                placeholder: "sk-ant-…",
+                text: $claudeAPIKey,
+                isVisible: $showAPIKey
+            )
+            Button("Claude API-sleutel aanvragen") {
+                showingClaudeConsole = true
+            }
+            .foregroundStyle(Theme.accent)
+        } header: {
+            Text("Samenvattingen")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Met een Claude API-sleutel worden samenvattingen door AI gegenereerd; zonder sleutel lokaal. Sleutels worden veilig opgeslagen in de Keychain en nooit gedeeld.")
+                if !claudeAPIKey.isEmpty {
+                    Label("AI-samenvattingen actief", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                        .padding(.top, 2)
+                }
+            }
+        }
+        .sheet(isPresented: $showingClaudeConsole) {
+            SafariVideoPlayer(url: URL(string: "https://console.anthropic.com")!)
+                .ignoresSafeArea()
+        }
+    }
+
+    // MARK: - 4. Bronanalyse & Fact-check
+
+    private var bronanalyseSection: some View {
+        Section {
+            Toggle("Toon bronanalyse op artikelkaarten", isOn: $showBiasIndicators)
+            apiKeyField(
+                placeholder: "AIzaSy…",
+                text: $googleFactCheckAPIKey,
+                isVisible: $showGoogleKey
+            )
+        } header: {
+            Text("Bronanalyse & Fact-check")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("De bronanalyse toont de politieke positie en betrouwbaarheid van nieuwsbronnen (AllSides, MBFC). Een Google Fact Check API-sleutel activeert claim-verificatie per artikel.")
+                if !googleFactCheckAPIKey.isEmpty {
+                    Label("Fact-check actief", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                        .padding(.top, 2)
+                }
+            }
+        }
+    }
+
+    // MARK: - 5. Artikelen bewaren
+
+    private var bewaarperiodeSection: some View {
+        Section {
+            Picker("Standaard bewaarperiode", selection: $defaultRetentionDays) {
+                ForEach(retentionOptions, id: \.days) { opt in
+                    Text(opt.label).tag(opt.days)
+                }
+            }
+        } header: {
+            Text("Artikelen bewaren")
+        } footer: {
+            Text("Feeds zonder eigen instelling gebruiken deze periode. De instelling gaat in bij de volgende verversing.")
+        }
+    }
+
+    // MARK: - 6. Mastodon
+
+    private var mastodonSection: some View {
+        Section("Mastodon") {
+            ForEach(mastodonAccounts) { account in
+                MastodonAccountRow(account: account)
+            }
+            .onDelete { indexSet in
+                for index in indexSet {
+                    let account = mastodonAccounts[index]
+                    if let feed = account.feed { modelContext.delete(feed) }
+                    modelContext.delete(account)
+                }
+                try? modelContext.save()
+            }
+
+            Button {
+                showMastodonSetup = true
+            } label: {
+                Label("Mastodon-account toevoegen", systemImage: "plus")
+            }
+        }
+        .sheet(isPresented: $showMastodonSetup) {
+            MastodonSetupView()
+        }
+    }
+
+    // MARK: - 7. Over
+
+    private var overSection: some View {
+        Section("Over") {
+            LabeledContent("App", value: "RSS Reader")
+            LabeledContent(
+                "Versie",
+                value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+            )
+        }
+    }
+
+    // MARK: - Hulpcomponenten
+
+    /// API-sleutelveld met toon/verberg-knop — gedeeld door Claude- en Google-sleutel.
+    private func apiKeyField(placeholder: String, text: Binding<String>, isVisible: Binding<Bool>) -> some View {
+        HStack {
+            if isVisible.wrappedValue {
+                TextField(placeholder, text: text)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+            } else {
+                SecureField(placeholder, text: text)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+            }
+            Button {
+                isVisible.wrappedValue.toggle()
+            } label: {
+                Image(systemName: isVisible.wrappedValue ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Uniforme tekstgrootte-regelaar
+
+/// Slider in procenten (80–150%, stap 5%, 100% = standaard) — identiek voor alle tekstgroottes.
+private struct TextSizePercentRow: View {
+    let title: String
+    @Binding var percent: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(Int(percent.rounded()))%")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "textformat.size.smaller")
+                    .foregroundStyle(.secondary)
+                Slider(value: $percent, in: 80...150, step: 5)
+                Image(systemName: "textformat.size.larger")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Mastodon-accountrij
+
+private struct MastodonAccountRow: View {
+    let account: MastodonAccount
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AsyncImage(url: URL(string: account.avatarURL)) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                default:
+                    Image(systemName: "person.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(account.displayName)
+                        .font(.body)
+                    if account.needsReauth {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    }
+                }
+                Text("@\(account.username)@\(URL(string: account.instanceURL)?.host ?? account.instanceURL)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if let last = account.lastRefreshed {
+                Text(last, style: .relative)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 }

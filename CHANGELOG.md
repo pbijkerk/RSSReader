@@ -7,6 +7,10 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Instellingenpagina heringedeeld in zeven logische secties, volledig Nederlandstalig
+- Alle drie de tekstgrootte-instellingen gebruiken nu dezelfde slider in procenten (80–150%), met één herstel-knop
+
 ### Toegevoegd
 - Versiebeheer-workflow (Workflow-feature.md) en dit changelog-bestand
 - Instelbare tekstgrootte voor bronanalyse en fact-check (10–18pt) in Settings
