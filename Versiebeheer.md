@@ -1,0 +1,33 @@
+# Projectinstructies voor Claude Code
+
+## Versiebeheer (iOS)
+
+Pas bij alle ontwikkelwerkzaamheden de volgende best practices toe:
+
+### Versienummering
+
+- Gebruik **Semantic Versioning** (`MAJOR.MINOR.PATCH`) voor de marketing version (`CFBundleShortVersionString`).
+  - MAJOR: breaking changes of grote redesigns
+  - MINOR: nieuwe features
+  - PATCH: bugfixes
+- Verhoog het **build number** (`CFBundleVersion`) bij elke build die naar App Store Connect gaat. Wijzig dit nooit handmatig in de broncode; gebruik Fastlane of CI/CD.
+
+### Git-workflow
+
+- Maak voor elke release een tag in het formaat `vMAJOR.MINOR.PATCH` (bijv. `v2.4.1`).
+- Gebruik release branches (`release/2.4`) voor stabilisatie en hotfixes; nieuwe features gaan via feature branches naar `main`.
+- Schrijf duidelijke commit messages volgens Conventional Commits (`feat:`, `fix:`, `chore:`, etc.).
+- Werk `CHANGELOG.md` bij bij elke versiewijziging.
+
+### Automatisering (Fastlane)
+
+- Gebruik `increment_build_number(build_number: latest_testflight_build_number + 1)` voor build numbers.
+- Gebruik `increment_version_number(bump_type: ...)` voor de marketing version; vraag bij twijfel aan de gebruiker of het een patch, minor of major release is.
+- Zet na een release automatisch een Git-tag met `add_git_tag` en `push_git_tags`.
+- Gebruik `match` voor certificaten en provisioning profiles.
+
+### Algemene regels
+
+- Voer nooit een release-lane uit zonder expliciete bevestiging van de gebruiker.
+- Controleer voor elke release of `CHANGELOG.md` en de release notes actueel zijn.
+- Houd versie-informatie op één plek (Xcode project settings / `.xcconfig`), niet verspreid door de code.
