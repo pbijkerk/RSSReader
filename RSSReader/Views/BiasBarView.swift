@@ -12,6 +12,17 @@ struct BiasBarView: View {
 
     @State private var showTransparency = false
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.analysisTextSize)
+    private var analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+
+    /// Schaalt mee met Dynamic Type; verhouding met de gebruikersinstelling blijft behouden.
+    @ScaledMetric(relativeTo: .caption) private var scaledBase: CGFloat = 12
+
+    private var base: CGFloat { scaledBase * CGFloat(analysisTextSize) / 12 }
+    private var labelSize: CGFloat { max(base - 3, 8) }
+    private var selectedDot: CGFloat { max(base - 2, 9) }
+    private var unselectedDot: CGFloat { selectedDot * 0.6 }
+
     private static let positions: [(score: Int, label: String)] = [
         (-2, "L"), (-1, "lL"), (0, "C"), (1, "lR"), (2, "R")
     ]
@@ -22,7 +33,7 @@ struct BiasBarView: View {
                 ZStack {
                     Capsule()
                         .fill(Color.secondary.opacity(0.12))
-                        .frame(height: 3)
+                        .frame(height: max(3, base * 0.25))
 
                     HStack(spacing: 0) {
                         ForEach(Self.positions, id: \.score) { pos in
@@ -30,23 +41,23 @@ struct BiasBarView: View {
                                 if pos.score == biasScore {
                                     Circle()
                                         .fill(dotColor(pos.score))
-                                        .frame(width: 10, height: 10)
+                                        .frame(width: selectedDot, height: selectedDot)
                                 } else {
                                     Circle()
                                         .strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1)
-                                        .frame(width: 6, height: 6)
+                                        .frame(width: unselectedDot, height: unselectedDot)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                         }
                     }
                 }
-                .frame(height: 10)
+                .frame(height: selectedDot)
 
                 HStack(spacing: 0) {
                     ForEach(Self.positions, id: \.score) { pos in
                         Text(pos.label)
-                            .font(.system(size: 7.5, weight: pos.score == biasScore ? .semibold : .regular))
+                            .font(.system(size: labelSize, weight: pos.score == biasScore ? .semibold : .regular))
                             .foregroundStyle(pos.score == biasScore ? Color.primary : Color.secondary.opacity(0.5))
                             .frame(maxWidth: .infinity)
                     }

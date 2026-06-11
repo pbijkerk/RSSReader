@@ -47,6 +47,9 @@ struct SettingsView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators)
     private var showBiasIndicators = true
 
+    @AppStorage(AppConfiguration.UserDefaultsKeys.analysisTextSize)
+    private var analysisTextSize = AppConfiguration.defaultAnalysisTextSize
+
     @State private var googleFactCheckAPIKey = ""
     @State private var showAPIKey = false
     @State private var showGoogleKey = false
@@ -141,6 +144,9 @@ struct SettingsView: View {
 
                 Section {
                     Toggle("Toon bronanalyse op artikelkaarten", isOn: $showBiasIndicators)
+                    Stepper("Tekstgrootte bronanalyse: \(analysisTextSize)pt",
+                            value: $analysisTextSize, in: 10...18)
+                        .disabled(!showBiasIndicators)
                     HStack {
                         if showGoogleKey {
                             TextField("AIzaSy…", text: $googleFactCheckAPIKey)
