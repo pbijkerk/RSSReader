@@ -1,21 +1,25 @@
-#Context
-Deze folder bevat documenten die klantgegevens kunnen bevatten. Deze gegevens mogen niet worden verspreid. Behandel alle documenten in deze folder vertrouwelijk.
-De toon is zakelijk, kort en bondig.
+# RSSReader
 
-#Regels
-- Vraag altijd om uitleg voor het starten van een complexe taak.
-- Laat zien wat je van plan bent te gaan doen, voordat je het gaat uitvoeren
-- Maak rapportage en samenvattingen kort en bondig, voorzien van opsommingen
-- alle uitvoerbestanden bewaren in de Uitvoermap
-- Geef bronvermelding bij het uitvoeren van onderzoek
-- Begin altijd met werken vanuit de werkmap '/home/peter/Projects/claude-projects/', tenzij ik expliciet anders aangeef
+Native iOS RSS-lezer met AI-samenvattingen via de Claude API.
 
-#Swift best practices en guide lines
-@IOS_swift.md
+**Vereisten:** iOS 17+, Xcode 15+, Swift 5.9+
 
-#Versiebeheer
+**Bouwen:** Open `RSSReader.xcodeproj` in Xcode → `⌘R`
+
+## Architectuur
+- `RSSReader/Models/` — SwiftData-modellen (Feed, FeedItem, MastodonAccount, Topic)
+- `RSSReader/Views/` — SwiftUI-views per scherm
+- `RSSReader/Services/` — businesslogica (parsing, refresh, clustering, Keychain)
+- `AppConfiguration.swift` — centrale constanten en configuratiesleutels
+
+Geen externe Swift-packages; uitsluitend Apple-frameworks en de Anthropic REST API (`claude-haiku-4-5`). API-sleutel wordt opgeslagen in de Keychain via `KeychainService`.
+
+## Swift best practices en richtlijnen
+@IOS_Swift.md
+
+## Versiebeheer
 @Versiebeheer.md
 
-#Workflow feature afronden
+## Workflow feature afronden
 @Workflow-feature.md
 - Voer deze workflow automatisch en volledig uit zodra de gebruiker aangeeft dat een feature af, klaar of gereed is — of vraagt om te committen na afgerond featurewerk.
