@@ -87,6 +87,7 @@ Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable
 - Beide assen van de bronanalyse tellen mee: betrouwbaarheid én politieke kleur — reden: naast "hoe betrouwbaar" is ook "vanuit welke hoek belicht" relevant voor het inschatten van een onderwerp.
 - **Duiden in plaats van weglaten**: minder betrouwbare bronnen worden getoond en geduid, niet stil uit de samenvatting verwijderd — reden: weglaten verbergt dat er iets mist; de lezer moet zelf kunnen wegen.
 - Fact-check uit zich als een **waarschuwing per onderwerp** bij betwijfelde beweringen — reden: consistente granulariteit met de bronduiding, zonder de samenvatting te blokkeren.
+- De koppeling samenvatting→bron (R3/R11) gebeurt via **gestructureerde generatie**: het model levert beweringen met bron-ids, niet inline-tekstmarkers of achteraf-matchen — reden: maakt "elke bewering herleidbaar" (R11) structureel afdwingbaar en draagt later ook de bronduiding per onderwerp (R4) en de fact-check-waarschuwing (R7) per bewering/onderwerp.
 
 ## Herziene besluiten
 - Openstaand punt "precieze rol van bronanalyse en fact-check" (vorige brief) — vervalt: de rol is nu belegd (zie besluiten hierboven en Gewenste uitkomst). Resteert alleen de weergavevorm (matrix, zie Richting).
