@@ -12,6 +12,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Alle drie de tekstgrootte-instellingen gebruiken nu dezelfde slider in procenten (80–150%), met één herstel-knop
 
 ### Toegevoegd
+- Inline bronverwijzingen in samenvattingen: beweringen met stabiele bron-ids, aantikbaar naar het bronartikel in de detailweergave
 - Versiebeheer-workflow (Workflow-feature.md) en dit changelog-bestand
 - Instelbare tekstgrootte voor bronanalyse en fact-check (10–18pt) in Settings
 - Bronanalyse op artikelkaarten: bias-balk, betrouwbaarheidsbadge en fact-check-chip
