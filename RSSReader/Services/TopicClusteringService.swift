@@ -4,15 +4,28 @@ import Observation
 import SwiftData
 import OSLog
 
+/// Eén bewering uit een samenvatting, gekoppeld aan de bronartikelen (FeedItem.id)
+/// die de bewering onderbouwen. `sourceItemIDs` bevat altijd >= 1 stabiele id.
+struct SummaryStatement: Identifiable, Sendable {
+    let id = UUID()
+    let text: String
+    let sourceItemIDs: [UUID]
+}
+
 struct TopicCluster {
     var topicName: String
     var keywords: [String]
     var items: [FeedItem]
-    var summary: String
+    /// Gestructureerde beweringen met bron-ids — renderpunt voor inline bronverwijzingen.
+    var statements: [SummaryStatement]
+    /// Platte previewtekst (samengevoegde beweringen) voor lijstweergaven.
+    var summary: String { statements.map(\.text).joined(separator: " ") }
 }
 
 /// Snapshot of a FeedItem's text — safe to pass across actor boundaries.
+/// `id` draagt FeedItem.id zodat bron-ids stabiel zijn (geen positienummer).
 private struct ItemSnapshot: Sendable {
+    let id: UUID
     let title: String
     let plainDescription: String
     var fullText: String { "\(title) \(plainDescription)" }
@@ -60,7 +73,7 @@ class TopicClusteringService {
 
         // --- Snapshot model data on MainActor BEFORE any async work ---
         let snapshots: [ItemSnapshot] = items.map {
-            ItemSnapshot(title: $0.title, plainDescription: $0.plainDescription)
+            ItemSnapshot(id: $0.id, title: $0.title, plainDescription: $0.plainDescription)
         }
 
         let likedTopics = savedTopics.filter { $0.isLiked }
@@ -113,17 +126,17 @@ class TopicClusteringService {
             let topicSnaps   = indices.map { snapshots[$0] }
             let keywords     = topicKeywordsMap[name] ?? []
 
-            let summary: String
+            let statements: [SummaryStatement]
             if let apiKey = claudeAPIKey, !apiKey.isEmpty {
                 logger.debug("Generating Claude summary for topic: \(name)")
                 // Pass only Sendable snapshots to async Claude call
-                summary = await generateSummaryWithClaude(
+                statements = await generateSummaryWithClaude(
                     topicName: name,
                     snapshots: topicSnaps,
                     apiKey: apiKey
                 )
             } else {
-                summary = localSummary(topicName: name, snapshots: topicSnaps)
+                statements = localSummary(topicName: name, snapshots: topicSnaps)
             }
 
             let sorted = topicItems.sorted {
@@ -134,7 +147,7 @@ class TopicClusteringService {
                 topicName: name,
                 keywords: keywords,
                 items: sorted,
-                summary: summary
+                statements: statements
             ))
         }
         
@@ -151,33 +164,44 @@ class TopicClusteringService {
         return AppConfiguration.SummaryLength(rawValue: raw) ?? .normaal
     }
 
-    private func localSummary(topicName: String, snapshots: [ItemSnapshot]) -> String {
+    /// Fallback zonder AI: één bewering per bronartikel, elk gekoppeld aan zijn
+    /// eigen FeedItem.id. Levert altijd >= 1 bron-id per bewering.
+    private func localSummary(topicName: String, snapshots: [ItemSnapshot]) -> [SummaryStatement] {
         let length = currentSummaryLength()
-        let snippets = snapshots.prefix(length.localSnippetCount).map { s -> String in
-            let snippet = String(s.plainDescription.prefix(200))
-            return snippet.isEmpty ? s.title : "\(s.title): \(snippet)"
-        }
-        let joined = snippets.joined(separator: ". ")
         let isEnglish = (UserDefaults.standard.string(
             forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
-        let intro = isEnglish
-            ? "Recent coverage of \(topicName) includes \(snapshots.count) article(s). "
-            : "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en). "
-        return intro + joined + (joined.hasSuffix(".") ? "" : ".")
+
+        let selected = Array(snapshots.prefix(length.localSnippetCount))
+
+        // Geen bronnen beschikbaar: één introbewering met alle (of geen) ids.
+        guard !selected.isEmpty else {
+            let intro = isEnglish
+                ? "Recent coverage of \(topicName) includes \(snapshots.count) article(s)."
+                : "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en)."
+            return [SummaryStatement(text: intro, sourceItemIDs: snapshots.map(\.id))]
+        }
+
+        return selected.map { s in
+            let snippet = String(s.plainDescription.prefix(200))
+            let text = snippet.isEmpty ? s.title : "\(s.title): \(snippet)"
+            return SummaryStatement(text: text, sourceItemIDs: [s.id])
+        }
     }
 
     private func generateSummaryWithClaude(
         topicName: String,
         snapshots: [ItemSnapshot],
         apiKey: String
-    ) async -> String {
+    ) async -> [SummaryStatement] {
         let length = currentSummaryLength()
-        let articleList = snapshots
-            .prefix(AppConfiguration.maxArticlesPerSummary)
+        // Beperk tot de eerste N artikelen; bewaar deze snapshots zodat het
+        // 1-based bronnummer dat Claude teruggeeft naar FeedItem.id te mappen is.
+        let usedSnapshots = Array(snapshots.prefix(AppConfiguration.maxArticlesPerSummary))
+        let articleList = usedSnapshots
             .enumerated()
             .map { idx, s in
                 let desc = String(s.plainDescription.prefix(300))
-                return "\(idx + 1). Title: \(s.title)\(desc.isEmpty ? "" : "\n   Description: \(desc)")"
+                return "[\(idx + 1)] Title: \(s.title)\(desc.isEmpty ? "" : "\n    Description: \(desc)")"
             }
             .joined(separator: "\n\n")
 
@@ -188,10 +212,20 @@ class TopicClusteringService {
         let prompt = """
         You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
 
+        Each article is prefixed with a bracketed source number, e.g. [1], [2].
+
         Here are the articles:
         \(articleList)
 
         \(instruction)
+
+        Break the summary into individual statements. Every statement MUST cite \
+        at least one source number of the article(s) it is based on. Do not invent \
+        source numbers; only use numbers that appear above.
+
+        Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
+        this shape:
+        {"statements":[{"text":"<one sentence>","sources":[1,2]}]}
         """
 
         struct Msg:  Encodable { let role: String; let content: String }
@@ -218,19 +252,72 @@ class TopicClusteringService {
                     messages: [Msg(role: "user", content: prompt)]
                 )
             )
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let response  = try JSONDecoder().decode(Res.self, from: data)
-            
-            if let summary = response.content.first?.text {
-                logger.info("Claude summary generated for \(topicName): \(summary.count) chars")
-                return summary
-            } else {
+            let (data, httpResponse) = try await URLSession.shared.data(for: request)
+
+            guard let http = httpResponse as? HTTPURLResponse,
+                  (200...299).contains(http.statusCode) else {
+                let code = (httpResponse as? HTTPURLResponse)?.statusCode ?? -1
+                logger.error("Claude API returned status \(code) for topic: \(topicName)")
+                return localSummary(topicName: topicName, snapshots: snapshots)
+            }
+
+            let response = try JSONDecoder().decode(Res.self, from: data)
+
+            guard let rawText = response.content.first?.text else {
                 logger.warning("Empty Claude response for topic: \(topicName)")
                 return localSummary(topicName: topicName, snapshots: snapshots)
             }
+
+            let statements = parseStatements(from: rawText, snapshots: usedSnapshots)
+            guard !statements.isEmpty else {
+                logger.warning("No usable statements decoded for topic: \(topicName)")
+                return localSummary(topicName: topicName, snapshots: snapshots)
+            }
+
+            logger.info("Claude summary generated for \(topicName): \(statements.count) statement(s)")
+            return statements
         } catch {
             logger.error("Claude API call failed for \(topicName): \(error.localizedDescription)")
             return localSummary(topicName: topicName, snapshots: snapshots)
+        }
+    }
+
+    /// Decodeert Claude's JSON-respons naar beweringen en mapt de 1-based
+    /// bronnummers naar stabiele FeedItem.id's. Beweringen zonder geldige bron
+    /// worden weggelaten zodat elke bewering >= 1 bron-id houdt.
+    private func parseStatements(
+        from rawText: String,
+        snapshots: [ItemSnapshot]
+    ) -> [SummaryStatement] {
+        struct ClaudeStatement: Decodable { let text: String; let sources: [Int] }
+        struct ClaudeSummary:   Decodable { let statements: [ClaudeStatement] }
+
+        // Verwijder eventuele markdown-fences en isoleer het JSON-object.
+        var cleaned = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        cleaned = cleaned.replacingOccurrences(of: "```json", with: "")
+                         .replacingOccurrences(of: "```", with: "")
+        guard let start = cleaned.firstIndex(of: "{"),
+              let end = cleaned.lastIndex(of: "}") else {
+            return []
+        }
+        let jsonSlice = String(cleaned[start...end])
+
+        guard let data = jsonSlice.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(ClaudeSummary.self, from: data) else {
+            return []
+        }
+
+        return decoded.statements.compactMap { st -> SummaryStatement? in
+            let text = st.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return nil }
+            // 1-based bronnummer → FeedItem.id; ongeldige nummers negeren.
+            let ids = st.sources.compactMap { num -> UUID? in
+                let idx = num - 1
+                guard snapshots.indices.contains(idx) else { return nil }
+                return snapshots[idx].id
+            }
+            guard !ids.isEmpty else { return nil }
+            return SummaryStatement(text: text, sourceItemIDs: ids)
         }
     }
 
