@@ -45,6 +45,31 @@ Uitsluitend de maker, als enige gebruiker en beslisser. Een persoonlijk project 
 - Vanuit de samenvatting is de bron (feed/artikel) direct te bereiken en terug te navigeren.
 - Bij dagelijks gebruik (ochtend + late middag) is de app een bruikbaar startpunt voor het nieuws.
 
+## Requirements
+Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable eis is belegd als (sub-)issue; zie de kolomverwijzing.
+
+### Must — zonder dit is de oplevering niet bruikbaar
+- R1: De AI-samenvatting is het eerste scherm bij het openen van de app (hoofdpagina) — reden: kern van de herijkte koers, de samenvatting ís het product. (sub-issue onder #14)
+- R2: De samenvatting groepeert het nieuws per behandeld onderwerp — reden: alle duiding en navigatie hangt op onderwerp-niveau. (sub-issue onder #14)
+- R3: Vanuit de samenvatting kan de gebruiker naar de onderliggende feed/het artikel navigeren én terugkeren (inline bronverwijzingen) — reden: verifieerbaarheid en het besloten heen/terug-navigeren. (sub-issue onder #14)
+- R11: Elke bewering in de samenvatting is herleidbaar naar minstens één gelinkte bron (geen ongefundeerde beweringen) — reden: maakt "betrouwbaarder" toetsbaar. (sub-issue onder #14)
+- R8: De feeds blijven volledig leesbaar wanneer de AI niet beschikbaar is (geen sleutel, API onbereikbaar, fout) — reden: harde randvoorwaarde; de app mag niet onbruikbaar worden zonder AI. (#15)
+
+### Should — belangrijk, maar niet fataal bij uitstel
+- R4: Per onderwerp toont de app een bronduiding op twee assen — betrouwbaarheid (high/mixed/low) en politieke kleur (bias −2…+2) — reden: kern van de betrouwbaarheidsduiding, maar de hoofdpagina functioneert er ook zonder. (sub-issue onder #11)
+- R6: Minder betrouwbare bronnen worden getoond en geduid, niet uit de samenvatting weggelaten — reden: de lezer moet zelf kunnen wegen; weglaten verbergt wat mist. (sub-issue onder #11)
+- R7: Bij een onderwerp met een betwijfelde bewering toont de app een fact-check-waarschuwing — reden: versterkt betrouwbaarheid; hangt af van herstel fact-check (#13). (sub-issue onder #11)
+- R10: Per onderwerp behandelt de samenvatting de belangrijkste ontwikkelingen op basis van minimaal 2 onderliggende bronnen waar er meerdere beschikbaar zijn — reden: maakt "uitgebreider" toetsbaar. (sub-issue onder #14)
+
+### Could — meerwaarde als er ruimte is
+- R5: Per losse bron/artikel zijn betrouwbaarheid en politieke kleur zichtbaar via de bronverwijzing — reden: detailverdieping bovenop de duiding per onderwerp. (sub-issue onder #11)
+- R9: Het aantal Claude-API-calls per samenvatting blijft binnen een nader te bepalen kostenkader — reden: kostenbeheersing; het kader moet eerst onderzocht worden (#12). (#12)
+
+### Won't — nu bewust niet (sluit aan op Scope → Niet)
+- Geen iPad-versie — reden: persoonlijk iOS-gebruik, geen behoefte.
+- Geen App Store-distributie — reden: uitsluitend eigen gebruik.
+- Geen ondersteuning voor andere gebruikers dan de maker — reden: persoonlijk project zonder externe belanghebbenden.
+
 ## Randvoorwaarden & aannames
 - **Techniek:** native iOS (iOS 17+, Xcode 15+, Swift 5.9+), SwiftData, uitsluitend Apple-frameworks. AI via de Anthropic REST API (`claude-haiku-4-5`); API-sleutel in de Keychain.
 - **API-kostprijs speelt een rol:** de kosten van de Claude API wegen mee in hoe ver uitgebreidere en vaker ververste samenvattingen mogen gaan. Uitgebreider mag niet onbeperkt duurder worden.
