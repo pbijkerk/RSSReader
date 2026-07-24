@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Samenvattingsprompt stuurt nu op hybride bron-synthese: beweringen citeren alle onderbouwende artikelen bij overlappende berichtgeving, één bron bij een enkele bron (R11-garantie behouden)
 - Bron-chip onder een bewering toont nu de artikeltitel (met feednaam als secundair label), zodat meerdere bronnen uit dezelfde feed onderscheidbaar zijn
 
 ## [1.1.0] - 2026-07-24
