@@ -111,17 +111,35 @@ class TopicClusteringService {
             topicKeywordsMap[name] = keywords
         }
 
+        // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
+        // (" ai ", " machine learning "), zodat de match in de hot loop een simpele
+        // deelstring-check op woordgrenzen is — geen regex-(her)compilatie per item.
+        let normalizedTopics: [(name: String, phrases: [String])] = topicMap.map { topic in
+            (topic.name, topic.keywords.map { wordBoundaryText($0) })
+        }
+
         for (idx, snapshot) in snapshots.enumerated() {
-            let text = snapshot.fullText.lowercased()
+            // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
+            let paddedText = wordBoundaryText(snapshot.fullText)
             var bestTopic: String?
             var bestScore = 0
+            var bestNormalized = 0.0
 
-            for (name, keywords) in topicMap {
-                let score = keywords.reduce(0) { $0 + (text.contains($1) ? 1 : 0) }
-                if score > bestScore { bestScore = score; bestTopic = name }
+            for (name, phrases) in normalizedTopics {
+                var score = 0
+                for phrase in phrases where paddedText.contains(phrase) { score += 1 }
+                guard score > 0 else { continue }
+                // Tie-break op genormaliseerde score (treffers / aantal trefwoorden),
+                // zodat een lange trefwoordenlijst niet louter door lijstvolgorde wint.
+                let normalized = Double(score) / Double(max(phrases.count, 1))
+                if score > bestScore || (score == bestScore && normalized > bestNormalized) {
+                    bestScore = score
+                    bestNormalized = normalized
+                    bestTopic = name
+                }
             }
 
-            if bestScore > 0, let topic = bestTopic {
+            if bestScore >= AppConfiguration.minimumClusterScore, let topic = bestTopic {
                 indexMap[topic, default: []].append(idx)
             }
         }
@@ -348,6 +366,23 @@ class TopicClusteringService {
             // Failable init weigert lege tekst of ontbrekende bron (R11).
             return SummaryStatement(text: st.text, sourceItemIDs: ids)
         }
+    }
+
+    /// Tokeniseert `text` op woordgrenzen (Apple `NLTokenizer`, consistent met
+    /// `extractKeywords`) en levert de kleingeletterde tokens aaneengeregen met
+    /// spaties, omsloten door één spatie aan begin en eind: " token token token ".
+    /// Zo matcht een trefwoord alleen als heel woord/hele frase — een deelstring
+    /// als "ai" in "email" valt weg omdat " ai " niet in " email " voorkomt.
+    private func wordBoundaryText(_ text: String) -> String {
+        let lower = text.lowercased()
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = lower
+        var tokens: [String] = []
+        tokenizer.enumerateTokens(in: lower.startIndex..<lower.endIndex) { range, _ in
+            tokens.append(String(lower[range]))
+            return true
+        }
+        return " " + tokens.joined(separator: " ") + " "
     }
 
     func extractKeywords(from text: String, limit: Int = 10) -> [String] {

@@ -47,6 +47,16 @@ enum AppConfiguration {
     /// Maximale breedte van een bron-chip in de samenvatting (begrenst lange titels)
     static let summarySourceChipMaxWidth: CGFloat = 220
 
+    // MARK: - Clustering
+
+    /// Minimum aantal trefwoord-treffers (op woordgrens) voordat een artikel aan
+    /// zijn best scorende onderwerp wordt toegewezen. Onder deze drempel volgt
+    /// geen toewijzing. Standaard 1: dankzij de woordgrens-matching valt de ruis
+    /// van deelstring-treffers (bijv. "ai" in "email") al weg, dus is één echte
+    /// hele-woord-treffer een betekenisvol signaal en behoudt recall. Verhoog naar
+    /// 2 om toevalsruis strenger te weren ten koste van dekking.
+    static let minimumClusterScore = 1
+
     // MARK: - UserDefaults Keys
 
     enum UserDefaultsKeys {
