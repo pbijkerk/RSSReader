@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Claude API-sleutel wordt in Settings nu echt gevalideerd (lichte `GET /v1/models`): de statusindicator toont pas groen "actief" na een geslaagde controle, met aparte standen voor valideren, ongeldige sleutel (401/403) en "kon niet valideren" bij netwerkfouten — in plaats van groen zodra het veld niet leeg is
 - Topic-clustering matcht trefwoorden nu op woordgrens (hele woorden/frasen) in plaats van deelstring, met een instelbare minimumdrempel, zodat toevalstreffers als "ai" in "email" geen artikelen meer in het verkeerde onderwerp trekken
 - Samenvattingsprompt stuurt nu op hybride bron-synthese: beweringen citeren alle onderbouwende artikelen bij overlappende berichtgeving, één bron bij een enkele bron (R11-garantie behouden)
 - Bron-chip onder een bewering toont nu de artikeltitel (met feednaam als secundair label), zodat meerdere bronnen uit dezelfde feed onderscheidbaar zijn
