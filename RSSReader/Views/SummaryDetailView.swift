@@ -134,7 +134,7 @@ struct SummaryDetailView: View {
         HStack(spacing: 4) {
             Image(systemName: "link")
                 .imageScale(.small)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .font(.caption)
                     .lineLimit(2)
@@ -145,6 +145,7 @@ struct SummaryDetailView: View {
                         .lineLimit(1)
                 }
             }
+            .frame(maxWidth: 220, alignment: .leading)
         }
         .foregroundStyle(accent)
         .padding(.horizontal, 8)
