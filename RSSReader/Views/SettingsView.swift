@@ -111,6 +111,7 @@ struct SettingsView: View {
             .navigationTitle("Instellingen")
         }
         .onAppear(perform: loadStoredValues)
+        .onDisappear { claudeValidationTask?.cancel() }
         .onChange(of: feedListPercent) { persistFeedListPercent() }
         .onChange(of: articlePercent) { persistArticlePercent() }
         .onChange(of: analysisPercent) { persistAnalysisPercent() }
