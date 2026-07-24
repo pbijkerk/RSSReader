@@ -7,6 +7,8 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-24
+
 ### Gewijzigd
 - Instellingenpagina heringedeeld in zeven logische secties, volledig Nederlandstalig
 - Alle drie de tekstgrootte-instellingen gebruiken nu dezelfde slider in procenten (80–150%), met één herstel-knop
