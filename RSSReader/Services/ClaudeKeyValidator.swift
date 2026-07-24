@@ -38,6 +38,10 @@ enum ClaudeKeyValidator {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        // Nooit uit de URLCache beantwoorden: de cache-sleutel is de URL, niet de
+        // x-api-key-header, dus een gewijzigde (ongeldige) sleutel zou anders de
+        // gecachete 200 van een eerdere geldige sleutel terugkrijgen.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue(key, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.timeoutInterval = AppConfiguration.networkTimeout
