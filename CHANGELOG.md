@@ -12,6 +12,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Alle drie de tekstgrootte-instellingen gebruiken nu dezelfde slider in procenten (80–150%), met één herstel-knop
 
 ### Toegevoegd
+- Borging bron-attributie (R11): beweringen zonder bron-id zijn onconstrueerbaar en een validatiegate faalt zichtbaar bij een regressie
 - Inline bronverwijzingen in samenvattingen: beweringen met stabiele bron-ids, aantikbaar naar het bronartikel in de detailweergave
 - Versiebeheer-workflow (Workflow-feature.md) en dit changelog-bestand
 - Instelbare tekstgrootte voor bronanalyse en fact-check (10–18pt) in Settings

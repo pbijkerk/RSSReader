@@ -10,6 +10,16 @@ struct SummaryStatement: Identifiable, Sendable {
     let id = UUID()
     let text: String
     let sourceItemIDs: [UUID]
+
+    /// R11-borging: een bewering is onconstrueerbaar zonder tekst én >= 1 bron-id.
+    /// Levert `nil` bij een lege tekst of ontbrekende bron, zodat een bronloze
+    /// bewering nooit ontstaat en dus nooit gerenderd wordt.
+    init?(text: String, sourceItemIDs: [UUID]) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !sourceItemIDs.isEmpty else { return nil }
+        self.text = trimmed
+        self.sourceItemIDs = sourceItemIDs
+    }
 }
 
 struct TopicCluster {
@@ -147,7 +157,7 @@ class TopicClusteringService {
                 topicName: name,
                 keywords: keywords,
                 items: sorted,
-                statements: statements
+                statements: validated(statements, topicName: name)
             ))
         }
         
@@ -157,6 +167,22 @@ class TopicClusteringService {
     }
 
     // MARK: - Summary helpers
+
+    /// R11-validatiegate: borgt dat elke bewering >= 1 bron-id draagt. De failable
+    /// `SummaryStatement`-init maakt bronloze beweringen onmogelijk; deze gate vangt
+    /// een eventuele regressie zichtbaar af (foutlog + assertie in debug) en filtert
+    /// bronloze beweringen weg zodat ze in release nooit gerenderd worden.
+    private func validated(_ statements: [SummaryStatement], topicName: String) -> [SummaryStatement] {
+        // De failable init maakt deze tak in de praktijk onbereikbaar; hij blijft
+        // opzettelijk als regressievanger voor toekomstige constructiepaden.
+        let sourceless = statements.filter { $0.sourceItemIDs.isEmpty }
+        guard sourceless.isEmpty else {
+            logger.error("R11-schending: \(sourceless.count) bronloze bewering(en) voor topic: \(topicName)")
+            assertionFailure("R11: bewering zonder bron-id in gegenereerde samenvatting")
+            return statements.filter { !$0.sourceItemIDs.isEmpty }
+        }
+        return statements
+    }
 
     private func currentSummaryLength() -> AppConfiguration.SummaryLength {
         let raw = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.summaryLength)
@@ -173,15 +199,17 @@ class TopicClusteringService {
 
         let selected = Array(snapshots.prefix(length.localSnippetCount))
 
-        // Geen bronnen beschikbaar: één introbewering met alle (of geen) ids.
+        // Geen bronnen beschikbaar: één introbewering met alle ids. Zonder ids
+        // levert de failable init nil en blijft de samenvatting bronloos-vrij.
         guard !selected.isEmpty else {
             let intro = isEnglish
                 ? "Recent coverage of \(topicName) includes \(snapshots.count) article(s)."
                 : "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en)."
             return [SummaryStatement(text: intro, sourceItemIDs: snapshots.map(\.id))]
+                .compactMap { $0 }
         }
 
-        return selected.map { s in
+        return selected.compactMap { s in
             let snippet = String(s.plainDescription.prefix(200))
             let text = snippet.isEmpty ? s.title : "\(s.title): \(snippet)"
             return SummaryStatement(text: text, sourceItemIDs: [s.id])
@@ -308,16 +336,14 @@ class TopicClusteringService {
         }
 
         return decoded.statements.compactMap { st -> SummaryStatement? in
-            let text = st.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return nil }
             // 1-based bronnummer → FeedItem.id; ongeldige nummers negeren.
             let ids = st.sources.compactMap { num -> UUID? in
                 let idx = num - 1
                 guard snapshots.indices.contains(idx) else { return nil }
                 return snapshots[idx].id
             }
-            guard !ids.isEmpty else { return nil }
-            return SummaryStatement(text: text, sourceItemIDs: ids)
+            // Failable init weigert lege tekst of ontbrekende bron (R11).
+            return SummaryStatement(text: st.text, sourceItemIDs: ids)
         }
     }
 
