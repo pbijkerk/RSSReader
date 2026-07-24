@@ -145,7 +145,7 @@ struct SummaryDetailView: View {
                         .lineLimit(1)
                 }
             }
-            .frame(maxWidth: 220, alignment: .leading)
+            .frame(maxWidth: AppConfiguration.summarySourceChipMaxWidth, alignment: .leading)
         }
         .foregroundStyle(accent)
         .padding(.horizontal, 8)

@@ -44,6 +44,9 @@ enum AppConfiguration {
     /// Standaard tekstgrootte voor bronanalyse (bias-balk, betrouwbaarheid, fact-check)
     static let defaultAnalysisTextSize = 12
 
+    /// Maximale breedte van een bron-chip in de samenvatting (begrenst lange titels)
+    static let summarySourceChipMaxWidth: CGFloat = 220
+
     // MARK: - UserDefaults Keys
 
     enum UserDefaultsKeys {
