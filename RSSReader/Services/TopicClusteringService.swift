@@ -173,6 +173,8 @@ class TopicClusteringService {
     /// een eventuele regressie zichtbaar af (foutlog + assertie in debug) en filtert
     /// bronloze beweringen weg zodat ze in release nooit gerenderd worden.
     private func validated(_ statements: [SummaryStatement], topicName: String) -> [SummaryStatement] {
+        // De failable init maakt deze tak in de praktijk onbereikbaar; hij blijft
+        // opzettelijk als regressievanger voor toekomstige constructiepaden.
         let sourceless = statements.filter { $0.sourceItemIDs.isEmpty }
         guard sourceless.isEmpty else {
             logger.error("R11-schending: \(sourceless.count) bronloze bewering(en) voor topic: \(topicName)")
