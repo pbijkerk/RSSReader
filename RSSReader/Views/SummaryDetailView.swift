@@ -134,10 +134,18 @@ struct SummaryDetailView: View {
         HStack(spacing: 4) {
             Image(systemName: "link")
                 .imageScale(.small)
-            Text(item.feed?.title ?? item.title)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.title)
+                    .font(.caption)
+                    .lineLimit(2)
+                if let feedTitle = item.feed?.title {
+                    Text(feedTitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
         }
-        .font(.caption)
         .foregroundStyle(accent)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)

@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Bron-chip onder een bewering toont nu de artikeltitel (met feednaam als secundair label), zodat meerdere bronnen uit dezelfde feed onderscheidbaar zijn
+
 ## [1.1.0] - 2026-07-24
 
 ### Gewijzigd
