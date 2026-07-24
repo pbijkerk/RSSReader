@@ -247,9 +247,12 @@ class TopicClusteringService {
 
         \(instruction)
 
-        Break the summary into individual statements. Every statement MUST cite \
-        at least one source number of the article(s) it is based on. Do not invent \
-        source numbers; only use numbers that appear above.
+        Break the summary into individual statements. Synthesize across articles: \
+        when a statement is supported by multiple articles, cite ALL the relevant \
+        source numbers; when it comes from a single article, cite only that one \
+        number. Every statement MUST cite at least one source number of the \
+        article(s) it is based on. Do not invent source numbers; only use numbers \
+        that appear above.
 
         Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
         this shape:
