@@ -22,6 +22,21 @@ struct SettingsView: View {
     @State private var claudeAPIKey = ""
     @State private var googleFactCheckAPIKey = ""
 
+    /// Status van de Claude-sleutelvalidatie — niet persistent, opnieuw bepaald bij
+    /// verschijnen en bij elke (gedebouncede) wijziging van het sleutelveld.
+    @State private var claudeKeyStatus: ClaudeKeyStatus = .noKey
+    /// Lopende validatietaak; wordt gecancelled bij een nieuwe toetsaanslag (debounce).
+    @State private var claudeValidationTask: Task<Void, Never>?
+
+    /// Vier standen van de sleutelvalidatie-indicator.
+    private enum ClaudeKeyStatus {
+        case noKey        // geen sleutel → neutrale "lokale samenvattingen"
+        case validating   // bezig met valideren
+        case valid        // sleutel geldig → groen "AI-samenvattingen actief"
+        case invalid      // 401/403 → foutstatus
+        case couldNotValidate // netwerk-/overige fout → neutrale "kon niet valideren"
+    }
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.retentionDays)
     private var defaultRetentionDays = AppConfiguration.defaultRetentionDays
 
@@ -99,7 +114,10 @@ struct SettingsView: View {
         .onChange(of: feedListPercent) { persistFeedListPercent() }
         .onChange(of: articlePercent) { persistArticlePercent() }
         .onChange(of: analysisPercent) { persistAnalysisPercent() }
-        .onChange(of: claudeAPIKey) { persistClaudeKey() }
+        .onChange(of: claudeAPIKey) {
+            persistClaudeKey()
+            scheduleClaudeKeyValidation(debounce: true)
+        }
         .onChange(of: googleFactCheckAPIKey) { persistGoogleKey() }
     }
 
@@ -111,6 +129,7 @@ struct SettingsView: View {
             ?? ""
         googleFactCheckAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey) ?? ""
         loadPercentages()
+        scheduleClaudeKeyValidation(debounce: false)
     }
 
     private func persistFeedListPercent() {
@@ -134,6 +153,41 @@ struct SettingsView: View {
 
     private func persistGoogleKey() {
         KeychainService.save(googleFactCheckAPIKey, forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey)
+    }
+
+    // MARK: - Claude-sleutelvalidatie
+
+    /// Start (opnieuw) een niet-blokkerende validatie van de Claude-sleutel.
+    ///
+    /// Cancelt een eventuele lopende taak; bij `debounce` wordt eerst kort gewacht
+    /// zodat niet elke toetsaanslag een netwerkverzoek doet. Status-updates lopen
+    /// via de `@MainActor`. Een lege sleutel valideert niet en toont de neutrale
+    /// "lokale samenvattingen"-status.
+    private func scheduleClaudeKeyValidation(debounce: Bool) {
+        claudeValidationTask?.cancel()
+
+        let key = claudeAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else {
+            claudeKeyStatus = .noKey
+            return
+        }
+
+        claudeKeyStatus = .validating
+        claudeValidationTask = Task { @MainActor in
+            if debounce {
+                try? await Task.sleep(for: .milliseconds(600))
+            }
+            guard !Task.isCancelled else { return }
+
+            let result = await ClaudeKeyValidator.validate(apiKey: key)
+            guard !Task.isCancelled else { return }
+
+            switch result {
+            case .valid:            claudeKeyStatus = .valid
+            case .invalid:          claudeKeyStatus = .invalid
+            case .couldNotValidate: claudeKeyStatus = .couldNotValidate
+            }
+        }
     }
 
     // MARK: - 1. Weergave
@@ -203,12 +257,9 @@ struct SettingsView: View {
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Met een Claude API-sleutel worden samenvattingen door AI gegenereerd; zonder sleutel lokaal. Sleutels worden veilig opgeslagen in de Keychain en nooit gedeeld.")
-                if !claudeAPIKey.isEmpty {
-                    Label("AI-samenvattingen actief", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.caption)
-                        .padding(.top, 2)
-                }
+                claudeKeyStatusLabel
+                    .font(.caption)
+                    .padding(.top, 2)
             }
         }
         .sheet(isPresented: $showingClaudeConsole) {
@@ -294,6 +345,28 @@ struct SettingsView: View {
                 "Versie",
                 value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
             )
+        }
+    }
+
+    /// Statusregel onder de Claude-sleutel — reflecteert het echte validatieresultaat.
+    @ViewBuilder
+    private var claudeKeyStatusLabel: some View {
+        switch claudeKeyStatus {
+        case .noKey:
+            Label("Lokale samenvattingen", systemImage: "iphone")
+                .foregroundStyle(.secondary)
+        case .validating:
+            Label("Sleutel valideren…", systemImage: "arrow.triangle.2.circlepath")
+                .foregroundStyle(.secondary)
+        case .valid:
+            Label("AI-samenvattingen actief", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .invalid:
+            Label("Sleutel ongeldig of verlopen", systemImage: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+        case .couldNotValidate:
+            Label("Kon niet valideren — controleer je verbinding", systemImage: "wifi.exclamationmark")
+                .foregroundStyle(.secondary)
         }
     }
 
