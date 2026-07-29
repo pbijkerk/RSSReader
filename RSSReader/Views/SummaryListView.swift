@@ -83,6 +83,10 @@ struct TopicClusterRowView: View {
 
                 TopicSourceRatingView(cluster: cluster)
 
+                if cluster.hasDisputedClaim {
+                    FactCheckWarningView(results: cluster.disputedFactChecks, compact: true)
+                }
+
                 if let latest = cluster.items.first?.pubDate {
                     Text("Latest: \(latest, style: .relative)")
                         .font(.caption2)
