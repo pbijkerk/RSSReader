@@ -45,20 +45,37 @@ class FeedItem {
 
     var plainDescription: String {
         if let cached = _cachedPlainDescription { return cached }
-        guard let desc = itemDescription else {
-            _cachedPlainDescription = ""
-            return ""
-        }
-        let result = desc
-            .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .htmlEntityDecoded
+        let result = Self.plainText(from: itemDescription)
         _cachedPlainDescription = result
         return result
     }
 
+    /// Strippt HTML uit ruwe beschrijvingstekst tot platte tekst. `nonisolated` en
+    /// puur (leest geen model-state) zodat het off-main aangeroepen kan worden —
+    /// de clustering-hotloop doet dit strippen in een detached taak i.p.v. op de
+    /// MainActor. Stappen identiek aan de vroegere inline `plainDescription`-logica:
+    /// tags → spatie, whitespace → één spatie, trim, dan HTML-entiteiten decoderen.
+    /// Gebruikt gecachte `NSRegularExpression`s (geen per-aanroep regex-compilatie).
+    nonisolated static func plainText(from raw: String?) -> String {
+        guard let desc = raw, !desc.isEmpty else { return "" }
+        var result = desc
+        let tagRange = NSRange(result.startIndex..., in: result)
+        result = tagStripRegex.stringByReplacingMatches(
+            in: result, options: [], range: tagRange, withTemplate: " "
+        )
+        let wsRange = NSRange(result.startIndex..., in: result)
+        result = whitespaceRegex.stringByReplacingMatches(
+            in: result, options: [], range: wsRange, withTemplate: " "
+        )
+        return result
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .htmlEntityDecoded
+    }
+
     // MARK: - Cached regexes voor performance
+
+    private static let tagStripRegex = try! NSRegularExpression(pattern: "<[^>]+>", options: [])
+    private static let whitespaceRegex = try! NSRegularExpression(pattern: "\\s+", options: [])
 
     private static let scriptRegex = try! NSRegularExpression(
         pattern: "(?i)<script[^>]*>[\\s\\S]*?</script>", options: []

@@ -143,9 +143,11 @@ class TopicClusteringService {
         
         logger.info("Starting clustering of \(items.count) items")
 
-        // --- Snapshot model data on MainActor BEFORE any async work ---
-        let snapshots: [ItemSnapshot] = items.map {
-            ItemSnapshot(id: $0.id, title: $0.title, plainDescription: $0.plainDescription)
+        // --- Lees RUWE model-velden op de MainActor (alleen stored-property-reads,
+        // geen regex/HTML-strip). Het CPU-intensieve HTML-strippen naar platte tekst
+        // gebeurt off-main in de detached taak hieronder, niet op de MainActor. ---
+        let rawItems: [(id: UUID, title: String, rawDescription: String?)] = items.map {
+            (id: $0.id, title: $0.title, rawDescription: $0.itemDescription)
         }
 
         let likedTopics = savedTopics.filter { $0.isLiked }
@@ -165,9 +167,11 @@ class TopicClusteringService {
         logger.debug("Using \(topicMap.count) topics for clustering")
 
         // --- Assign items to topics off the MainActor (no SwiftData access) ---
-        // Alleen Sendable data (snapshots + topic-strings) gaat naar de detached
-        // taak; de CPU-intensieve tokenisatie en matchloop mogen de UI niet
-        // seconden blokkeren (IOS_Swift.md: "Task.detached voor CPU-intensief werk").
+        // Alleen Sendable data (ruwe strings + topic-strings) gaat naar de detached
+        // taak; het HTML-strippen, de tokenisatie en de matchloop — alle CPU-werk —
+        // mogen de UI niet seconden blokkeren (IOS_Swift.md: "Task.detached voor
+        // CPU-intensief werk"). De detached taak levert de (off-main gestripte)
+        // snapshots terug plus de toewijzing.
         var topicKeywordsMap: [String: [String]] = [:]
         for (name, keywords) in topicMap {
             topicKeywordsMap[name] = keywords
@@ -175,9 +179,9 @@ class TopicClusteringService {
 
         let topicsForMatching = topicMap
         let minimumScore = AppConfiguration.minimumClusterScore
-        let indexMap: [String: [Int]] = await Task.detached {
+        let (snapshots, indexMap): ([ItemSnapshot], [String: [Int]]) = await Task.detached {
             Self.computeAssignments(
-                snapshots: snapshots,
+                rawItems: rawItems,
                 topics: topicsForMatching,
                 minimumScore: minimumScore
             )
@@ -272,17 +276,29 @@ class TopicClusteringService {
         return topic
     }
 
-    /// Voert de volledige toewijzing off-main uit: normaliseert de topic-frasen en
-    /// scoort elke snapshot. Werkt uitsluitend op Sendable invoer en levert dezelfde
-    /// `indexMap` (topicNaam → indices in `snapshots`) als de oude MainActor-loop.
-    /// Eén `NLTokenizer` wordt over de hele batch hergebruikt (vervangt de vroegere
-    /// main-actor-stored instantie, die off-actor niet bruikbaar is).
+    /// Voert al het CPU-werk off-main uit: strippt de ruwe beschrijvingen tot platte
+    /// tekst (`FeedItem.plainText(from:)`), normaliseert de topic-frasen en scoort
+    /// elke snapshot. Werkt uitsluitend op Sendable invoer (ruwe strings + topic-
+    /// strings) en levert de (off-main gestripte) snapshots plus dezelfde `indexMap`
+    /// (topicNaam → indices) als de oude MainActor-loop. Eén `NLTokenizer` wordt over
+    /// de hele batch hergebruikt (vervangt de vroegere main-actor-stored instantie,
+    /// die off-actor niet bruikbaar is).
     nonisolated private static func computeAssignments(
-        snapshots: [ItemSnapshot],
+        rawItems: [(id: UUID, title: String, rawDescription: String?)],
         topics: [(name: String, keywords: [String])],
         minimumScore: Int
-    ) -> [String: [Int]] {
+    ) -> (snapshots: [ItemSnapshot], indexMap: [String: [Int]]) {
         let tokenizer = NLTokenizer(unit: .word)
+
+        // HTML-strippen off-main: de dure regex-transformatie draait hier, niet op
+        // de MainActor. `plainDescription` blijft identiek aan de instance-getter.
+        let snapshots: [ItemSnapshot] = rawItems.map { raw in
+            ItemSnapshot(
+                id: raw.id,
+                title: raw.title,
+                plainDescription: FeedItem.plainText(from: raw.rawDescription)
+            )
+        }
 
         // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
         // (" ai ", " machine learning "), zodat de match in de hot loop een simpele
@@ -303,7 +319,7 @@ class TopicClusteringService {
                 indexMap[topic, default: []].append(idx)
             }
         }
-        return indexMap
+        return (snapshots, indexMap)
     }
 
     // MARK: - Summary helpers

@@ -8,7 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Opgelost
-- Clustering-toewijzing (tokenisatie en trefwoord-matching) draait nu off-main via `Task.detached` in plaats van op de MainActor, zodat refresh en samenvatting de UI niet langer seconden blokkeren; toewijzingsresultaten blijven identiek
+- Clustering draait al het CPU-werk (HTML-strippen van artikelteksten, tokenisatie en trefwoord-matching) nu off-main via `Task.detached` in plaats van op de MainActor, zodat refresh en samenvatting de UI niet langer seconden blokkeren; resultaten blijven identiek. Het HTML-strippen is bovendien geëxtraheerd naar `FeedItem.plainText(from:)` met gecachte regexes (geen per-aanroep regex-compilatie)
 
 ## [1.4.0] - 2026-07-29
 
