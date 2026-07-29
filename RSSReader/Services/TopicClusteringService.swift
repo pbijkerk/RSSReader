@@ -187,25 +187,11 @@ class TopicClusteringService {
         for (idx, snapshot) in snapshots.enumerated() {
             // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
             let paddedText = wordBoundaryText(snapshot.fullText)
-            var bestTopic: String?
-            var bestScore = 0
-            var bestNormalized = 0.0
-
-            for (name, phrases) in normalizedTopics {
-                var score = 0
-                for phrase in phrases where paddedText.contains(phrase) { score += 1 }
-                guard score > 0 else { continue }
-                // Tie-break op genormaliseerde score (treffers / aantal trefwoorden),
-                // zodat een lange trefwoordenlijst niet louter door lijstvolgorde wint.
-                let normalized = Double(score) / Double(max(phrases.count, 1))
-                if score > bestScore || (score == bestScore && normalized > bestNormalized) {
-                    bestScore = score
-                    bestNormalized = normalized
-                    bestTopic = name
-                }
-            }
-
-            if bestScore >= AppConfiguration.minimumClusterScore, let topic = bestTopic {
+            if let topic = assignedTopic(
+                forText: paddedText,
+                normalizedTopics: normalizedTopics,
+                minimumScore: AppConfiguration.minimumClusterScore
+            ) {
                 indexMap[topic, default: []].append(idx)
             }
         }
@@ -248,6 +234,40 @@ class TopicClusteringService {
         logger.info("Clustering complete: created \(result.count) clusters")
 
         return result.sorted { $0.items.count > $1.items.count }
+    }
+
+    /// Kiest voor één (al op woordgrens getokeniseerde) artikeltekst het best
+    /// scorende onderwerp. `paddedText` is de uitvoer van `wordBoundaryText`
+    /// (" token token "); `normalizedTopics` bevat per onderwerp de eveneens op
+    /// woordgrens omsloten frasen. Telt trefwoord-frasen op woordgrens, breekt
+    /// gelijke ruwe scores op de genormaliseerde score (treffers / aantal frasen)
+    /// zodat een lange trefwoordenlijst niet louter door lijstvolgorde wint, en
+    /// levert alleen een onderwerp als `bestScore >= minimumScore`; anders `nil`.
+    func assignedTopic(
+        forText paddedText: String,
+        normalizedTopics: [(name: String, phrases: [String])],
+        minimumScore: Int
+    ) -> String? {
+        var bestTopic: String?
+        var bestScore = 0
+        var bestNormalized = 0.0
+
+        for (name, phrases) in normalizedTopics {
+            var score = 0
+            for phrase in phrases where paddedText.contains(phrase) { score += 1 }
+            guard score > 0 else { continue }
+            // Tie-break op genormaliseerde score (treffers / aantal trefwoorden),
+            // zodat een lange trefwoordenlijst niet louter door lijstvolgorde wint.
+            let normalized = Double(score) / Double(max(phrases.count, 1))
+            if score > bestScore || (score == bestScore && normalized > bestNormalized) {
+                bestScore = score
+                bestNormalized = normalized
+                bestTopic = name
+            }
+        }
+
+        guard bestScore >= minimumScore, let topic = bestTopic else { return nil }
+        return topic
     }
 
     // MARK: - Summary helpers
@@ -458,7 +478,7 @@ class TopicClusteringService {
     /// spaties, omsloten door één spatie aan begin en eind: " token token token ".
     /// Zo matcht een trefwoord alleen als heel woord/hele frase — een deelstring
     /// als "ai" in "email" valt weg omdat " ai " niet in " email " voorkomt.
-    private func wordBoundaryText(_ text: String) -> String {
+    func wordBoundaryText(_ text: String) -> String {
         let lower = text.lowercased()
         wordTokenizer.string = lower
         var tokens: [String] = []
