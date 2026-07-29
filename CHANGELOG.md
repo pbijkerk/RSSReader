@@ -7,6 +7,8 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-29
+
 ### Toegevoegd
 - Per-onderwerp bronduiding op de samenvattingspagina (lijst en detail): een geaggregeerd politieke-kleurspectrum met "overwegend"-label plus een afgeleid betrouwbaarheidslabel over de distinct bronnen; onbekende ratings tellen niet mee en worden nooit geraden
 
