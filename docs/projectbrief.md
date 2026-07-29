@@ -53,7 +53,7 @@ Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable
 - R2: De samenvatting groepeert het nieuws per behandeld onderwerp — reden: alle duiding en navigatie hangt op onderwerp-niveau. (sub-issue onder #14)
 - R3: Vanuit de samenvatting kan de gebruiker naar de onderliggende feed/het artikel navigeren én terugkeren (inline bronverwijzingen) — reden: verifieerbaarheid en het besloten heen/terug-navigeren. (sub-issue onder #14)
 - R11: Elke bewering in de samenvatting is herleidbaar naar minstens één gelinkte bron (geen ongefundeerde beweringen) — reden: maakt "betrouwbaarder" toetsbaar. (sub-issue onder #14)
-- R8: De feeds blijven volledig leesbaar wanneer de AI niet beschikbaar is (geen sleutel, API onbereikbaar, fout) — reden: harde randvoorwaarde; de app mag niet onbruikbaar worden zonder AI. (#15)
+- R8: De feeds blijven volledig leesbaar wanneer de AI niet beschikbaar is (geen sleutel, API onbereikbaar, fout) — reden: harde randvoorwaarde; de app mag niet onbruikbaar worden zonder AI. (#15) — **geverifieerd op device (2026-07-29): structureel geborgd; RSS-refresh is Claude-onafhankelijk en elke AI-faalroute valt terug op `localSummary`.**
 
 ### Should — belangrijk, maar niet fataal bij uitstel
 - R4: Per onderwerp toont de app een bronduiding op twee assen — betrouwbaarheid (high/mixed/low) en politieke kleur (bias −2…+2) — reden: kern van de betrouwbaarheidsduiding, maar de hoofdpagina functioneert er ook zonder. (sub-issue onder #11)
@@ -129,5 +129,5 @@ Kostenstructuur: **1 API-call per onderwerp-cluster** per refresh; input ≈ ~1.
 1. De samenvatting-hoofdpagina ontwerpen: uitgebreidere inhoud met inline bronverwijzingen (heen/terug-navigatie) en **per onderwerp** een bronduiding (betrouwbaarheid + politieke kleur) en fact-check-waarschuwing.
 2. De weergavevorm van de bronduiding per onderwerp bepalen — matrix (kleur × betrouwbaarheid) of een andere vorm (zie Richting).
 3. ~~Een kostenkader bepalen voor de samenvatting~~ — **gedaan** (#12), zie sectie **Kostenkader**.
-4. De offline/AI-uitval-eis borgen: feeds blijven leesbaar zonder werkende AI — controleren dat de huidige app dit al doet, anders inregelen.
+4. ~~De offline/AI-uitval-eis borgen: feeds blijven leesbaar zonder werkende AI~~ — **gedaan** (#15): op device geverifieerd, geen afwijkingen.
 5. De bestaande fact-check-fout onderzoeken (ontbrekend veld `claims` in de API-response) voordat fact-check een grotere rol in de samenvatting krijgt.
