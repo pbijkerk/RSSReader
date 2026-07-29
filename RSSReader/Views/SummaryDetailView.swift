@@ -142,11 +142,14 @@ struct SummaryDetailView: View {
                 Text(item.title)
                     .font(.caption)
                     .lineLimit(2)
-                if let feedTitle = item.feed?.title {
-                    Text(feedTitle)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: 4) {
+                    if let feedTitle = item.feed?.title {
+                        Text(feedTitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    ReliabilityBadgeView(level: item.feed?.reliabilityLevel)
                 }
             }
             .frame(maxWidth: AppConfiguration.summarySourceChipMaxWidth, alignment: .leading)
@@ -294,6 +297,7 @@ struct ArticleRowView: View {
                         .font(.caption)
                         .foregroundStyle(.blue)
                 }
+                ReliabilityBadgeView(level: item.feed?.reliabilityLevel)
                 Spacer()
                 if let date = item.pubDate {
                     Text(date, style: .relative)
