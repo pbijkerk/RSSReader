@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- App opent nu standaard op de samenvatting-tab in plaats van de feedlijst
+
 ## [1.2.0] - 2026-07-29
 
 ### Toegevoegd

@@ -10,7 +10,7 @@ struct ContentView: View {
     @State private var clusteringService = TopicClusteringService()
 
     @State private var clusters: [TopicCluster] = []
-    @State private var selectedTab = 0
+    @State private var selectedTab = 1
     @State private var lastClusteredAt: Date? = nil
 
     private let clusteringDebounce: TimeInterval = 120 // 2 minuten
