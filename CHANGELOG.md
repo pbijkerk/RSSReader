@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Clustering hergebruikt nu één `NLTokenizer`-instantie in `wordBoundaryText` in plaats van er per aanroep een aan te maken; identieke uitvoer, minder allocaties in de hotloop
+
 ## [1.3.0] - 2026-07-29
 
 ### Toegevoegd
