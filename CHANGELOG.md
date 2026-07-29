@@ -7,6 +7,8 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-29
+
 ### Toegevoegd
 - Subtiele betrouwbaarheidsmarkering per bron in de samenvatting: de artikelrijen en bron-chips tonen nu een compacte betrouwbaarheidsbadge (hergebruik `ReliabilityBadgeView`), zodat low/mixed bronnen zichtbaar geduid worden; onbekende betrouwbaarheid toont niets en er wordt niets uit de samenvatting weggelaten
 - Fact-check-waarschuwing per onderwerp op de samenvattingspagina (lijst en detail): toont een compacte, neutrale melding zodra minstens één artikel in het cluster een betwijfeld verdict heeft, met inklapbare details per bewering en beoordelaar; classificatie is deterministisch (geen AI-call)
