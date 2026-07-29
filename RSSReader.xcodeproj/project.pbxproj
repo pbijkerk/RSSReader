@@ -39,6 +39,7 @@
 		AA1B2C3D4E5F6789ABCD0008 /* BiasBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */; };
 		AA1B2C3D4E5F6789ABCD000A /* FactCheckChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */; };
 		AA1B2C3D4E5F6789ABCD000C /* ReliabilityBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */; };
+		AA1B2C3D4E5F6789ABCD000E /* TopicSourceRatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD000D /* TopicSourceRatingView.swift */; };
 		BB1C2D3E4F5A6B7C8D9E0F02 /* EventClusteringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1C2D3E4F5A6B7C8D9E0F01 /* EventClusteringService.swift */; };
 		BB1C2D3E4F5A6B7C8D9E0F04 /* StoryGroupHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */; };
 		AA1B2C3D4E5F6789ABCD000E /* source_ratings.json in Resources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */; };
@@ -83,6 +84,7 @@
 		AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiasBarView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactCheckChipView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReliabilityBadgeView.swift; sourceTree = "<group>"; };
+		AA1B2C3D4E5F6789ABCD000D /* TopicSourceRatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicSourceRatingView.swift; sourceTree = "<group>"; };
 		BB1C2D3E4F5A6B7C8D9E0F01 /* EventClusteringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClusteringService.swift; sourceTree = "<group>"; };
 		BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryGroupHeaderView.swift; sourceTree = "<group>"; };
 		AA1B2C3D4E5F6789ABCD000D /* source_ratings.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = source_ratings.json; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 				AA1B2C3D4E5F6789ABCD0007 /* BiasBarView.swift */,
 				AA1B2C3D4E5F6789ABCD0009 /* FactCheckChipView.swift */,
 				AA1B2C3D4E5F6789ABCD000B /* ReliabilityBadgeView.swift */,
+				AA1B2C3D4E5F6789ABCD000D /* TopicSourceRatingView.swift */,
 				BB1C2D3E4F5A6B7C8D9E0F03 /* StoryGroupHeaderView.swift */,
 			);
 			path = Views;
@@ -322,6 +325,7 @@
 				AA1B2C3D4E5F6789ABCD0008 /* BiasBarView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000A /* FactCheckChipView.swift in Sources */,
 				AA1B2C3D4E5F6789ABCD000C /* ReliabilityBadgeView.swift in Sources */,
+				AA1B2C3D4E5F6789ABCD000E /* TopicSourceRatingView.swift in Sources */,
 				BB1C2D3E4F5A6B7C8D9E0F02 /* EventClusteringService.swift in Sources */,
 				BB1C2D3E4F5A6B7C8D9E0F04 /* StoryGroupHeaderView.swift in Sources */,
 			);

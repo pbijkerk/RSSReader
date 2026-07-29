@@ -32,6 +32,7 @@ struct SummaryDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 topicHeader
+                TopicSourceRatingView(cluster: cluster)
                 summarySection
                 articlesSection
             }

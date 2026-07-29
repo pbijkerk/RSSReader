@@ -30,6 +30,56 @@ struct TopicCluster {
     var statements: [SummaryStatement]
     /// Platte previewtekst (samengevoegde beweringen) voor lijstweergaven.
     var summary: String { statements.map(\.text).joined(separator: " ") }
+
+    // MARK: - Bronduiding (R4)
+    // Geaggregeerde, non-persistente duiding over de distinct bronnen van dit
+    // cluster. Onbekende ratings tellen niet mee en worden nooit als centrum/high
+    // geraden; assen zonder bekende waarde leveren geen label (nil / lege reeks).
+
+    /// Distinct bronfeeds van dit cluster, ontdubbeld op `feed?.id`.
+    private var distinctFeeds: [Feed] {
+        var seen = Set<UUID>()
+        var feeds: [Feed] = []
+        for feed in items.compactMap(\.feed) where seen.insert(feed.id).inserted {
+            feeds.append(feed)
+        }
+        return feeds
+    }
+
+    /// Bekende bias-posities van de distinct bronnen — voedt de `BiasSpectrumStrip`.
+    var sourceBiasScores: [Int] {
+        Array(Set(distinctFeeds.compactMap { $0.biasScore })).sorted()
+    }
+
+    /// Afgerond gemiddelde van de bekende bias-scores; nil zonder bekende scores.
+    var averageBias: Int? {
+        let scores = distinctFeeds.compactMap { $0.biasScore }
+        guard !scores.isEmpty else { return nil }
+        let mean = Double(scores.reduce(0, +)) / Double(scores.count)
+        return Int(mean.rounded())
+    }
+
+    /// Afgeleid "overwegend"-label uit het gemiddelde; nil zonder bekende scores.
+    var dominantBiasLabel: String? {
+        guard let averageBias else { return nil }
+        return "Overwegend \(biasLabel(averageBias).lowercased())"
+    }
+
+    /// Dominante (meest voorkomende) betrouwbaarheid van de distinct bronnen; bij
+    /// gelijkspel de meest voorzichtige (low > mixed > high). Nil zonder bekende waarden.
+    var dominantReliability: String? {
+        let levels = distinctFeeds.compactMap { $0.reliabilityLevel?.lowercased() }
+        guard !levels.isEmpty else { return nil }
+        var counts: [String: Int] = [:]
+        for level in levels { counts[level, default: 0] += 1 }
+        // Lagere rang = voorzichtiger; wint bij gelijk aantal.
+        let cautionRank = ["low": 0, "mixed": 1, "high": 2]
+        return counts.max { a, b in
+            a.value != b.value
+                ? a.value < b.value
+                : (cautionRank[a.key] ?? 3) > (cautionRank[b.key] ?? 3)
+        }?.key
+    }
 }
 
 /// Snapshot of a FeedItem's text — safe to pass across actor boundaries.
