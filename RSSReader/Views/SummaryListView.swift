@@ -81,6 +81,8 @@ struct TopicClusterRowView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
 
+                TopicSourceRatingView(cluster: cluster)
+
                 if let latest = cluster.items.first?.pubDate {
                     Text("Latest: \(latest, style: .relative)")
                         .font(.caption2)
