@@ -33,6 +33,9 @@ struct SummaryDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 topicHeader
                 TopicSourceRatingView(cluster: cluster)
+                if cluster.hasDisputedClaim {
+                    FactCheckWarningView(results: cluster.disputedFactChecks)
+                }
                 summarySection
                 articlesSection
             }

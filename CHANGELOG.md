@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Toegevoegd
+- Fact-check-waarschuwing per onderwerp op de samenvattingspagina (lijst en detail): toont een compacte, neutrale melding zodra minstens één artikel in het cluster een betwijfeld verdict heeft, met inklapbare details per bewering en beoordelaar; classificatie is deterministisch (geen AI-call)
+
 ### Gewijzigd
 - Samenvattingsprompt stuurt bij een onderwerp met meerdere bronnen nu expliciet op synthese: de belangrijkste beweringen leiden met door twee of meer bronnen bevestigde ontwikkelingen, terwijl enkelvoudige-bron-items behouden blijven (R11-garantie ongewijzigd)
 

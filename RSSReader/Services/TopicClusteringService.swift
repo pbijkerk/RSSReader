@@ -31,6 +31,18 @@ struct TopicCluster {
     /// Platte previewtekst (samengevoegde beweringen) voor lijstweergaven.
     var summary: String { statements.map(\.text).joined(separator: " ") }
 
+    // MARK: - Fact-check-waarschuwing (R7)
+    // Non-persistente, deterministische aggregatie (geen AI) over de fact-checks
+    // van de artikelen in dit cluster. Toont niets zonder betwijfeld verdict.
+
+    /// Fact-checkresultaten uit dit cluster met een betwijfeld verdict.
+    var disputedFactChecks: [FactCheckResult] {
+        items.flatMap { $0.factCheckResults }.filter(\.isDisputed)
+    }
+
+    /// True zodra minstens één artikel in dit cluster een betwijfelde bewering heeft.
+    var hasDisputedClaim: Bool { !disputedFactChecks.isEmpty }
+
     // MARK: - Bronduiding (R4)
     // Geaggregeerde, non-persistente duiding over de distinct bronnen van dit
     // cluster. Onbekende ratings tellen niet mee en worden nooit als centrum/high
