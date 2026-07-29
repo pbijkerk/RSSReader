@@ -113,6 +113,10 @@ class TopicClusteringService {
         category: AppConfiguration.LogSubsystem.Category.clustering
     )
 
+    /// Herbruikbare tokenizer voor `wordBoundaryText`; per aanroep wordt alleen
+    /// `.string` gezet, wat allocaties in de clustering-hotloop bespaart.
+    private let wordTokenizer = NLTokenizer(unit: .word)
+
     private let defaultTopics: [(name: String, keywords: [String])] = [
         ("Artificial Intelligence", ["ai", "artificial intelligence", "machine learning", "llm",
                                      "chatgpt", "openai", "gpt", "neural", "deep learning", "claude",
@@ -456,10 +460,9 @@ class TopicClusteringService {
     /// als "ai" in "email" valt weg omdat " ai " niet in " email " voorkomt.
     private func wordBoundaryText(_ text: String) -> String {
         let lower = text.lowercased()
-        let tokenizer = NLTokenizer(unit: .word)
-        tokenizer.string = lower
+        wordTokenizer.string = lower
         var tokens: [String] = []
-        tokenizer.enumerateTokens(in: lower.startIndex..<lower.endIndex) { range, _ in
+        wordTokenizer.enumerateTokens(in: lower.startIndex..<lower.endIndex) { range, _ in
             tokens.append(String(lower[range]))
             return true
         }

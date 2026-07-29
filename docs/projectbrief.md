@@ -96,7 +96,29 @@ Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable
 ## Openstaande punten
 > Vast te leggen als issue.
 
-1. Hoe "uitgebreider en betrouwbaarder" concreet wordt begrensd tegen de API-kostprijs — bepaalt de omvang, frequentie en het aantal API-calls per samenvatting.
+_Geen openstaande punten meer._
+
+- ~~Hoe "uitgebreider en betrouwbaarder" concreet wordt begrensd tegen de API-kostprijs~~ — **opgelost** (#12), zie **Kostenkader** hieronder.
+
+## Kostenkader (R9 / #12)
+Onderzoek 2026-07-29. Prijs `claude-haiku-4-5`: **$1,00/1M input, $5,00/1M output** (bron: Anthropic first-party tarief via de claude-api-skill, cache 2026-06-24).
+
+Kostenstructuur: **1 API-call per onderwerp-cluster** per refresh; input ≈ ~1.500 tokens/call (max 10 artikelen), output begrensd door `SummaryLength.maxTokens` (300/600/1000). Bij dagelijks gebruik (ochtend + late middag, ~2 refreshes/dag, ~5 clusters):
+
+| Scenario | Per refresh | Per maand |
+|----------|-------------|-----------|
+| Normaal (600 out) | ~$0,022 | ~€1,35 |
+| Uitgebreid (1000 out) | ~$0,030 | ~€1,80 |
+| Zwaar (8 clusters, uitgebreid, 4×/dag) | ~$0,052 | ~€6,30 |
+
+**Conclusie:** bij eigen gebruik zijn de kosten verwaarloosbaar (enkele euro's/maand). Het kader dient om ongemerkte groei te begrenzen.
+
+**Vastgelegde grenzen:**
+1. **Max 10 artikelen per call** (`AppConfiguration.maxArticlesPerSummary`) — begrenst input.
+2. **Output-cap** via `SummaryLength.maxTokens` (300/600/1000) — reeds aanwezig.
+3. **Verversings-debounce ≥ 2 min** (`clusteringDebounce`, nu 120s) — voorkomt call-stormen.
+4. **Richtbudget < €10/maand** bij normaal gebruik — ruime marge; geen harde in-app-limiet nodig.
+5. **Prompt-caching niet toegepast** — elke cluster-call heeft een unieke artikellijst; geen deelbare prefix, dus geen besparing.
 
 ## Richting, nog geen besluit
 - **Matrix (politieke kleur × betrouwbaarheid)** als concrete weergavevorm van de bronduiding per onderwerp — als richting genoemd ("wellicht een matrix"), vorm nog niet vastgesteld.
@@ -106,6 +128,6 @@ Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable
 ## Voorgestelde vervolgstappen
 1. De samenvatting-hoofdpagina ontwerpen: uitgebreidere inhoud met inline bronverwijzingen (heen/terug-navigatie) en **per onderwerp** een bronduiding (betrouwbaarheid + politieke kleur) en fact-check-waarschuwing.
 2. De weergavevorm van de bronduiding per onderwerp bepalen — matrix (kleur × betrouwbaarheid) of een andere vorm (zie Richting).
-3. Een kostenkader bepalen voor de samenvatting (omvang, verversingsfrequentie, aantal API-calls) dat de kostprijs beheersbaar houdt (openstaand punt 1).
+3. ~~Een kostenkader bepalen voor de samenvatting~~ — **gedaan** (#12), zie sectie **Kostenkader**.
 4. De offline/AI-uitval-eis borgen: feeds blijven leesbaar zonder werkende AI — controleren dat de huidige app dit al doet, anders inregelen.
 5. De bestaande fact-check-fout onderzoeken (ontbrekend veld `claims` in de API-response) voordat fact-check een grotere rol in de samenvatting krijgt.
