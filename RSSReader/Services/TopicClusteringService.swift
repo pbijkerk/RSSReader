@@ -305,6 +305,25 @@ class TopicClusteringService {
             forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
         let instruction = isEnglish ? length.sentenceInstruction.en : length.sentenceInstruction.nl
 
+        // Elk aangeboden artikel is een distinct bron. Bij >= 2 bronnen stuurt de
+        // prompt expliciet op synthese: de belangrijkste beweringen leiden met door
+        // meerdere bronnen bevestigde ontwikkelingen (meerdere bron-ids). Enkelvoudige
+        // bronnen blijven geldig — er wordt niet gefilterd op bronaantal (R10/R11).
+        let synthesisGuidance = usedSnapshots.count >= 2
+            ? """
+            Multiple sources are available for this topic. Lead with the most \
+            important developments that are confirmed by two OR MORE of the \
+            articles above, and cite ALL their source numbers together (e.g. \
+            [1,2]) so each such statement carries multiple source numbers. \
+            Prioritise these corroborated developments first. Still include \
+            noteworthy details that appear in only a single article, citing that \
+            one source number — never drop a single-source item.
+            """
+            : """
+            Only one source is available for this topic, so cite that single \
+            source number for every statement.
+            """
+
         let prompt = """
         You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
 
@@ -318,9 +337,9 @@ class TopicClusteringService {
         Break the summary into individual statements. Synthesize across articles: \
         when a statement is supported by multiple articles, cite ALL the relevant \
         source numbers; when it comes from a single article, cite only that one \
-        number. Every statement MUST cite at least one source number of the \
-        article(s) it is based on. Do not invent source numbers; only use numbers \
-        that appear above.
+        number. \(synthesisGuidance) Every statement MUST cite at least one source \
+        number of the article(s) it is based on. Do not invent source numbers; only \
+        use numbers that appear above.
 
         Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
         this shape:

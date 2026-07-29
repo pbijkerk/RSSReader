@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Samenvattingsprompt stuurt bij een onderwerp met meerdere bronnen nu expliciet op synthese: de belangrijkste beweringen leiden met door twee of meer bronnen bevestigde ontwikkelingen, terwijl enkelvoudige-bron-items behouden blijven (R11-garantie ongewijzigd)
+
 ## [1.2.1] - 2026-07-29
 
 ### Gewijzigd
