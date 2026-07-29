@@ -9,6 +9,7 @@ struct ItemDetailView: View {
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration.defaultArticleFontSize
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily) private var articleFontFamily = AppConfiguration.defaultArticleFontFamily
+    @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators) private var showBiasIndicators = true
 
     @State private var displayHTML: String = ""
     @State private var isExtracting = false
@@ -35,13 +36,16 @@ struct ItemDetailView: View {
     }
 
     var body: some View {
-        Group {
-            if item.isAudioItem {
-                audioLayout
-            } else if item.isVideoItem {
-                videoLayout
-            } else {
-                readerLayout
+        VStack(spacing: 0) {
+            sourceRatingStrip
+            Group {
+                if item.isAudioItem {
+                    audioLayout
+                } else if item.isVideoItem {
+                    videoLayout
+                } else {
+                    readerLayout
+                }
             }
         }
         .overlay(alignment: .top) { readingProgressBar }
@@ -129,6 +133,32 @@ struct ItemDetailView: View {
 
             if isExtracting {
                 LoadingOverlay(message: "Artikel laden…")
+            }
+        }
+    }
+
+    /// Compacte bron-duidingsstrip boven alle layouts (audio/video/reader).
+    /// Toont politieke positie (BiasBarView) en betrouwbaarheid (ReliabilityBadgeView)
+    /// alleen wanneer de feed een beoordeling heeft. Tik op de balk opent de
+    /// bestaande transparantie-sheet ("Over deze bron"). Consistent met FeedItemsView.
+    @ViewBuilder
+    private var sourceRatingStrip: some View {
+        if showBiasIndicators, let feed = item.feed, let score = feed.biasScore {
+            HStack(alignment: .center, spacing: 8) {
+                BiasBarView(
+                    biasScore: score,
+                    feedName: feed.title,
+                    reliabilityLevel: feed.reliabilityLevel,
+                    ratingSource: feed.ratingSource,
+                    biasRatedAt: feed.biasRatedAt
+                )
+                ReliabilityBadgeView(level: feed.reliabilityLevel)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Theme.card)
+            .overlay(alignment: .bottom) {
+                Divider()
             }
         }
     }
