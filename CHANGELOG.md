@@ -10,6 +10,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ### Toegevoegd
 - Bron-duidingsstrip in het artikeldetail: boven alle layouts (audio/video/reader) tonen de politieke positie (`BiasBarView`) en betrouwbaarheid (`ReliabilityBadgeView`) zodra de feed een beoordeling heeft; tik op de bias-balk opent de bestaande transparantie-sheet, en zonder beoordeling verschijnt er niets
 
+### Gewijzigd
+- Clustering hergebruikt nu één `NLTokenizer`-instantie in `wordBoundaryText` in plaats van er per aanroep een aan te maken; identieke uitvoer, minder allocaties in de hotloop
+
 ## [1.3.0] - 2026-07-29
 
 ### Toegevoegd
