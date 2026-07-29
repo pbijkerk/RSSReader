@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Opgelost
+- Clustering-toewijzing (tokenisatie en trefwoord-matching) draait nu off-main via `Task.detached` in plaats van op de MainActor, zodat refresh en samenvatting de UI niet langer seconden blokkeren; toewijzingsresultaten blijven identiek
+
 ## [1.4.0] - 2026-07-29
 
 ### Toegevoegd
