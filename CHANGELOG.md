@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Toegevoegd
+- Unit-tests voor de clustering-toewijzing (woordgrens, meerwoord-frase, case-insensitiviteit, minimumdrempel en tie-break) door de matching-logica testbaar te isoleren zonder productiegedrag te wijzigen
 - Bron-duidingsstrip in het artikeldetail: boven alle layouts (audio/video/reader) tonen de politieke positie (`BiasBarView`) en betrouwbaarheid (`ReliabilityBadgeView`) zodra de feed een beoordeling heeft; tik op de bias-balk opent de bestaande transparantie-sheet, en zonder beoordeling verschijnt er niets
 
 ### Gewijzigd
