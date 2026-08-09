@@ -113,10 +113,6 @@ class TopicClusteringService {
         category: AppConfiguration.LogSubsystem.Category.clustering
     )
 
-    /// Herbruikbare tokenizer voor `wordBoundaryText`; per aanroep wordt alleen
-    /// `.string` gezet, wat allocaties in de clustering-hotloop bespaart.
-    private let wordTokenizer = NLTokenizer(unit: .word)
-
     private let defaultTopics: [(name: String, keywords: [String])] = [
         ("Artificial Intelligence", ["ai", "artificial intelligence", "machine learning", "llm",
                                      "chatgpt", "openai", "gpt", "neural", "deep learning", "claude",
@@ -147,9 +143,13 @@ class TopicClusteringService {
         
         logger.info("Starting clustering of \(items.count) items")
 
-        // --- Snapshot model data on MainActor BEFORE any async work ---
-        let snapshots: [ItemSnapshot] = items.map {
-            ItemSnapshot(id: $0.id, title: $0.title, plainDescription: $0.plainDescription)
+        // --- Lees RUWE model-velden op de MainActor (alleen stored-property-reads,
+        // geen regex/HTML-strip). Het CPU-intensieve HTML-strippen naar platte tekst
+        // gebeurt off-main in de detached taak hieronder, niet op de MainActor. ---
+        // `cachedPlain` leest alleen de transient cache uit (strippt niets), zodat een
+        // item dat al eerder gestript is niet opnieuw door de regex hoeft.
+        let rawItems: [(id: UUID, title: String, rawDescription: String?, cachedPlain: String?)] = items.map {
+            (id: $0.id, title: $0.title, rawDescription: $0.itemDescription, cachedPlain: $0.cachedPlainDescription)
         }
 
         let likedTopics = savedTopics.filter { $0.isLiked }
@@ -168,32 +168,47 @@ class TopicClusteringService {
         
         logger.debug("Using \(topicMap.count) topics for clustering")
 
-        // --- Assign items to topics using snapshots (no SwiftData access) ---
-        var indexMap: [String: [Int]] = [:]        // topicName → indices into `items`
+        // --- Assign items to topics off the MainActor (no SwiftData access) ---
+        // Alleen Sendable data (ruwe strings + topic-strings) gaat naar de detached
+        // taak; het HTML-strippen, de tokenisatie en de matchloop — alle CPU-werk —
+        // mogen de UI niet seconden blokkeren (IOS_Swift.md: "Task.detached voor
+        // CPU-intensief werk"). De detached taak levert de (off-main gestripte)
+        // snapshots terug plus de toewijzing.
         var topicKeywordsMap: [String: [String]] = [:]
-
         for (name, keywords) in topicMap {
-            indexMap[name] = []
             topicKeywordsMap[name] = keywords
         }
 
-        // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
-        // (" ai ", " machine learning "), zodat de match in de hot loop een simpele
-        // deelstring-check op woordgrenzen is — geen regex-(her)compilatie per item.
-        let normalizedTopics: [(name: String, phrases: [String])] = topicMap.map { topic in
-            (topic.name, topic.keywords.map { wordBoundaryText($0) })
+        let topicsForMatching = topicMap
+        let minimumScore = AppConfiguration.minimumClusterScore
+        // `Task.detached` erft géén cancellation: koppel die expliciet door, anders
+        // draait de CPU-lus door nadat de aanroeper (bijv. de `.task` van een view) is
+        // geannuleerd en blijft `cluster(...)` hangen met `isClustering == true`.
+        let work = Task.detached {
+            Self.computeAssignments(
+                rawItems: rawItems,
+                topics: topicsForMatching,
+                minimumScore: minimumScore
+            )
         }
+        let assignment = await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
+        guard let assignment else {
+            logger.info("Clustering geannuleerd tijdens de toewijzing")
+            return []
+        }
+        let snapshots = assignment.snapshots
+        let indexMap = assignment.indexMap
 
-        for (idx, snapshot) in snapshots.enumerated() {
-            // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
-            let paddedText = wordBoundaryText(snapshot.fullText)
-            if let topic = assignedTopic(
-                forText: paddedText,
-                normalizedTopics: normalizedTopics,
-                minimumScore: AppConfiguration.minimumClusterScore
-            ) {
-                indexMap[topic, default: []].append(idx)
-            }
+        // Warm de transient cache van de modellen met de off-main gestripte tekst;
+        // anders strippen de views (lijstrijen, artikeldetail) dezelfde HTML later
+        // alsnog op de MainActor. Alleen wanneer de ruwe tekst intussen niet gewijzigd
+        // is, zodat de cache nooit een verouderde waarde krijgt.
+        for (idx, item) in items.enumerated() where item.itemDescription == rawItems[idx].rawDescription {
+            item.primePlainDescriptionCache(snapshots[idx].plainDescription)
         }
 
         // --- Build clusters ---
@@ -243,7 +258,22 @@ class TopicClusteringService {
     /// gelijke ruwe scores op de genormaliseerde score (treffers / aantal frasen)
     /// zodat een lange trefwoordenlijst niet louter door lijstvolgorde wint, en
     /// levert alleen een onderwerp als `bestScore >= minimumScore`; anders `nil`.
-    func assignedTopic(
+    /// Instance-wrapper (bruikbaar vanuit de #38-tests) over de pure, `nonisolated`
+    /// static implementatie. Bevat geen actor-state, dus vrij van de MainActor
+    /// aanroepbaar — ook vanuit de detached toewijzingstaak.
+    nonisolated func assignedTopic(
+        forText paddedText: String,
+        normalizedTopics: [(name: String, phrases: [String])],
+        minimumScore: Int
+    ) -> String? {
+        Self.assignedTopic(
+            forText: paddedText,
+            normalizedTopics: normalizedTopics,
+            minimumScore: minimumScore
+        )
+    }
+
+    nonisolated static func assignedTopic(
         forText paddedText: String,
         normalizedTopics: [(name: String, phrases: [String])],
         minimumScore: Int
@@ -268,6 +298,57 @@ class TopicClusteringService {
 
         guard bestScore >= minimumScore, let topic = bestTopic else { return nil }
         return topic
+    }
+
+    /// Voert al het CPU-werk off-main uit: strippt de ruwe beschrijvingen tot platte
+    /// tekst (`FeedItem.plainText(from:)`), normaliseert de topic-frasen en scoort
+    /// elke snapshot. Werkt uitsluitend op Sendable invoer (ruwe strings + topic-
+    /// strings) en levert de (off-main gestripte) snapshots plus dezelfde `indexMap`
+    /// (topicNaam → indices) als de oude MainActor-loop. Eén `NLTokenizer` wordt over
+    /// de hele batch hergebruikt (vervangt de vroegere main-actor-stored instantie,
+    /// die off-actor niet bruikbaar is).
+    nonisolated private static func computeAssignments(
+        rawItems: [(id: UUID, title: String, rawDescription: String?, cachedPlain: String?)],
+        topics: [(name: String, keywords: [String])],
+        minimumScore: Int
+    ) -> (snapshots: [ItemSnapshot], indexMap: [String: [Int]])? {
+        let tokenizer = NLTokenizer(unit: .word)
+
+        // HTML-strippen off-main: de dure regex-transformatie draait hier, niet op
+        // de MainActor. `plainDescription` blijft identiek aan de instance-getter;
+        // een al gestripte tekst uit de cache wordt hergebruikt.
+        var snapshots: [ItemSnapshot] = []
+        snapshots.reserveCapacity(rawItems.count)
+        for (idx, raw) in rawItems.enumerated() {
+            if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
+            snapshots.append(ItemSnapshot(
+                id: raw.id,
+                title: raw.title,
+                plainDescription: raw.cachedPlain ?? FeedItem.plainText(from: raw.rawDescription)
+            ))
+        }
+
+        // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
+        // (" ai ", " machine learning "), zodat de match in de hot loop een simpele
+        // deelstring-check op woordgrenzen is — geen regex-(her)compilatie per item.
+        let normalizedTopics: [(name: String, phrases: [String])] = topics.map { topic in
+            (topic.name, topic.keywords.map { wordBoundaryText($0, tokenizer: tokenizer) })
+        }
+
+        var indexMap: [String: [Int]] = [:]        // topicName → indices into `snapshots`
+        for (idx, snapshot) in snapshots.enumerated() {
+            if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
+            // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
+            let paddedText = wordBoundaryText(snapshot.fullText, tokenizer: tokenizer)
+            if let topic = assignedTopic(
+                forText: paddedText,
+                normalizedTopics: normalizedTopics,
+                minimumScore: minimumScore
+            ) {
+                indexMap[topic, default: []].append(idx)
+            }
+        }
+        return (snapshots, indexMap)
     }
 
     // MARK: - Summary helpers
@@ -478,11 +559,19 @@ class TopicClusteringService {
     /// spaties, omsloten door één spatie aan begin en eind: " token token token ".
     /// Zo matcht een trefwoord alleen als heel woord/hele frase — een deelstring
     /// als "ai" in "email" valt weg omdat " ai " niet in " email " voorkomt.
-    func wordBoundaryText(_ text: String) -> String {
+    /// Instance-wrapper (bruikbaar vanuit de #38-tests) met een eigen tokenizer per
+    /// aanroep. De clustering-hotloop gebruikt de static variant met een over de
+    /// batch hergebruikte tokenizer; deze wrapper is `nonisolated` en dus vrij van
+    /// de MainActor aanroepbaar.
+    nonisolated func wordBoundaryText(_ text: String) -> String {
+        Self.wordBoundaryText(text, tokenizer: NLTokenizer(unit: .word))
+    }
+
+    nonisolated static func wordBoundaryText(_ text: String, tokenizer: NLTokenizer) -> String {
         let lower = text.lowercased()
-        wordTokenizer.string = lower
+        tokenizer.string = lower
         var tokens: [String] = []
-        wordTokenizer.enumerateTokens(in: lower.startIndex..<lower.endIndex) { range, _ in
+        tokenizer.enumerateTokens(in: lower.startIndex..<lower.endIndex) { range, _ in
             tokens.append(String(lower[range]))
             return true
         }

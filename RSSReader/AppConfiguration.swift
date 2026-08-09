@@ -57,6 +57,11 @@ enum AppConfiguration {
     /// 2 om toevalsruis strenger te weren ten koste van dekking.
     static let minimumClusterScore = 1
 
+    /// Om de hoeveel artikelen de clustering-lus op annulering controleert. De check
+    /// is goedkoop maar niet gratis; per artikel controleren levert bij duizenden
+    /// artikelen onnodige overhead, terwijl deze stap ruim binnen één frame blijft.
+    static let clusteringCancellationCheckInterval = 64
+
     // MARK: - UserDefaults Keys
 
     enum UserDefaultsKeys {

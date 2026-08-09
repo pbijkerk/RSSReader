@@ -45,20 +45,50 @@ class FeedItem {
 
     var plainDescription: String {
         if let cached = _cachedPlainDescription { return cached }
-        guard let desc = itemDescription else {
-            _cachedPlainDescription = ""
-            return ""
-        }
-        let result = desc
-            .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .htmlEntityDecoded
+        let result = Self.plainText(from: itemDescription)
         _cachedPlainDescription = result
         return result
     }
 
+    /// De al gestripte tekst uit de transient cache, of `nil` zolang die leeg is.
+    /// Anders dan `plainDescription` voert dit géén strip-transformatie uit; bedoeld
+    /// om op de MainActor goedkoop te kunnen zien of het dure werk al gedaan is.
+    var cachedPlainDescription: String? { _cachedPlainDescription }
+
+    /// Vult de transient cache met tekst die elders (off-main) uit dezelfde ruwe
+    /// beschrijving is gestript, zodat de views `plainDescription` niet alsnog op de
+    /// MainActor hoeven te berekenen. De aanroeper borgt dat `value` bij de huidige
+    /// `itemDescription` hoort.
+    func primePlainDescriptionCache(_ value: String) {
+        _cachedPlainDescription = value
+    }
+
+    /// Strippt HTML uit ruwe beschrijvingstekst tot platte tekst. `nonisolated` en
+    /// puur (leest geen model-state) zodat het off-main aangeroepen kan worden —
+    /// de clustering-hotloop doet dit strippen in een detached taak i.p.v. op de
+    /// MainActor. Stappen identiek aan de vroegere inline `plainDescription`-logica:
+    /// tags → spatie, whitespace → één spatie, trim, dan HTML-entiteiten decoderen.
+    /// Gebruikt gecachte `NSRegularExpression`s (geen per-aanroep regex-compilatie).
+    nonisolated static func plainText(from raw: String?) -> String {
+        guard let desc = raw, !desc.isEmpty else { return "" }
+        var result = desc
+        let tagRange = NSRange(result.startIndex..., in: result)
+        result = tagStripRegex.stringByReplacingMatches(
+            in: result, options: [], range: tagRange, withTemplate: " "
+        )
+        let wsRange = NSRange(result.startIndex..., in: result)
+        result = whitespaceRegex.stringByReplacingMatches(
+            in: result, options: [], range: wsRange, withTemplate: " "
+        )
+        return result
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .htmlEntityDecoded
+    }
+
     // MARK: - Cached regexes voor performance
+
+    private static let tagStripRegex = try! NSRegularExpression(pattern: "<[^>]+>", options: [])
+    private static let whitespaceRegex = try! NSRegularExpression(pattern: "\\s+", options: [])
 
     private static let scriptRegex = try! NSRegularExpression(
         pattern: "(?i)<script[^>]*>[\\s\\S]*?</script>", options: []

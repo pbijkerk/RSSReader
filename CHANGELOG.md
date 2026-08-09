@@ -7,6 +7,11 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Opgelost
+- Clustering draait al het CPU-werk (HTML-strippen van artikelteksten, tokenisatie en trefwoord-matching) nu off-main via `Task.detached` in plaats van op de MainActor, zodat refresh en samenvatting de UI niet langer seconden blokkeren; resultaten blijven identiek. Het HTML-strippen is bovendien geëxtraheerd naar `FeedItem.plainText(from:)` met gecachte regexes (geen per-aanroep regex-compilatie)
+- Artikellijst in de samenvattingsdetailpagina wordt lazy opgebouwd (`LazyVStack`), zodat het openen van een groot onderwerp (honderden artikelen) niet langer alle rijen en hun navigatiedoelen in één main-thread-pass bouwt en de UI blokkeert
+- Clustering hergebruikt en vult nu de platte-tekst-cache van artikelen, zodat dezelfde HTML niet elke ronde opnieuw gestript wordt en de lijstweergaven het strippen niet alsnog op de MainActor doen; daarnaast stopt het off-main CPU-werk nu daadwerkelijk zodra de aanroeper wordt geannuleerd
+
 ## [1.4.0] - 2026-07-29
 
 ### Toegevoegd
