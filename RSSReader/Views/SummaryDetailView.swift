@@ -161,7 +161,10 @@ struct SummaryDetailView: View {
     }
 
     private var articlesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Lazy: een topic kan honderden artikelen bevatten. Met een gewone VStack
+        // bouwt SwiftUI alle rijen én alle NavigationLink-destinations in één
+        // main-thread-pass, wat bij grote topics een zichtbare hang oplevert.
+        LazyVStack(alignment: .leading, spacing: 12) {
             Label("Articles in this summary", systemImage: "list.bullet")
                 .font(.headline)
 
