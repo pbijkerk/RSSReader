@@ -15,7 +15,7 @@ geen `mcp__xcodebuildmcp__*`-tools.
 - **Scheme:** `RSSReader` — het Xcode-project wordt gegenereerd uit `project.yml` (XcodeGen).
 - **Code-intelligence:** SourceKit-LSP heeft een `buildServer.json` nodig (niet in Git):
   ```bash
-  brew install xcode-build-server xcbeautify swiftformat
+  brew install xcode-build-server xcbeautify
   xcode-build-server config -project RSSReader.xcodeproj -scheme RSSReader
   ```
 - **Aanbevolen VS Code-extensies:** zie `.vscode/extensions.json`.
