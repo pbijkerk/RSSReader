@@ -146,8 +146,10 @@ class TopicClusteringService {
         // --- Lees RUWE model-velden op de MainActor (alleen stored-property-reads,
         // geen regex/HTML-strip). Het CPU-intensieve HTML-strippen naar platte tekst
         // gebeurt off-main in de detached taak hieronder, niet op de MainActor. ---
-        let rawItems: [(id: UUID, title: String, rawDescription: String?)] = items.map {
-            (id: $0.id, title: $0.title, rawDescription: $0.itemDescription)
+        // `cachedPlain` leest alleen de transient cache uit (strippt niets), zodat een
+        // item dat al eerder gestript is niet opnieuw door de regex hoeft.
+        let rawItems: [(id: UUID, title: String, rawDescription: String?, cachedPlain: String?)] = items.map {
+            (id: $0.id, title: $0.title, rawDescription: $0.itemDescription, cachedPlain: $0.cachedPlainDescription)
         }
 
         let likedTopics = savedTopics.filter { $0.isLiked }
@@ -179,13 +181,35 @@ class TopicClusteringService {
 
         let topicsForMatching = topicMap
         let minimumScore = AppConfiguration.minimumClusterScore
-        let (snapshots, indexMap): ([ItemSnapshot], [String: [Int]]) = await Task.detached {
+        // `Task.detached` erft géén cancellation: koppel die expliciet door, anders
+        // draait de CPU-lus door nadat de aanroeper (bijv. de `.task` van een view) is
+        // geannuleerd en blijft `cluster(...)` hangen met `isClustering == true`.
+        let work = Task.detached {
             Self.computeAssignments(
                 rawItems: rawItems,
                 topics: topicsForMatching,
                 minimumScore: minimumScore
             )
-        }.value
+        }
+        let assignment = await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
+        guard let assignment else {
+            logger.info("Clustering geannuleerd tijdens de toewijzing")
+            return []
+        }
+        let snapshots = assignment.snapshots
+        let indexMap = assignment.indexMap
+
+        // Warm de transient cache van de modellen met de off-main gestripte tekst;
+        // anders strippen de views (lijstrijen, artikeldetail) dezelfde HTML later
+        // alsnog op de MainActor. Alleen wanneer de ruwe tekst intussen niet gewijzigd
+        // is, zodat de cache nooit een verouderde waarde krijgt.
+        for (idx, item) in items.enumerated() where item.itemDescription == rawItems[idx].rawDescription {
+            item.primePlainDescriptionCache(snapshots[idx].plainDescription)
+        }
 
         // --- Build clusters ---
         var result: [TopicCluster] = []
@@ -284,20 +308,24 @@ class TopicClusteringService {
     /// de hele batch hergebruikt (vervangt de vroegere main-actor-stored instantie,
     /// die off-actor niet bruikbaar is).
     nonisolated private static func computeAssignments(
-        rawItems: [(id: UUID, title: String, rawDescription: String?)],
+        rawItems: [(id: UUID, title: String, rawDescription: String?, cachedPlain: String?)],
         topics: [(name: String, keywords: [String])],
         minimumScore: Int
-    ) -> (snapshots: [ItemSnapshot], indexMap: [String: [Int]]) {
+    ) -> (snapshots: [ItemSnapshot], indexMap: [String: [Int]])? {
         let tokenizer = NLTokenizer(unit: .word)
 
         // HTML-strippen off-main: de dure regex-transformatie draait hier, niet op
-        // de MainActor. `plainDescription` blijft identiek aan de instance-getter.
-        let snapshots: [ItemSnapshot] = rawItems.map { raw in
-            ItemSnapshot(
+        // de MainActor. `plainDescription` blijft identiek aan de instance-getter;
+        // een al gestripte tekst uit de cache wordt hergebruikt.
+        var snapshots: [ItemSnapshot] = []
+        snapshots.reserveCapacity(rawItems.count)
+        for (idx, raw) in rawItems.enumerated() {
+            if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
+            snapshots.append(ItemSnapshot(
                 id: raw.id,
                 title: raw.title,
-                plainDescription: FeedItem.plainText(from: raw.rawDescription)
-            )
+                plainDescription: raw.cachedPlain ?? FeedItem.plainText(from: raw.rawDescription)
+            ))
         }
 
         // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
@@ -309,6 +337,7 @@ class TopicClusteringService {
 
         var indexMap: [String: [Int]] = [:]        // topicName → indices into `snapshots`
         for (idx, snapshot) in snapshots.enumerated() {
+            if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
             // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
             let paddedText = wordBoundaryText(snapshot.fullText, tokenizer: tokenizer)
             if let topic = assignedTopic(

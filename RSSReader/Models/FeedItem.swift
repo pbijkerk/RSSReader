@@ -50,6 +50,19 @@ class FeedItem {
         return result
     }
 
+    /// De al gestripte tekst uit de transient cache, of `nil` zolang die leeg is.
+    /// Anders dan `plainDescription` voert dit géén strip-transformatie uit; bedoeld
+    /// om op de MainActor goedkoop te kunnen zien of het dure werk al gedaan is.
+    var cachedPlainDescription: String? { _cachedPlainDescription }
+
+    /// Vult de transient cache met tekst die elders (off-main) uit dezelfde ruwe
+    /// beschrijving is gestript, zodat de views `plainDescription` niet alsnog op de
+    /// MainActor hoeven te berekenen. De aanroeper borgt dat `value` bij de huidige
+    /// `itemDescription` hoort.
+    func primePlainDescriptionCache(_ value: String) {
+        _cachedPlainDescription = value
+    }
+
     /// Strippt HTML uit ruwe beschrijvingstekst tot platte tekst. `nonisolated` en
     /// puur (leest geen model-state) zodat het off-main aangeroepen kan worden —
     /// de clustering-hotloop doet dit strippen in een detached taak i.p.v. op de
