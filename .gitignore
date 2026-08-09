@@ -5,3 +5,7 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# SourceKit-LSP / xcode-build-server (machine-specifiek)
+buildServer.json
+.sourcekit-lsp/

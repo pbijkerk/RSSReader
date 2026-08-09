@@ -4,7 +4,21 @@ Native iOS RSS-lezer met AI-samenvattingen via de Claude API.
 
 **Vereisten:** iOS 17+, Xcode 15+, Swift 5.9+
 
-**Bouwen:** Open `RSSReader.xcodeproj` in Xcode → `⌘R`
+**Bouwen:** SweetPad in VS Code (zie *Toolchain*), of open `RSSReader.xcodeproj` in Xcode → `⌘R`
+
+## Toolchain
+**BELANGRIJK:** dit project gebruikt **SweetPad**, niet XcodeBuildMCP. Deze sectie vervangt de
+`## XcodeBuildMCP Integration`-sectie uit de bovenliggende `CLAUDE.md`; gebruik in dit project
+geen `mcp__xcodebuildmcp__*`-tools.
+
+- **Build/run/debug:** SweetPad (VS Code) of `xcodebuild` via de terminal.
+- **Scheme:** `RSSReader` — het Xcode-project wordt gegenereerd uit `project.yml` (XcodeGen).
+- **Code-intelligence:** SourceKit-LSP heeft een `buildServer.json` nodig (niet in Git):
+  ```bash
+  brew install xcode-build-server xcbeautify swiftformat
+  xcode-build-server config -project RSSReader.xcodeproj -scheme RSSReader
+  ```
+- **Aanbevolen VS Code-extensies:** zie `.vscode/extensions.json`.
 
 ## Architectuur
 - `RSSReader/Models/` — SwiftData-modellen (Feed, FeedItem, MastodonAccount, Topic)
