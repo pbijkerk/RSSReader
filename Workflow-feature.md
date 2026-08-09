@@ -39,3 +39,21 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 - `## [Unreleased]` in CHANGELOG.md omzetten naar `## [X.Y.Z] - JJJJ-MM-DD`.
 - Git-tag `vX.Y.Z` aanmaken en pushen.
 - Voer nooit een release uit zonder expliciete bevestiging (zie Versiebeheer.md).
+
+## 9. Installeren op de iPhone (hoort bij elke release)
+- Direct na stap 8: de nieuwe versie op het toestel zetten. Zonder App Store-distributie is een
+  release pas af als hij op de iPhone staat.
+- Controleer eerst `xcrun devicectl list devices` — het toestel moet `available (paired)` zijn.
+- Bouw en installeer:
+  ```bash
+  DEVICE=A500BDFC-5A4E-5B21-9E09-5A1ABF32D5B3   # iPhone van Peter
+  DERIVED=~/Library/Developer/Xcode/DerivedData/RSSReader-device
+  xcodebuild -project RSSReader.xcodeproj -scheme RSSReader -configuration Release \
+    -destination "id=$DEVICE" -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
+  xcrun devicectl device install app --device "$DEVICE" \
+    "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app"
+  ```
+- **Bouw niet binnen de projectmap.** Die staat in iCloud Drive; iCloud zet dan
+  `com.apple.FinderInfo` op de `.app` en `codesign` faalt met *"resource fork, Finder
+  information, or similar detritus not allowed"*. Simulatorbuilds hebben hier geen last van
+  omdat die niet worden ondertekend.

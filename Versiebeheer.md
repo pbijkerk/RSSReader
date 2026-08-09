@@ -31,3 +31,10 @@ Pas bij alle ontwikkelwerkzaamheden de volgende best practices toe:
 - Voer nooit een release-lane uit zonder expliciete bevestiging van de gebruiker.
 - Controleer voor elke release of `CHANGELOG.md` en de release notes actueel zijn.
 - Houd versie-informatie op één plek (Xcode project settings / `.xcconfig`), niet verspreid door de code.
+### Installatie op het toestel
+
+- Elke release wordt na het taggen op de iPhone geïnstalleerd; dit project gaat niet via de
+  App Store, dus dit is de enige distributie. Zie stap 9 van `Workflow-feature.md` voor de
+  commando's.
+- Bouw device-builds naar een `-derivedDataPath` buiten de projectmap (die in iCloud Drive
+  staat), anders faalt `codesign` op `com.apple.FinderInfo`.

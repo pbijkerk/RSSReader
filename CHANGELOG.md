@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Gewijzigd
+- Releaseworkflow beschrijft nu het installeren van de nieuwe versie op de iPhone als vaste stap, inclusief de eis om device-builds buiten de iCloud-map te bouwen (anders faalt `codesign`)
+
 ## [1.4.2] - 2026-08-09
 
 ### Opgelost
