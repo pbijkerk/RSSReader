@@ -3,7 +3,7 @@ import Foundation
 struct EventCluster: Identifiable {
     let id = UUID()
     let headline: String
-    let items: [FeedItem]      // gesorteerd op pubDate desc
+    let items: [FeedItem]  // gesorteerd op pubDate desc
 
     var feedCount: Int { Set(items.compactMap { $0.feed?.id }).count }
 
@@ -18,17 +18,17 @@ final class EventClusteringService: Sendable {
 
     private static let stopWords: Set<String> = [
         // Engels
-        "the","a","an","and","or","but","in","on","at","to","for","of","with","by","from",
-        "is","was","are","were","be","been","have","has","had","will","would","could",
-        "should","may","might","this","that","these","those","its","after","before",
-        "about","into","than","more","also","not","all","over","says","said","after",
-        "new","year","first","last","two","three","four","five","their","they","some",
+        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by", "from",
+        "is", "was", "are", "were", "be", "been", "have", "has", "had", "will", "would", "could",
+        "should", "may", "might", "this", "that", "these", "those", "its", "after", "before",
+        "about", "into", "than", "more", "also", "not", "all", "over", "says", "said", "after",
+        "new", "year", "first", "last", "two", "three", "four", "five", "their", "they", "some",
         // Nederlands
-        "de","het","een","en","of","maar","in","op","aan","te","voor","van","met",
-        "door","is","was","zijn","werd","worden","heeft","hebben","had","zou","kan",
-        "dit","dat","deze","die","hij","zij","we","ze","er","nog","wel","niet","ook",
-        "naar","dan","meer","over","als","wordt","heeft","zich","zijn","haar","zijn",
-        "nog","wel","toen","toch","weer","nu","al","om","bij","uit","tot","na","zo"
+        "de", "het", "een", "en", "of", "maar", "in", "op", "aan", "te", "voor", "van", "met",
+        "door", "is", "was", "zijn", "werd", "worden", "heeft", "hebben", "had", "zou", "kan",
+        "dit", "dat", "deze", "die", "hij", "zij", "we", "ze", "er", "nog", "wel", "niet", "ook",
+        "naar", "dan", "meer", "over", "als", "wordt", "heeft", "zich", "zijn", "haar", "zijn",
+        "nog", "wel", "toen", "toch", "weer", "nu", "al", "om", "bij", "uit", "tot", "na", "zo",
     ]
 
     /// Trekt significante woorden uit een titel.
@@ -58,7 +58,10 @@ final class EventClusteringService: Sendable {
         var parent = Array(0..<n)
         func find(_ i: Int) -> Int {
             var i = i
-            while parent[i] != i { parent[i] = parent[parent[i]]; i = parent[i] }
+            while parent[i] != i {
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            }
             return i
         }
 
@@ -73,7 +76,8 @@ final class EventClusteringService: Sendable {
                 let minSize = min(setA.count, setB.count)
                 // Overlap coëfficiënt: gedeelde woorden t.o.v. de kortste set
                 if Double(shared) / Double(minSize) >= 0.4 {
-                    let ra = find(i), rb = find(j)
+                    let ra = find(i)
+                    let rb = find(j)
                     if ra != rb { parent[ra] = rb }
                 }
             }
@@ -92,10 +96,11 @@ final class EventClusteringService: Sendable {
             let sorted = clusterItems.sorted {
                 ($0.pubDate ?? .distantPast) > ($1.pubDate ?? .distantPast)
             }
-            clusters.append(EventCluster(
-                headline: sorted.first?.title ?? "",
-                items: sorted
-            ))
+            clusters.append(
+                EventCluster(
+                    headline: sorted.first?.title ?? "",
+                    items: sorted
+                ))
         }
 
         // Meest recente clusters eerst

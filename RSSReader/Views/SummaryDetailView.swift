@@ -17,10 +17,10 @@ struct SummaryDetailView: View {
 
     private var summaryFont: Font {
         switch fontFamily {
-        case "charter":   return .custom("Charter", size: CGFloat(fontSize))
-        case "newyork":   return .custom("New York", size: CGFloat(fontSize))
-        case "georgia":   return .custom("Georgia", size: CGFloat(fontSize))
-        default:          return .system(size: CGFloat(fontSize))
+        case "charter": return .custom("Charter", size: CGFloat(fontSize))
+        case "newyork": return .custom("New York", size: CGFloat(fontSize))
+        case "georgia": return .custom("Georgia", size: CGFloat(fontSize))
+        default: return .system(size: CGFloat(fontSize))
         }
     }
 
@@ -277,8 +277,9 @@ struct FlowLayout: Layout {
                 y += rowHeight + spacing
                 rowHeight = 0
             }
-            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading,
-                          proposal: ProposedViewSize(size))
+            subview.place(
+                at: CGPoint(x: x, y: y), anchor: .topLeading,
+                proposal: ProposedViewSize(size))
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
         }

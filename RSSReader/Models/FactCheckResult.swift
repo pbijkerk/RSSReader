@@ -31,7 +31,7 @@ extension FactCheckResult {
     /// Verdict-termen die wijzen op een betwijfelde bewering (EN + NL).
     private static let disputedTerms = [
         "false", "misleading", "incorrect", "unsupported", "inaccurate",
-        "pants on fire", "onwaar", "onjuist", "misleidend", "nep"
+        "pants on fire", "onwaar", "onjuist", "misleidend", "nep",
     ]
 
     /// Vertrouwde termen die een betwijfeld-classificatie expliciet uitsluiten
@@ -48,9 +48,9 @@ extension FactCheckResult {
     }
 }
 
-private extension String {
+extension String {
     /// True als `word` als heel woord/hele frase in de string voorkomt (woordgrenzen).
-    func containsWord(_ word: String) -> Bool {
+    fileprivate func containsWord(_ word: String) -> Bool {
         let pattern = "\\b" + NSRegularExpression.escapedPattern(for: word) + "\\b"
         return range(of: pattern, options: [.regularExpression]) != nil
     }

@@ -16,7 +16,7 @@ class FeedItem {
     var imageURL: String?
     var feed: Feed?
     @Relationship(deleteRule: .cascade) var factCheckResults: [FactCheckResult] = []
-    var factCheckCheckedAt: Date?    // nil = nooit gecontroleerd
+    var factCheckCheckedAt: Date?  // nil = nooit gecontroleerd
 
     // Transient cache — niet bewaard, opnieuw berekend na SwiftData fault
     @Transient private var _cachedPlainDescription: String? = nil
@@ -80,7 +80,8 @@ class FeedItem {
         result = whitespaceRegex.stringByReplacingMatches(
             in: result, options: [], range: wsRange, withTemplate: " "
         )
-        return result
+        return
+            result
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .htmlEntityDecoded
     }
@@ -130,7 +131,8 @@ class FeedItem {
         guard let link, link.contains("youtube.com") || link.contains("youtu.be") else { return nil }
         guard let url = URL(string: link) else { return nil }
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let v = components.queryItems?.first(where: { $0.name == "v" })?.value {
+            let v = components.queryItems?.first(where: { $0.name == "v" })?.value
+        {
             return v
         }
         if url.host?.contains("youtu.be") == true {
@@ -147,7 +149,8 @@ class FeedItem {
 
     var directVideoURL: URL? {
         guard let mime = enclosureMIMEType, mime.hasPrefix("video/"),
-              let urlStr = enclosureURL else { return nil }
+            let urlStr = enclosureURL
+        else { return nil }
         return URL(string: urlStr)
     }
 
@@ -159,7 +162,8 @@ class FeedItem {
 
     var directAudioURL: URL? {
         guard let mime = enclosureMIMEType, mime.hasPrefix("audio/"),
-              let urlStr = enclosureURL else { return nil }
+            let urlStr = enclosureURL
+        else { return nil }
         return URL(string: urlStr)
     }
 
@@ -167,27 +171,27 @@ class FeedItem {
 
     var videoPlayerURL: URL? {
         if let id = youtubeVideoID { return URL(string: "https://youtu.be/\(id)") }
-        if let id = vimeoVideoID   { return URL(string: "https://vimeo.com/\(id)") }
+        if let id = vimeoVideoID { return URL(string: "https://vimeo.com/\(id)") }
         return nil
     }
 }
 
 // MARK: - HTML-entiteiten decoderen
 
-private extension String {
+extension String {
     // Gecachede regex — wordt eenmalig aangemaakt voor de gehele app-sessie
     private static let numericEntityRegex = try? NSRegularExpression(pattern: "&#(x?)([0-9a-fA-F]+);")
 
-    var htmlEntityDecoded: String {
+    fileprivate var htmlEntityDecoded: String {
         guard self.contains("&") else { return self }
         var s = self
         let named: [(String, String)] = [
-            ("&amp;",    "&"),  ("&lt;",    "<"),  ("&gt;",    ">"),
-            ("&quot;",   "\""), ("&apos;",  "'"),  ("&nbsp;",  " "),
-            ("&mdash;",  "—"),  ("&ndash;", "–"),  ("&lsquo;", "\u{2018}"),
-            ("&rsquo;",  "\u{2019}"), ("&ldquo;", "\u{201C}"), ("&rdquo;", "\u{201D}"),
-            ("&hellip;", "…"),  ("&bull;",  "•"),  ("&copy;",  "©"),
-            ("&reg;",    "®"),  ("&trade;", "™"),  ("&euro;",  "€"),
+            ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
+            ("&quot;", "\""), ("&apos;", "'"), ("&nbsp;", " "),
+            ("&mdash;", "—"), ("&ndash;", "–"), ("&lsquo;", "\u{2018}"),
+            ("&rsquo;", "\u{2019}"), ("&ldquo;", "\u{201C}"), ("&rdquo;", "\u{201D}"),
+            ("&hellip;", "…"), ("&bull;", "•"), ("&copy;", "©"),
+            ("&reg;", "®"), ("&trade;", "™"), ("&euro;", "€"),
         ]
         for (entity, char) in named {
             s = s.replacingOccurrences(of: entity, with: char)
@@ -196,11 +200,13 @@ private extension String {
         let matches = regex.matches(in: s, range: NSRange(s.startIndex..., in: s))
         for match in matches.reversed() {
             guard let range = Range(match.range, in: s),
-                  let numRange = Range(match.range(at: 2), in: s) else { continue }
+                let numRange = Range(match.range(at: 2), in: s)
+            else { continue }
             let isHex = match.range(at: 1).length > 0
             let numStr = String(s[numRange])
             if let code = isHex ? UInt32(numStr, radix: 16) : UInt32(numStr),
-               let scalar = Unicode.Scalar(code) {
+                let scalar = Unicode.Scalar(code)
+            {
                 s.replaceSubrange(range, with: String(scalar))
             }
         }

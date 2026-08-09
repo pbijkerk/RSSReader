@@ -56,15 +56,17 @@ struct FeedItemsView: View {
                         item.isSaved.toggle()
                         try? modelContext.save()
                     } label: {
-                        Label(item.isSaved ? "Verwijder uit bewaard" : "Bewaar",
-                              systemImage: item.isSaved ? "bookmark.slash" : "bookmark")
+                        Label(
+                            item.isSaved ? "Verwijder uit bewaard" : "Bewaar",
+                            systemImage: item.isSaved ? "bookmark.slash" : "bookmark")
                     }
                     Button {
                         item.isRead.toggle()
                         try? modelContext.save()
                     } label: {
-                        Label(item.isRead ? "Markeer als ongelezen" : "Markeer als gelezen",
-                              systemImage: item.isRead ? "envelope.badge" : "envelope.open")
+                        Label(
+                            item.isRead ? "Markeer als ongelezen" : "Markeer als gelezen",
+                            systemImage: item.isRead ? "envelope.badge" : "envelope.open")
                     }
                     if let link = item.link, let url = URL(string: link) {
                         ShareLink(item: url) { Label("Delen", systemImage: "square.and.arrow.up") }
@@ -106,15 +108,16 @@ struct FeedItemCard: View {
     let item: FeedItem
     @AppStorage(AppConfiguration.UserDefaultsKeys.previewLineCount) private var previewLineCount = 2
     @AppStorage(AppConfiguration.UserDefaultsKeys.showArticleThumbnails) private var showArticleThumbnails = true
-    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration.defaultArticleFontSize
+    @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration
+        .defaultArticleFontSize
     @AppStorage(AppConfiguration.UserDefaultsKeys.showBiasIndicators) private var showBiasIndicators = true
 
     /// Basisschaal die meebeweegt met Dynamic Type, met behoud van de gebruikersvoorkeur.
     @ScaledMetric(relativeTo: .body) private var scaledBase: CGFloat = 17
 
-    private var titleSize:   CGFloat { scaledBase * CGFloat(articleFontSize) / 17 }
+    private var titleSize: CGFloat { scaledBase * CGFloat(articleFontSize) / 17 }
     private var captionSize: CGFloat { max(titleSize - 4, 9) }
-    private var metaSize:    CGFloat { max(titleSize - 5, 8) }
+    private var metaSize: CGFloat { max(titleSize - 5, 8) }
 
     private var brand: Color {
         Theme.brandColor(for: item.feed?.title ?? item.feed?.url ?? "")
@@ -225,7 +228,10 @@ struct FeedItemCard: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             case .empty:
-                ZStack { brand.opacity(0.12); ProgressView() }
+                ZStack {
+                    brand.opacity(0.12)
+                    ProgressView()
+                }
             case .failure:
                 ZStack {
                     brand.opacity(0.12)

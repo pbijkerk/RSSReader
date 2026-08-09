@@ -2,16 +2,16 @@ import SwiftUI
 import SwiftData
 
 private let retentionOptions: [(label: String, days: Int)] = [
-    ("1 dag",       1),
-    ("2 dagen",     2),
-    ("7 dagen",     7),
-    ("14 dagen",   14),
-    ("30 dagen",   30),
-    ("60 dagen",   60),
-    ("90 dagen",   90),
+    ("1 dag", 1),
+    ("2 dagen", 2),
+    ("7 dagen", 7),
+    ("14 dagen", 14),
+    ("30 dagen", 30),
+    ("60 dagen", 60),
+    ("90 dagen", 90),
     ("180 dagen", 180),
-    ("1 jaar",    365),
-    ("Nooit",       0),
+    ("1 jaar", 365),
+    ("Nooit", 0),
 ]
 
 struct SettingsView: View {
@@ -30,11 +30,11 @@ struct SettingsView: View {
 
     /// Vier standen van de sleutelvalidatie-indicator.
     private enum ClaudeKeyStatus {
-        case noKey        // geen sleutel → neutrale "lokale samenvattingen"
-        case validating   // bezig met valideren
-        case valid        // sleutel geldig → groen "AI-samenvattingen actief"
-        case invalid      // 401/403 → foutstatus
-        case couldNotValidate // netwerk-/overige fout → neutrale "kon niet valideren"
+        case noKey  // geen sleutel → neutrale "lokale samenvattingen"
+        case validating  // bezig met valideren
+        case valid  // sleutel geldig → groen "AI-samenvattingen actief"
+        case invalid  // 401/403 → foutstatus
+        case couldNotValidate  // netwerk-/overige fout → neutrale "kon niet valideren"
     }
 
     @AppStorage(AppConfiguration.UserDefaultsKeys.retentionDays)
@@ -91,7 +91,7 @@ struct SettingsView: View {
     /// Laadt de drie percentages uit de opgeslagen waarden.
     private func loadPercentages() {
         feedListPercent = Self.percentOnGrid(feedListScale * 100)
-        articlePercent  = Self.percentOnGrid(
+        articlePercent = Self.percentOnGrid(
             Double(articleFontSize) / Double(AppConfiguration.defaultArticleFontSize) * 100)
         analysisPercent = Self.percentOnGrid(
             Double(analysisTextSize) / Double(AppConfiguration.defaultAnalysisTextSize) * 100)
@@ -125,7 +125,8 @@ struct SettingsView: View {
     // MARK: - Laden & persisteren
 
     private func loadStoredValues() {
-        claudeAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
+        claudeAPIKey =
+            KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
             ?? ""
         googleFactCheckAPIKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey) ?? ""
@@ -184,8 +185,8 @@ struct SettingsView: View {
             guard !Task.isCancelled else { return }
 
             switch result {
-            case .valid:            claudeKeyStatus = .valid
-            case .invalid:          claudeKeyStatus = .invalid
+            case .valid: claudeKeyStatus = .valid
+            case .invalid: claudeKeyStatus = .invalid
             case .couldNotValidate: claudeKeyStatus = .couldNotValidate
             }
         }
@@ -227,7 +228,9 @@ struct SettingsView: View {
         } header: {
             Text("Tekstgrootte")
         } footer: {
-            Text("100% is de standaardgrootte. Alle tekst schaalt daarnaast mee met de iOS-instelling voor tekstgrootte (Dynamic Type).")
+            Text(
+                "100% is de standaardgrootte. Alle tekst schaalt daarnaast mee met de iOS-instelling voor tekstgrootte (Dynamic Type)."
+            )
         }
     }
 
@@ -257,7 +260,9 @@ struct SettingsView: View {
             Text("Samenvattingen")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Met een Claude API-sleutel worden samenvattingen door AI gegenereerd; zonder sleutel lokaal. Sleutels worden veilig opgeslagen in de Keychain en nooit gedeeld.")
+                Text(
+                    "Met een Claude API-sleutel worden samenvattingen door AI gegenereerd; zonder sleutel lokaal. Sleutels worden veilig opgeslagen in de Keychain en nooit gedeeld."
+                )
                 claudeKeyStatusLabel
                     .font(.caption)
                     .padding(.top, 2)
@@ -283,7 +288,9 @@ struct SettingsView: View {
             Text("Bronanalyse & Fact-check")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text("De bronanalyse toont de politieke positie en betrouwbaarheid van nieuwsbronnen (AllSides, MBFC). Een Google Fact Check API-sleutel activeert claim-verificatie per artikel.")
+                Text(
+                    "De bronanalyse toont de politieke positie en betrouwbaarheid van nieuwsbronnen (AllSides, MBFC). Een Google Fact Check API-sleutel activeert claim-verificatie per artikel."
+                )
                 if !googleFactCheckAPIKey.isEmpty {
                     Label("Fact-check actief", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
@@ -306,7 +313,9 @@ struct SettingsView: View {
         } header: {
             Text("Artikelen bewaren")
         } footer: {
-            Text("Feeds zonder eigen instelling gebruiken deze periode. De instelling gaat in bij de volgende verversing.")
+            Text(
+                "Feeds zonder eigen instelling gebruiken deze periode. De instelling gaat in bij de volgende verversing."
+            )
         }
     }
 

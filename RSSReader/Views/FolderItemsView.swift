@@ -130,8 +130,9 @@ struct FolderItemsView: View {
                 item.isRead.toggle()
                 try? modelContext.save()
             } label: {
-                Label(item.isRead ? "Ongelezen" : "Gelezen",
-                      systemImage: item.isRead ? "envelope.badge" : "envelope.open")
+                Label(
+                    item.isRead ? "Ongelezen" : "Gelezen",
+                    systemImage: item.isRead ? "envelope.badge" : "envelope.open")
             }
             .tint(.gray)
         }
@@ -140,8 +141,9 @@ struct FolderItemsView: View {
                 item.isSaved.toggle()
                 try? modelContext.save()
             } label: {
-                Label(item.isSaved ? "Niet bewaard" : "Bewaar",
-                      systemImage: item.isSaved ? "bookmark.slash" : "bookmark")
+                Label(
+                    item.isSaved ? "Niet bewaard" : "Bewaar",
+                    systemImage: item.isSaved ? "bookmark.slash" : "bookmark")
             }
             .tint(Theme.accentSecondary)
         }

@@ -16,7 +16,10 @@ final class FactCheckService {
     func checkItem(_ item: FeedItem, context: ModelContext) async {
         // Sla over als recent gecontroleerd — vóór Keychain-read om onnodige I/O te vermijden
         if let checkedAt = item.factCheckCheckedAt,
-           Date().timeIntervalSince(checkedAt) < AppConfiguration.factCheckCacheDays * 86_400 { return }
+            Date().timeIntervalSince(checkedAt) < AppConfiguration.factCheckCacheDays * 86_400
+        {
+            return
+        }
 
         guard
             let apiKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.googleFactCheckAPIKey),
@@ -25,8 +28,8 @@ final class FactCheckService {
 
         var components = URLComponents(string: "https://factchecktools.googleapis.com/v1alpha1/claims:search")!
         components.queryItems = [
-            URLQueryItem(name: "query",    value: String(item.title.prefix(120))),
-            URLQueryItem(name: "key",      value: apiKey),
+            URLQueryItem(name: "query", value: String(item.title.prefix(120))),
+            URLQueryItem(name: "key", value: apiKey),
             URLQueryItem(name: "pageSize", value: "3"),
         ]
         guard let url = components.url else { return }

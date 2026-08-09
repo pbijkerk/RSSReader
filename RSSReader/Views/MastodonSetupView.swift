@@ -55,8 +55,9 @@ final class MastodonSetupViewModel {
         static func == (lhs: SetupState, rhs: SetupState) -> Bool {
             switch (lhs, rhs) {
             case (.idle, .idle), (.registering, .registering),
-                 (.waitingForOAuth, .waitingForOAuth), (.exchangingToken, .exchangingToken),
-                 (.verifyingCredentials, .verifyingCredentials), (.saving, .saving): return true
+                (.waitingForOAuth, .waitingForOAuth), (.exchangingToken, .exchangingToken),
+                (.verifyingCredentials, .verifyingCredentials), (.saving, .saving):
+                return true
             case (.success(let a1, let b1), .success(let a2, let b2)): return a1 == a2 && b1 == b2
             case (.error(let a), .error(let b)): return a == b
             default: return false
@@ -136,28 +137,30 @@ final class MastodonSetupViewModel {
 
     // MARK: - Persisteren
 
-    private func persistAccount(_ instanceURL: String, reg: MastodonAppRegistration,
-                                 token: MastodonToken, creds: MastodonVerifyCredentials,
-                                 context: ModelContext) throws {
+    private func persistAccount(
+        _ instanceURL: String, reg: MastodonAppRegistration,
+        token: MastodonToken, creds: MastodonVerifyCredentials,
+        context: ModelContext
+    ) throws {
         let socialFolder = findOrCreateSocialFolder(context: context)
 
         let account = MastodonAccount(
             instanceURL: instanceURL,
-            accountID:   creds.id,
-            username:    creds.username,
+            accountID: creds.id,
+            username: creds.username,
             displayName: creds.displayName,
-            avatarURL:   creds.avatar,
-            clientID:    reg.clientId,
-            clientSecret: "",   // niet in SwiftData opslaan; clientSecret is alleen nodig tijdens setup
-            accessToken: ""     // niet in SwiftData opslaan; token staat uitsluitend in Keychain
+            avatarURL: creds.avatar,
+            clientID: reg.clientId,
+            clientSecret: "",  // niet in SwiftData opslaan; clientSecret is alleen nodig tijdens setup
+            accessToken: ""  // niet in SwiftData opslaan; token staat uitsluitend in Keychain
         )
         context.insert(account)
 
         // Token veilig opslaan in Keychain (via MastodonService — Services-laag)
         MastodonService.shared.saveToken(token.accessToken, instanceURL: instanceURL, accountID: creds.id)
 
-        let host      = URL(string: instanceURL)?.host ?? instanceURL
-        let feedURL   = "mastodon://\(host)/@\(creds.username)"
+        let host = URL(string: instanceURL)?.host ?? instanceURL
+        let feedURL = "mastodon://\(host)/@\(creds.username)"
         let feedTitle = "\(creds.displayName) (@\(creds.username)@\(host))"
         let virtualFeed = Feed(url: feedURL, title: feedTitle)
         virtualFeed.folder = socialFolder
@@ -173,9 +176,9 @@ final class MastodonSetupViewModel {
         )
         if let existing = try? context.fetch(descriptor).first { return existing }
 
-        let allDesc  = FetchDescriptor<FeedFolder>(sortBy: [SortDescriptor(\.sortOrder, order: .reverse)])
+        let allDesc = FetchDescriptor<FeedFolder>(sortBy: [SortDescriptor(\.sortOrder, order: .reverse)])
         let maxOrder = (try? context.fetch(allDesc).first?.sortOrder) ?? -1
-        let folder   = FeedFolder(name: "Social", sortOrder: maxOrder + 1, isSystem: true)
+        let folder = FeedFolder(name: "Social", sortOrder: maxOrder + 1, isSystem: true)
         context.insert(folder)
         return folder
     }
@@ -193,14 +196,14 @@ final class MastodonSetupViewModel {
 
     var stateLabel: String {
         switch state {
-        case .idle:                  return ""
-        case .registering:           return "App registreren bij instantie…"
-        case .waitingForOAuth:       return "Wacht op inloggen…"
-        case .exchangingToken:       return "Toegangstoken ophalen…"
-        case .verifyingCredentials:  return "Account verifiëren…"
-        case .saving:                return "Opslaan…"
-        case .success:               return ""
-        case .error:                 return ""
+        case .idle: return ""
+        case .registering: return "App registreren bij instantie…"
+        case .waitingForOAuth: return "Wacht op inloggen…"
+        case .exchangingToken: return "Toegangstoken ophalen…"
+        case .verifyingCredentials: return "Account verifiëren…"
+        case .saving: return "Opslaan…"
+        case .success: return ""
+        case .error: return ""
         }
     }
 

@@ -98,7 +98,9 @@ struct FactCheckChipView: View {
         if lower.contains("true") || lower.contains("correct") || lower.contains("accurate") {
             return .green
         }
-        if lower.contains("false") || lower.contains("incorrect") || lower.contains("fabricat") || lower.contains("pants on fire") {
+        if lower.contains("false") || lower.contains("incorrect") || lower.contains("fabricat")
+            || lower.contains("pants on fire")
+        {
             return Theme.accentSecondary
         }
         if lower.contains("mislead") || lower.contains("mixed") || lower.contains("partly") || lower.contains("half") {

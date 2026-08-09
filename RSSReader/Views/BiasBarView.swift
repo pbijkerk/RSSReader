@@ -4,7 +4,7 @@ import SwiftUI
 /// Positie is de primaire indicator; kleur is secundair voor kleurenblinden.
 /// Tikken opent een transparantie-sheet met toelichting.
 struct BiasBarView: View {
-    let biasScore: Int          // -2 … +2
+    let biasScore: Int  // -2 … +2
     let feedName: String
     let reliabilityLevel: String?
     let ratingSource: String?
@@ -24,11 +24,13 @@ struct BiasBarView: View {
     private var unselectedDot: CGFloat { selectedDot * 0.6 }
 
     private static let positions: [(score: Int, label: String)] = [
-        (-2, "L"), (-1, "lL"), (0, "C"), (1, "lR"), (2, "R")
+        (-2, "L"), (-1, "lL"), (0, "C"), (1, "lR"), (2, "R"),
     ]
 
     var body: some View {
-        Button { showTransparency = true } label: {
+        Button {
+            showTransparency = true
+        } label: {
             VStack(alignment: .leading, spacing: 3) {
                 ZStack {
                     Capsule()
@@ -87,9 +89,9 @@ func biasColor(for score: Int) -> Color {
     switch score {
     case -2: return Color(light: 0x2558A0, dark: 0x5B90D0)
     case -1: return Color(light: 0x5B8DB8, dark: 0x89B8E0)
-    case  0: return Color(.systemGray3)
-    case  1: return Theme.accent
-    case  2: return Theme.accentSecondary
+    case 0: return Color(.systemGray3)
+    case 1: return Theme.accent
+    case 2: return Theme.accentSecondary
     default: return Color(.systemGray3)
     }
 }
@@ -97,10 +99,10 @@ func biasColor(for score: Int) -> Color {
 /// Gedeelde vertaling reliability-string → Nederlandse label (TransparencySheetView + ReliabilityBadgeView).
 func reliabilityLabel(_ level: String) -> String {
     switch level.lowercased() {
-    case "high":  return "Hoog"
+    case "high": return "Hoog"
     case "mixed": return "Gemiddeld"
-    case "low":   return "Laag"
-    default:      return level
+    case "low": return "Laag"
+    default: return level
     }
 }
 
@@ -108,9 +110,9 @@ func biasLabel(_ score: Int) -> String {
     switch score {
     case -2: return "Links"
     case -1: return "Licht links"
-    case  0: return "Centrum"
-    case  1: return "Licht rechts"
-    case  2: return "Rechts"
+    case 0: return "Centrum"
+    case 1: return "Licht rechts"
+    case 2: return "Rechts"
     default: return "Onbekend"
     }
 }
@@ -159,9 +161,11 @@ struct TransparencySheetView: View {
                 }
 
                 Section {
-                    Text("Deze beoordeling geldt voor de nieuwsbron als geheel, niet voor dit specifieke artikel. Politieke positie en betrouwbaarheid worden bepaald door onafhankelijke organisaties (AllSides, Media Bias/Fact Check e.a.) op basis van redactioneel beleid, brongebruik en externe audits.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(
+                        "Deze beoordeling geldt voor de nieuwsbron als geheel, niet voor dit specifieke artikel. Politieke positie en betrouwbaarheid worden bepaald door onafhankelijke organisaties (AllSides, Media Bias/Fact Check e.a.) op basis van redactioneel beleid, brongebruik en externe audits."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 } header: {
                     Text("Toelichting")
                 }

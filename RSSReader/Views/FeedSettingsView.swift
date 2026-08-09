@@ -3,16 +3,16 @@ import SwiftData
 
 private let feedRetentionOptions: [(label: String, days: Int?)] = [
     ("Gebruik standaard", nil),
-    ("1 dag",       1),
-    ("2 dagen",     2),
-    ("7 dagen",     7),
-    ("14 dagen",   14),
-    ("30 dagen",   30),
-    ("60 dagen",   60),
-    ("90 dagen",   90),
+    ("1 dag", 1),
+    ("2 dagen", 2),
+    ("7 dagen", 7),
+    ("14 dagen", 14),
+    ("30 dagen", 30),
+    ("60 dagen", 60),
+    ("90 dagen", 90),
     ("180 dagen", 180),
-    ("1 jaar",    365),
-    ("Nooit",       0),
+    ("1 jaar", 365),
+    ("Nooit", 0),
 ]
 
 struct FeedSettingsView: View {
@@ -62,8 +62,10 @@ struct FeedSettingsView: View {
                     Text("Bewaarperiode artikelen")
                 } footer: {
                     if selectedDays == nil {
-                        Text("De globale standaard (\(effectiveLabel)) is van toepassing. Wijzig de standaard via Instellingen.")
-                            .font(.caption)
+                        Text(
+                            "De globale standaard (\(effectiveLabel)) is van toepassing. Wijzig de standaard via Instellingen."
+                        )
+                        .font(.caption)
                     } else if selectedDays == 0 {
                         Text("Artikelen van deze feed worden nooit automatisch verwijderd.")
                             .font(.caption)

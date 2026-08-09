@@ -13,7 +13,7 @@ struct ContentView: View {
     @State private var selectedTab = 1
     @State private var lastClusteredAt: Date? = nil
 
-    private let clusteringDebounce: TimeInterval = 120 // 2 minuten
+    private let clusteringDebounce: TimeInterval = 120  // 2 minuten
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -61,7 +61,8 @@ struct ContentView: View {
 
     private func regenerateSummaries() async {
         let allItems = feeds.flatMap { $0.items }
-        let apiKey = KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
+        let apiKey =
+            KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
             ?? ""
         clusters = await clusteringService.cluster(

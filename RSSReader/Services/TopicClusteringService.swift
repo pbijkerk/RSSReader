@@ -107,30 +107,70 @@ private struct ItemSnapshot: Sendable {
 @Observable
 class TopicClusteringService {
     var isClustering = false
-    
+
     private let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.clustering
     )
 
     private let defaultTopics: [(name: String, keywords: [String])] = [
-        ("Artificial Intelligence", ["ai", "artificial intelligence", "machine learning", "llm",
-                                     "chatgpt", "openai", "gpt", "neural", "deep learning", "claude",
-                                     "gemini", "copilot", "ml", "generative", "transformer", "model"]),
-        ("Technology", ["tech", "software", "hardware", "app", "code", "programming", "developer",
-                        "startup", "silicon valley", "computer", "digital", "cloud", "saas", "api", "platform"]),
-        ("Politics", ["president", "election", "government", "congress", "senate", "democrat",
-                      "republican", "political", "vote", "policy", "law", "minister", "parliament", "legislation"]),
-        ("Science", ["research", "study", "scientist", "discovery", "space", "nasa", "experiment",
-                     "physics", "biology", "climate", "environment", "gene", "medicine", "quantum"]),
-        ("Business", ["market", "stock", "economy", "investment", "revenue", "profit", "startup",
-                      "ipo", "acquisition", "merger", "ceo", "company", "finance", "trade", "economic"]),
-        ("Sports", ["game", "match", "tournament", "championship", "player", "team", "score",
-                    "season", "league", "win", "lose", "football", "soccer", "basketball", "tennis"]),
-        ("Health", ["health", "medical", "disease", "treatment", "vaccine", "hospital", "doctor",
-                    "drug", "clinical", "mental health", "fda", "cancer", "virus", "pandemic"]),
-        ("Entertainment", ["movie", "film", "music", "album", "artist", "celebrity", "award",
-                           "streaming", "netflix", "disney", "show", "series", "tv", "gaming", "game"])
+        (
+            "Artificial Intelligence",
+            [
+                "ai", "artificial intelligence", "machine learning", "llm",
+                "chatgpt", "openai", "gpt", "neural", "deep learning", "claude",
+                "gemini", "copilot", "ml", "generative", "transformer", "model",
+            ]
+        ),
+        (
+            "Technology",
+            [
+                "tech", "software", "hardware", "app", "code", "programming", "developer",
+                "startup", "silicon valley", "computer", "digital", "cloud", "saas", "api", "platform",
+            ]
+        ),
+        (
+            "Politics",
+            [
+                "president", "election", "government", "congress", "senate", "democrat",
+                "republican", "political", "vote", "policy", "law", "minister", "parliament", "legislation",
+            ]
+        ),
+        (
+            "Science",
+            [
+                "research", "study", "scientist", "discovery", "space", "nasa", "experiment",
+                "physics", "biology", "climate", "environment", "gene", "medicine", "quantum",
+            ]
+        ),
+        (
+            "Business",
+            [
+                "market", "stock", "economy", "investment", "revenue", "profit", "startup",
+                "ipo", "acquisition", "merger", "ceo", "company", "finance", "trade", "economic",
+            ]
+        ),
+        (
+            "Sports",
+            [
+                "game", "match", "tournament", "championship", "player", "team", "score",
+                "season", "league", "win", "lose", "football", "soccer", "basketball", "tennis",
+            ]
+        ),
+        (
+            "Health",
+            [
+                "health", "medical", "disease", "treatment", "vaccine", "hospital", "doctor",
+                "drug", "clinical", "mental health", "fda", "cancer", "virus", "pandemic",
+            ]
+        ),
+        (
+            "Entertainment",
+            [
+                "movie", "film", "music", "album", "artist", "celebrity", "award",
+                "streaming", "netflix", "disney", "show", "series", "tv", "gaming", "game",
+            ]
+        ),
     ]
 
     func cluster(
@@ -140,7 +180,7 @@ class TopicClusteringService {
     ) async -> [TopicCluster] {
         isClustering = true
         defer { isClustering = false }
-        
+
         logger.info("Starting clustering of \(items.count) items")
 
         // --- Lees RUWE model-velden op de MainActor (alleen stored-property-reads,
@@ -165,7 +205,7 @@ class TopicClusteringService {
                 topicMap.append(dt)
             }
         }
-        
+
         logger.debug("Using \(topicMap.count) topics for clustering")
 
         // --- Assign items to topics off the MainActor (no SwiftData access) ---
@@ -217,9 +257,9 @@ class TopicClusteringService {
         for (name, indices) in indexMap {
             guard !indices.isEmpty else { continue }
 
-            let topicItems   = indices.map { items[$0] }
-            let topicSnaps   = indices.map { snapshots[$0] }
-            let keywords     = topicKeywordsMap[name] ?? []
+            let topicItems = indices.map { items[$0] }
+            let topicSnaps = indices.map { snapshots[$0] }
+            let keywords = topicKeywordsMap[name] ?? []
 
             let statements: [SummaryStatement]
             if let apiKey = claudeAPIKey, !apiKey.isEmpty {
@@ -238,14 +278,15 @@ class TopicClusteringService {
                 ($0.pubDate ?? .distantPast) > ($1.pubDate ?? .distantPast)
             }
 
-            result.append(TopicCluster(
-                topicName: name,
-                keywords: keywords,
-                items: sorted,
-                statements: validated(statements, topicName: name)
-            ))
+            result.append(
+                TopicCluster(
+                    topicName: name,
+                    keywords: keywords,
+                    items: sorted,
+                    statements: validated(statements, topicName: name)
+                ))
         }
-        
+
         logger.info("Clustering complete: created \(result.count) clusters")
 
         return result.sorted { $0.items.count > $1.items.count }
@@ -321,11 +362,12 @@ class TopicClusteringService {
         snapshots.reserveCapacity(rawItems.count)
         for (idx, raw) in rawItems.enumerated() {
             if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
-            snapshots.append(ItemSnapshot(
-                id: raw.id,
-                title: raw.title,
-                plainDescription: raw.cachedPlain ?? FeedItem.plainText(from: raw.rawDescription)
-            ))
+            snapshots.append(
+                ItemSnapshot(
+                    id: raw.id,
+                    title: raw.title,
+                    plainDescription: raw.cachedPlain ?? FeedItem.plainText(from: raw.rawDescription)
+                ))
         }
 
         // Normaliseer trefwoorden één keer vooraf tot met-spaties-omsloten frasen
@@ -335,7 +377,7 @@ class TopicClusteringService {
             (topic.name, topic.keywords.map { wordBoundaryText($0, tokenizer: tokenizer) })
         }
 
-        var indexMap: [String: [Int]] = [:]        // topicName → indices into `snapshots`
+        var indexMap: [String: [Int]] = [:]  // topicName → indices into `snapshots`
         for (idx, snapshot) in snapshots.enumerated() {
             if idx.isMultiple(of: AppConfiguration.clusteringCancellationCheckInterval), Task.isCancelled { return nil }
             // Eén tokenisatie per snapshot; frasen matchen alleen op woordgrenzen.
@@ -370,7 +412,8 @@ class TopicClusteringService {
     }
 
     private func currentSummaryLength() -> AppConfiguration.SummaryLength {
-        let raw = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.summaryLength)
+        let raw =
+            UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.summaryLength)
             ?? AppConfiguration.defaultSummaryLength
         return AppConfiguration.SummaryLength(rawValue: raw) ?? .normaal
     }
@@ -379,15 +422,17 @@ class TopicClusteringService {
     /// eigen FeedItem.id. Levert altijd >= 1 bron-id per bewering.
     private func localSummary(topicName: String, snapshots: [ItemSnapshot]) -> [SummaryStatement] {
         let length = currentSummaryLength()
-        let isEnglish = (UserDefaults.standard.string(
-            forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
+        let isEnglish =
+            (UserDefaults.standard.string(
+                forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
 
         let selected = Array(snapshots.prefix(length.localSnippetCount))
 
         // Geen bronnen beschikbaar: één introbewering met alle ids. Zonder ids
         // levert de failable init nil en blijft de samenvatting bronloos-vrij.
         guard !selected.isEmpty else {
-            let intro = isEnglish
+            let intro =
+                isEnglish
                 ? "Recent coverage of \(topicName) includes \(snapshots.count) article(s)."
                 : "Recente berichtgeving over \(topicName) omvat \(snapshots.count) artikel(en)."
             return [SummaryStatement(text: intro, sourceItemIDs: snapshots.map(\.id))]
@@ -410,7 +455,8 @@ class TopicClusteringService {
         // Beperk tot de eerste N artikelen; bewaar deze snapshots zodat het
         // 1-based bronnummer dat Claude teruggeeft naar FeedItem.id te mappen is.
         let usedSnapshots = Array(snapshots.prefix(AppConfiguration.maxArticlesPerSummary))
-        let articleList = usedSnapshots
+        let articleList =
+            usedSnapshots
             .enumerated()
             .map { idx, s in
                 let desc = String(s.plainDescription.prefix(300))
@@ -418,15 +464,17 @@ class TopicClusteringService {
             }
             .joined(separator: "\n\n")
 
-        let isEnglish = (UserDefaults.standard.string(
-            forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
+        let isEnglish =
+            (UserDefaults.standard.string(
+                forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
         let instruction = isEnglish ? length.sentenceInstruction.en : length.sentenceInstruction.nl
 
         // Elk aangeboden artikel is een distinct bron. Bij >= 2 bronnen stuurt de
         // prompt expliciet op synthese: de belangrijkste beweringen leiden met door
         // meerdere bronnen bevestigde ontwikkelingen (meerdere bron-ids). Enkelvoudige
         // bronnen blijven geldig — er wordt niet gefilterd op bronaantal (R10/R11).
-        let synthesisGuidance = usedSnapshots.count >= 2
+        let synthesisGuidance =
+            usedSnapshots.count >= 2
             ? """
             Multiple sources are available for this topic. Lead with the most \
             important developments that are confirmed by two OR MORE of the \
@@ -442,31 +490,38 @@ class TopicClusteringService {
             """
 
         let prompt = """
-        You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
+            You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
 
-        Each article is prefixed with a bracketed source number, e.g. [1], [2].
+            Each article is prefixed with a bracketed source number, e.g. [1], [2].
 
-        Here are the articles:
-        \(articleList)
+            Here are the articles:
+            \(articleList)
 
-        \(instruction)
+            \(instruction)
 
-        Break the summary into individual statements. Synthesize across articles: \
-        when a statement is supported by multiple articles, cite ALL the relevant \
-        source numbers; when it comes from a single article, cite only that one \
-        number. \(synthesisGuidance) Every statement MUST cite at least one source \
-        number of the article(s) it is based on. Do not invent source numbers; only \
-        use numbers that appear above.
+            Break the summary into individual statements. Synthesize across articles: \
+            when a statement is supported by multiple articles, cite ALL the relevant \
+            source numbers; when it comes from a single article, cite only that one \
+            number. \(synthesisGuidance) Every statement MUST cite at least one source \
+            number of the article(s) it is based on. Do not invent source numbers; only \
+            use numbers that appear above.
 
-        Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
-        this shape:
-        {"statements":[{"text":"<one sentence>","sources":[1,2]}]}
-        """
+            Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
+            this shape:
+            {"statements":[{"text":"<one sentence>","sources":[1,2]}]}
+            """
 
-        struct Msg:  Encodable { let role: String; let content: String }
-        struct Req:  Encodable { let model: String; let max_tokens: Int; let messages: [Msg] }
+        struct Msg: Encodable {
+            let role: String
+            let content: String
+        }
+        struct Req: Encodable {
+            let model: String
+            let max_tokens: Int
+            let messages: [Msg]
+        }
         struct RCnt: Decodable { let text: String }
-        struct Res:  Decodable { let content: [RCnt] }
+        struct Res: Decodable { let content: [RCnt] }
 
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
             logger.error("Invalid Claude API URL")
@@ -475,9 +530,9 @@ class TopicClusteringService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json",  forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey,              forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01",        forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
         do {
             request.httpBody = try JSONEncoder().encode(
@@ -490,7 +545,8 @@ class TopicClusteringService {
             let (data, httpResponse) = try await URLSession.shared.data(for: request)
 
             guard let http = httpResponse as? HTTPURLResponse,
-                  (200...299).contains(http.statusCode) else {
+                (200...299).contains(http.statusCode)
+            else {
                 let code = (httpResponse as? HTTPURLResponse)?.statusCode ?? -1
                 logger.error("Claude API returned status \(code) for topic: \(topicName)")
                 return localSummary(topicName: topicName, snapshots: snapshots)
@@ -524,21 +580,26 @@ class TopicClusteringService {
         from rawText: String,
         snapshots: [ItemSnapshot]
     ) -> [SummaryStatement] {
-        struct ClaudeStatement: Decodable { let text: String; let sources: [Int] }
-        struct ClaudeSummary:   Decodable { let statements: [ClaudeStatement] }
+        struct ClaudeStatement: Decodable {
+            let text: String
+            let sources: [Int]
+        }
+        struct ClaudeSummary: Decodable { let statements: [ClaudeStatement] }
 
         // Verwijder eventuele markdown-fences en isoleer het JSON-object.
         var cleaned = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         cleaned = cleaned.replacingOccurrences(of: "```json", with: "")
-                         .replacingOccurrences(of: "```", with: "")
+            .replacingOccurrences(of: "```", with: "")
         guard let start = cleaned.firstIndex(of: "{"),
-              let end = cleaned.lastIndex(of: "}") else {
+            let end = cleaned.lastIndex(of: "}")
+        else {
             return []
         }
         let jsonSlice = String(cleaned[start...end])
 
         guard let data = jsonSlice.data(using: .utf8),
-              let decoded = try? JSONDecoder().decode(ClaudeSummary.self, from: data) else {
+            let decoded = try? JSONDecoder().decode(ClaudeSummary.self, from: data)
+        else {
             return []
         }
 
@@ -582,10 +643,12 @@ class TopicClusteringService {
         let tagger = NLTagger(tagSchemes: [.lexicalClass])
         tagger.string = text.lowercased()
 
-        let stopWords = Set(["the","a","an","and","or","but","in","on","at","to","for","of",
-                             "with","by","from","is","was","are","were","be","been","have","has",
-                             "had","do","does","did","will","would","could","should","may","might",
-                             "this","that","these","those","it","its"])
+        let stopWords = Set([
+            "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of",
+            "with", "by", "from", "is", "was", "are", "were", "be", "been", "have", "has",
+            "had", "do", "does", "did", "will", "would", "could", "should", "may", "might",
+            "this", "that", "these", "those", "it", "its",
+        ])
         var wordCounts: [String: Int] = [:]
 
         tagger.enumerateTags(

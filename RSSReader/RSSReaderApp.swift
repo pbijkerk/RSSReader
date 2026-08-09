@@ -7,7 +7,10 @@ struct RSSReaderApp: App {
 
     init() {
         do {
-            let schema = Schema([Feed.self, FeedItem.self, Topic.self, TopicSummary.self, FeedFolder.self, MastodonAccount.self, FactCheckResult.self])
+            let schema = Schema([
+                Feed.self, FeedItem.self, Topic.self, TopicSummary.self, FeedFolder.self, MastodonAccount.self,
+                FactCheckResult.self,
+            ])
             let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             modelContainer = try ModelContainer(for: schema, configurations: config)
         } catch {

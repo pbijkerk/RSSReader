@@ -26,10 +26,10 @@ class FeedFolder {
 
     var icon: String {
         switch name {
-        case "Video":  return "play.rectangle"
-        case "Audio":  return "headphones"
+        case "Video": return "play.rectangle"
+        case "Audio": return "headphones"
         case "Social": return "bubble.left.and.bubble.right"
-        default:       return "folder"
+        default: return "folder"
         }
     }
 }

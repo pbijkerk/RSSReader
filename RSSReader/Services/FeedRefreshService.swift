@@ -8,7 +8,7 @@ import OSLog
 class FeedRefreshService {
     var isRefreshing = false
     var lastError: String?
-    
+
     private let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.feed
@@ -18,26 +18,26 @@ class FeedRefreshService {
     func refreshAll(feeds: [Feed], context: ModelContext) async {
         isRefreshing = true
         lastError = nil
-        
+
         logger.info("Starting refresh of \(feeds.count) feeds")
 
         // Parallel refresh voor betere performance, met limiet
         await withTaskGroup(of: Void.self) { group in
             var activeCount = 0
-            
+
             for feed in feeds {
                 // Wacht als we de limiet hebben bereikt
                 if activeCount >= AppConfiguration.maxParallelRefreshes {
                     await group.next()
                     activeCount -= 1
                 }
-                
+
                 group.addTask { @MainActor in
                     await self.refresh(feed: feed, context: context)
                 }
                 activeCount += 1
             }
-            
+
             // Wacht tot alle tasks klaar zijn
             await group.waitForAll()
         }
@@ -45,9 +45,9 @@ class FeedRefreshService {
         // Mastodon accounts ook vernieuwen (sequentieel om rate limiting te respecteren)
         let mastodonDescriptor = FetchDescriptor<MastodonAccount>()
         let accounts = (try? context.fetch(mastodonDescriptor)) ?? []
-        
+
         logger.info("Refreshing \(accounts.count) Mastodon accounts")
-        
+
         for account in accounts {
             guard let feed = account.feed else { continue }
             do {
@@ -91,7 +91,7 @@ class FeedRefreshService {
             // All model mutations back on MainActor (we already are, but explicit for clarity)
             applyParsedFeed(parsed, to: feed, context: context)
             try context.save()
-            
+
             logger.info("Successfully refreshed feed: \(feed.title)")
 
         } catch {
@@ -102,16 +102,17 @@ class FeedRefreshService {
 
     /// All writes to SwiftData happen here, synchronously on MainActor.
     private func applyParsedFeed(_ parsed: ParsedFeed, to feed: Feed, context: ModelContext) {
-        if (feed.title == "New Feed" || feed.title.isEmpty), !parsed.title.isEmpty {
+        if feed.title == "New Feed" || feed.title.isEmpty, !parsed.title.isEmpty {
             feed.title = parsed.title
         }
         if feed.feedDescription == nil || feed.feedDescription?.isEmpty == true,
-           !parsed.description.isEmpty {
+            !parsed.description.isEmpty
+        {
             feed.feedDescription = parsed.description
         }
 
-        let existingGuids  = Set(feed.items.compactMap { $0.guid })
-        let existingLinks  = Set(feed.items.compactMap { $0.link })
+        let existingGuids = Set(feed.items.compactMap { $0.guid })
+        let existingLinks = Set(feed.items.compactMap { $0.link })
         let existingTitles = Set(feed.items.map { $0.title })
 
         for parsedItem in parsed.items {
@@ -160,24 +161,25 @@ class FeedRefreshService {
 
     /// Verwijdert artikelen ouder dan de effectieve bewaarperiode (feed-instelling of globale standaard).
     func pruneOldItems(feed: Feed, context: ModelContext) {
-        let globalDefault = UserDefaults.standard.object(
-            forKey: AppConfiguration.UserDefaultsKeys.retentionDays
-        ) as? Int ?? AppConfiguration.defaultRetentionDays
-        
+        let globalDefault =
+            UserDefaults.standard.object(
+                forKey: AppConfiguration.UserDefaultsKeys.retentionDays
+            ) as? Int ?? AppConfiguration.defaultRetentionDays
+
         let effective = feed.retentionDays ?? globalDefault
         guard effective > 0 else { return }
-        
+
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -effective, to: Date()) else {
             logger.warning("Failed to calculate cutoff date for pruning")
             return
         }
-        
+
         let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
-        
+
         if !toDelete.isEmpty {
             logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
         }
-        
+
         for item in toDelete {
             feed.items.removeAll { $0.id == item.id }
             context.delete(item)
@@ -194,8 +196,10 @@ class FeedRefreshService {
     private func detectMediaType(url: String, parsed: ParsedFeed) -> FeedMediaType {
         let lower = url.lowercased()
         let videoPatterns = ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com"]
-        let audioPatterns = ["anchor.fm", "buzzsprout.com", "libsyn.com", "transistor.fm",
-                             "podbean.com", "spreaker.com", "simplecast.com", "megaphone.fm"]
+        let audioPatterns = [
+            "anchor.fm", "buzzsprout.com", "libsyn.com", "transistor.fm",
+            "podbean.com", "spreaker.com", "simplecast.com", "megaphone.fm",
+        ]
         if videoPatterns.contains(where: { lower.contains($0) }) { return .video }
         if audioPatterns.contains(where: { lower.contains($0) }) { return .audio }
         return parsed.detectedMediaType
@@ -221,13 +225,14 @@ class FeedRefreshService {
         // Fetch all Mastodon accounts en filter in-memory
         // (Predicates met optional relationships zijn complex in SwiftData)
         let descriptor = FetchDescriptor<MastodonAccount>()
-        
+
         guard let accounts = try? context.fetch(descriptor),
-              let account = accounts.first(where: { $0.feed?.url == feed.url }) else {
+            let account = accounts.first(where: { $0.feed?.url == feed.url })
+        else {
             logger.warning("No Mastodon account found for feed: \(feed.url)")
             return
         }
-        
+
         do {
             try await MastodonService.shared.refreshFeed(account: account, feed: feed, context: context)
         } catch let e as MastodonError {

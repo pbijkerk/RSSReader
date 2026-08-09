@@ -5,12 +5,12 @@ struct OPMLFeed {
     var xmlURL: String
     var htmlURL: String?
     var type: String?
-    var folderName: String?   // populated when feed is inside a folder outline
+    var folderName: String?  // populated when feed is inside a folder outline
 }
 
 class OPMLParser: NSObject, XMLParserDelegate {
     private var feeds: [OPMLFeed] = []
-    private var currentFolderName: String?   // name of the enclosing folder outline (if any)
+    private var currentFolderName: String?  // name of the enclosing folder outline (if any)
     private var depth = 0
 
     func parse(data: Data) -> [OPMLFeed] {

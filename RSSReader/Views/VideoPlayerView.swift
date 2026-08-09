@@ -165,7 +165,8 @@ final class AudioPlayerViewModel {
                 }
                 // Update duration if not yet set (some streams report late)
                 if self.duration == 0, let d = self.player?.currentItem?.duration.seconds,
-                   d.isFinite && d > 0 {
+                    d.isFinite && d > 0
+                {
                     self.duration = d
                 }
             }

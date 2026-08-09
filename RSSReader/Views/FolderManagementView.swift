@@ -62,10 +62,13 @@ struct FolderManagementView: View {
             } message: {
                 Text("Geef de folder een naam.")
             }
-            .alert("Hernoemen", isPresented: Binding(
-                get: { folderToRename != nil },
-                set: { if !$0 { folderToRename = nil } }
-            )) {
+            .alert(
+                "Hernoemen",
+                isPresented: Binding(
+                    get: { folderToRename != nil },
+                    set: { if !$0 { folderToRename = nil } }
+                )
+            ) {
                 TextField("Naam", text: $renameText)
                 Button("Opslaan") { applyRename() }
                 Button("Annuleren", role: .cancel) { folderToRename = nil }

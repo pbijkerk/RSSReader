@@ -71,15 +71,15 @@ enum MastodonError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidInstance(let url):           return "Ongeldig instantie-adres: \(url)"
-        case .oauthCancelled:                     return "Inloggen geannuleerd"
-        case .oauthFailed(let msg):               return "OAuth mislukt: \(msg)"
-        case .tokenExchangeFailed(let msg):       return "Toegangstoken ophalen mislukt: \(msg)"
+        case .invalidInstance(let url): return "Ongeldig instantie-adres: \(url)"
+        case .oauthCancelled: return "Inloggen geannuleerd"
+        case .oauthFailed(let msg): return "OAuth mislukt: \(msg)"
+        case .tokenExchangeFailed(let msg): return "Toegangstoken ophalen mislukt: \(msg)"
         case .credentialVerificationFailed(let m): return "Account verifiëren mislukt: \(m)"
-        case .timelineFetchFailed(let msg):       return "Timeline ophalen mislukt: \(msg)"
-        case .httpError(let code, _):             return "Serverfout (HTTP \(code))"
-        case .decodingFailed:                     return "Onverwacht serverantwoord"
-        case .noAccountForFeed:                   return "Geen Mastodon-account gekoppeld aan deze feed"
+        case .timelineFetchFailed(let msg): return "Timeline ophalen mislukt: \(msg)"
+        case .httpError(let code, _): return "Serverfout (HTTP \(code))"
+        case .decodingFailed: return "Onverwacht serverantwoord"
+        case .noAccountForFeed: return "Geen Mastodon-account gekoppeld aan deze feed"
         }
     }
 }
@@ -93,9 +93,9 @@ class MastodonService {
     private let session: URLSession
     private let decoder: JSONDecoder
     private let redirectURI = "rssreader://oauth/mastodon"
-    private let scope       = "read"
-    private let appName     = "RSSReader"
-    
+    private let scope = "read"
+    private let appName = "RSSReader"
+
     private let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.mastodon
@@ -117,7 +117,7 @@ class MastodonService {
         decoder.dateDecodingStrategy = .custom { dec in
             let container = try dec.singleValueContainer()
             let str = try container.decode(String.self)
-            if let date = full.date(from: str)  { return date }
+            if let date = full.date(from: str) { return date }
             if let date = short.date(from: str) { return date }
             throw DecodingError.dataCorruptedError(
                 in: container, debugDescription: "Ongeldige datumnotatie: \(str)")
@@ -128,7 +128,7 @@ class MastodonService {
 
     func registerApp(instanceURL: String) async throws -> MastodonAppRegistration {
         logger.debug("Registering app with instance: \(instanceURL)")
-        
+
         guard let base = URL(string: instanceURL) else {
             throw MastodonError.invalidInstance(instanceURL)
         }
@@ -139,19 +139,19 @@ class MastodonService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: String] = [
-            "client_name":   appName,
+            "client_name": appName,
             "redirect_uris": redirectURI,
-            "scopes":        scope,
-            "website":       ""
+            "scopes": scope,
+            "website": "",
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await session.data(for: request)
         try checkHTTP(response, data: data)
-        
+
         let registration = try decodeOrThrow(MastodonAppRegistration.self, from: data)
         logger.info("App registration successful")
-        
+
         return registration
     }
 
@@ -163,11 +163,11 @@ class MastodonService {
         }
         components.path = "/oauth/authorize"
         components.queryItems = [
-            URLQueryItem(name: "client_id",     value: clientID),
-            URLQueryItem(name: "redirect_uri",  value: redirectURI),
+            URLQueryItem(name: "client_id", value: clientID),
+            URLQueryItem(name: "redirect_uri", value: redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope",         value: scope),
-            URLQueryItem(name: "force_login",   value: "false")
+            URLQueryItem(name: "scope", value: scope),
+            URLQueryItem(name: "force_login", value: "false"),
         ]
         guard let url = components.url else {
             throw MastodonError.invalidInstance(instanceURL)
@@ -175,8 +175,10 @@ class MastodonService {
         return url
     }
 
-    func exchangeToken(instanceURL: String, clientID: String,
-                       clientSecret: String, code: String) async throws -> MastodonToken {
+    func exchangeToken(
+        instanceURL: String, clientID: String,
+        clientSecret: String, code: String
+    ) async throws -> MastodonToken {
         guard let base = URL(string: instanceURL) else {
             throw MastodonError.invalidInstance(instanceURL)
         }
@@ -187,14 +189,15 @@ class MastodonService {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
         let params: [String: String] = [
-            "client_id":     clientID,
+            "client_id": clientID,
             "client_secret": clientSecret,
-            "redirect_uri":  redirectURI,
-            "grant_type":    "authorization_code",
-            "code":          code,
-            "scope":         scope
+            "redirect_uri": redirectURI,
+            "grant_type": "authorization_code",
+            "code": code,
+            "scope": scope,
         ]
-        request.httpBody = params
+        request.httpBody =
+            params
             .map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.value)" }
             .joined(separator: "&")
             .data(using: .utf8)
@@ -220,8 +223,10 @@ class MastodonService {
 
     // MARK: - Home timeline
 
-    func fetchHomeTimeline(account: MastodonAccount,
-                           sinceID: String? = nil) async throws -> [MastodonStatus] {
+    func fetchHomeTimeline(
+        account: MastodonAccount,
+        sinceID: String? = nil
+    ) async throws -> [MastodonStatus] {
         guard var components = URLComponents(string: account.instanceURL) else {
             throw MastodonError.invalidInstance(account.instanceURL)
         }
@@ -263,9 +268,9 @@ class MastodonService {
 
         // Eerste afbeelding als enclosure én thumbnail
         if let first = images.first {
-            item.enclosureURL      = first.url
+            item.enclosureURL = first.url
             item.enclosureMIMEType = "image/jpeg"
-            item.imageURL          = first.previewUrl ?? first.url
+            item.imageURL = first.previewUrl ?? first.url
         }
 
         // Alle afbeeldingen toevoegen aan de HTML-content (zichtbaar in detailweergave)
@@ -300,11 +305,11 @@ class MastodonService {
     }
 
     private func escape(_ text: String) -> String {
-        text.replacingOccurrences(of: "&",  with: "&amp;")
-            .replacingOccurrences(of: "<",  with: "&lt;")
-            .replacingOccurrences(of: ">",  with: "&gt;")
+        text.replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
             .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'",  with: "&#39;")
+            .replacingOccurrences(of: "'", with: "&#39;")
     }
 
     // MARK: - Feed refresh
@@ -312,56 +317,57 @@ class MastodonService {
     @MainActor
     func refreshFeed(account: MastodonAccount, feed: Feed, context: ModelContext) async throws {
         logger.debug("Refreshing Mastodon feed for: \(account.username)@\(account.instanceURL)")
-        
+
         let statuses = try await fetchHomeTimeline(account: account, sinceID: account.lastFetchedStatusID)
-        
+
         guard !statuses.isEmpty else {
             logger.debug("No new statuses for \(account.username)")
             return
         }
-        
+
         logger.info("Fetched \(statuses.count) new statuses for \(account.username)")
 
         let existingGUIDs = Set(feed.items.compactMap { $0.guid })
         var newItemsCount = 0
-        
+
         for status in statuses where !existingGUIDs.contains(status.id) {
             let item = mapToFeedItem(status: status, feed: feed)
             feed.items.append(item)
             context.insert(item)
             newItemsCount += 1
         }
-        
+
         logger.debug("Added \(newItemsCount) new items to feed")
 
         // Cursor naar meest recente status (index 0 = nieuwste)
         if let newestID = statuses.first?.id {
             account.lastFetchedStatusID = newestID
         }
-        account.lastRefreshed  = Date()
-        account.needsReauth    = false
-        feed.lastRefreshed     = Date()
+        account.lastRefreshed = Date()
+        account.needsReauth = false
+        feed.lastRefreshed = Date()
 
         // Bewaarperiode toepassen
-        let globalDefault = UserDefaults.standard.object(
-            forKey: AppConfiguration.UserDefaultsKeys.retentionDays
-        ) as? Int ?? AppConfiguration.defaultRetentionDays
-        
+        let globalDefault =
+            UserDefaults.standard.object(
+                forKey: AppConfiguration.UserDefaultsKeys.retentionDays
+            ) as? Int ?? AppConfiguration.defaultRetentionDays
+
         let effectiveDays = feed.retentionDays ?? globalDefault
-        
+
         if effectiveDays > 0 {
             guard let cutoff = Calendar.current.date(byAdding: .day, value: -effectiveDays, to: Date()) else {
                 logger.warning("Failed to calculate cutoff date")
                 try context.save()
                 return
             }
-            
+
             let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
-            
+
             if !toDelete.isEmpty {
                 logger.debug("Pruning \(toDelete.count) old Mastodon items")
             }
-            
+
             for item in toDelete {
                 feed.items.removeAll { $0.id == item.id }
                 context.delete(item)
@@ -385,7 +391,7 @@ class MastodonService {
     private func resolveToken(for account: MastodonAccount) -> String {
         let key = AppConfiguration.KeychainKeys.mastodonToken(
             instanceURL: account.instanceURL,
-            accountID:   account.accountID
+            accountID: account.accountID
         )
         return KeychainService.load(forKey: key) ?? account.accessToken
     }
@@ -396,8 +402,10 @@ class MastodonService {
         guard let http = response as? HTTPURLResponse else { return }
         switch http.statusCode {
         case 200...299: return
-        case 401: throw MastodonError.httpError(statusCode: 401,
-                         body: String(data: data, encoding: .utf8) ?? "")
+        case 401:
+            throw MastodonError.httpError(
+                statusCode: 401,
+                body: String(data: data, encoding: .utf8) ?? "")
         case 403: throw MastodonError.oauthFailed("Onvoldoende rechten (403)")
         case 404: throw MastodonError.invalidInstance("Endpoint niet gevonden (404)")
         case 429: throw MastodonError.timelineFetchFailed("Te veel verzoeken — probeer later opnieuw")
