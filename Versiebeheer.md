@@ -35,6 +35,8 @@ Pas bij alle ontwikkelwerkzaamheden de volgende best practices toe:
 
 - Elke release wordt na het taggen op de iPhone geïnstalleerd; dit project gaat niet via de
   App Store, dus dit is de enige distributie. Zie stap 9 van `Workflow-feature.md` voor de
-  commando's.
+  commando's. Dit gebeurt alleen bij een release, niet na gewoon featurewerk.
+- Draai `xcodegen generate` vóór de device-build: de versie staat in `project.yml` en komt pas
+  in het `.xcodeproj` na regeneratie.
 - Bouw device-builds naar een `-derivedDataPath` buiten de projectmap (die in iCloud Drive
   staat), anders faalt `codesign` op `com.apple.FinderInfo`.

@@ -40,19 +40,27 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 - Git-tag `vX.Y.Z` aanmaken en pushen.
 - Voer nooit een release uit zonder expliciete bevestiging (zie Versiebeheer.md).
 
-## 9. Installeren op de iPhone (hoort bij elke release)
-- Direct na stap 8: de nieuwe versie op het toestel zetten. Zonder App Store-distributie is een
-  release pas af als hij op de iPhone staat.
-- Controleer eerst `xcrun devicectl list devices` — het toestel moet `available (paired)` zijn.
+## 9. Installeren op de iPhone (alleen na een release, stap 8)
+- Hoort bij stap 8 en deelt dus dezelfde gate: alleen uitvoeren als er daadwerkelijk een release
+  is uitgebracht. Na gewoon featurewerk (stap 1–7) niets installeren.
+- Zonder App Store-distributie is een release pas af als de nieuwe versie op het toestel staat.
+- Regenereer eerst het project: stap 8 bumpt `MARKETING_VERSION` in `project.yml`, en zonder
+  `xcodegen generate` bouw je een `.xcodeproj` met het oude versienummer.
+- Zoek het toestel op in plaats van een identifier over te typen; die verandert bij herkoppelen,
+  een ander toestel of een andere Mac. De regel moet `available (paired)` tonen.
 - Bouw en installeer:
   ```bash
-  DEVICE=A500BDFC-5A4E-5B21-9E09-5A1ABF32D5B3   # iPhone van Peter
+  xcodegen generate
+  DEVICE=$(xcrun devicectl list devices | grep iPhone | grep 'available (paired)' \
+    | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)
   DERIVED=~/Library/Developer/Xcode/DerivedData/RSSReader-device
   xcodebuild -project RSSReader.xcodeproj -scheme RSSReader -configuration Release \
     -destination "id=$DEVICE" -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
   xcrun devicectl device install app --device "$DEVICE" \
     "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app"
   ```
+- Controleer na afloop dat de geïnstalleerde build het verwachte versienummer heeft:
+  `/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app/Info.plist"`
 - **Bouw niet binnen de projectmap.** Die staat in iCloud Drive; iCloud zet dan
   `com.apple.FinderInfo` op de `.app` en `codesign` faalt met *"resource fork, Finder
   information, or similar detritus not allowed"*. Simulatorbuilds hebben hier geen last van
