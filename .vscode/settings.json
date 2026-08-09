@@ -7,7 +7,6 @@
   // Formatteren gebeurt met swift-format uit de Xcode-toolchain, gestuurd door
   // .swift-format in de repo-root; de officiële Swift-extensie roept die aan.
   "swift.autoGenerateLaunchConfigurations": false,
-  "swift.format.enable": true,
   "[swift]": {
     "editor.defaultFormatter": "swiftlang.swift-vscode",
     "editor.formatOnSave": true,
