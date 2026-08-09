@@ -33,3 +33,20 @@ targets:
         DEVELOPMENT_TEAM: ""
         ENABLE_PREVIEWS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
+    scheme:
+      testTargets:
+        - RSSReaderTests
+
+  RSSReaderTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: RSSReaderTests
+    dependencies:
+      - target: RSSReader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.peterbijkerk.rssreader.tests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
