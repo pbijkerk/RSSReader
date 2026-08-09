@@ -1,0 +1,36 @@
+# SwiftFormat-config voor RSSReader
+# Afgeleid van de bestaande codestijl (swiftformat --inferoptions, 47/47 bestanden).
+
+--swiftversion 5.9
+
+# Bestandsselectie
+--exclude build,DerivedData,**/.build
+
+# Opmaak (zoals de code nu al is)
+--indent 4
+--maxwidth none
+--self init-only
+--pattern-let inline
+--stripunusedargs closure-only
+--trailingcommas never
+--nospaceoperators ...,..<
+--decimalgrouping none
+--binarygrouping none
+--hexgrouping none
+--octalgrouping none
+
+# Uitgezette regels — deze botsen met bewuste keuzes in de bestaande code.
+# Imports staan op volgorde van relevantie (Foundation, SwiftData, OSLog), niet alfabetisch:
+--disable sortImports
+# Uitgelijnde switch-cases en trailing comments (`case "Audio":  return ...`):
+--disable consecutiveSpaces
+--disable redundantReturn
+# Eenregelige bodies (`if x { return false }`, `var isDisputed: Bool { ... }`):
+--disable wrapPropertyBodies
+--disable wrapIfStatementBodies
+--disable wrapLoopBodies
+--disable wrapFunctionBodies
+--disable wrapMultilineStatementBraces
+# `&&` in condities i.p.v. komma; expliciete if/else i.p.v. `let x = if ...`:
+--disable andOperator
+--disable conditionalAssignment
