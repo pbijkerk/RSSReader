@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.4.1] - 2026-08-09
 
 ### Opgelost
 - Clustering draait al het CPU-werk (HTML-strippen van artikelteksten, tokenisatie en trefwoord-matching) nu off-main via `Task.detached` in plaats van op de MainActor, zodat refresh en samenvatting de UI niet langer seconden blokkeren; resultaten blijven identiek. Het HTML-strippen is bovendien geëxtraheerd naar `FeedItem.plainText(from:)` met gecachte regexes (geen per-aanroep regex-compilatie)
