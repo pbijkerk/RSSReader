@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.4.2] - 2026-08-09
 
 ### Opgelost
 - `RSSReaderTests` staat nu als testtarget in `project.yml` en het gedeelde `RSSReader`-scheme voert de tests uit, zodat `xcodebuild test` en `⌘U` de bestaande unit-tests daadwerkelijk draaien en dit een `xcodegen generate` overleeft
