@@ -88,17 +88,19 @@ class RSSParser: NSObject, XMLParserDelegate {
             }
         case "enclosure":
             if insideItem {
-                currentItem?.enclosureURL      = attributeDict["url"]
+                currentItem?.enclosureURL = attributeDict["url"]
                 currentItem?.enclosureMIMEType = attributeDict["type"]
                 if let type = attributeDict["type"], type.hasPrefix("image/"),
-                   let url = attributeDict["url"] {
+                    let url = attributeDict["url"]
+                {
                     currentItem?.imageURL = url
                 }
             }
         case "media:content", "media:thumbnail":
             if insideItem, currentItem?.imageURL == nil {
                 if let url = attributeDict["url"],
-                   (attributeDict["medium"] == "image" || elementName.contains("thumbnail")) {
+                    attributeDict["medium"] == "image" || elementName.contains("thumbnail")
+                {
                     currentItem?.imageURL = url
                 }
             }
@@ -193,7 +195,7 @@ class RSSParser: NSObject, XMLParserDelegate {
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
             "yyyy-MM-dd'T'HH:mm:ssXXXXX",
             "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-            "yyyy-MM-dd"
+            "yyyy-MM-dd",
         ]
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -208,12 +210,14 @@ class RSSParser: NSObject, XMLParserDelegate {
         guard let regex = Self.imgSrcRegex else { return nil }
         let range = NSRange(html.startIndex..., in: html)
         guard let match = regex.firstMatch(in: html, options: [], range: range),
-              match.numberOfRanges > 1,
-              let swiftRange = Range(match.range(at: 1), in: html) else { return nil }
+            match.numberOfRanges > 1,
+            let swiftRange = Range(match.range(at: 1), in: html)
+        else { return nil }
 
         let imageURL = String(html[swiftRange])
-        if imageURL.contains("1x1") || imageURL.contains("pixel") ||
-           imageURL.contains("tracker") || (imageURL.hasSuffix(".gif") && imageURL.count < 50) {
+        if imageURL.contains("1x1") || imageURL.contains("pixel") || imageURL.contains("tracker")
+            || (imageURL.hasSuffix(".gif") && imageURL.count < 50)
+        {
             return nil
         }
         return imageURL

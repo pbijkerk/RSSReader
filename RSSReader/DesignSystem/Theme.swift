@@ -15,11 +15,12 @@ extension UIColor {
 extension Color {
     /// Dynamische kleur die automatisch wisselt tussen light- en dark-mode.
     init(light: UInt, dark: UInt) {
-        self = Color(uiColor: UIColor { trait in
-            trait.userInterfaceStyle == .dark
-                ? UIColor(hex: dark)
-                : UIColor(hex: light)
-        })
+        self = Color(
+            uiColor: UIColor { trait in
+                trait.userInterfaceStyle == .dark
+                    ? UIColor(hex: dark)
+                    : UIColor(hex: light)
+            })
     }
 }
 

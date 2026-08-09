@@ -47,7 +47,7 @@ struct BiasSpectrumStrip: View {
     let biasScores: [Int]
 
     private static let positions: [(score: Int, label: String)] = [
-        (-2, "L"), (-1, "lL"), (0, "C"), (1, "lR"), (2, "R")
+        (-2, "L"), (-1, "lL"), (0, "C"), (1, "lR"), (2, "R"),
     ]
 
     var body: some View {

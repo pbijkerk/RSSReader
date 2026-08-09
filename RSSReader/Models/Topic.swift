@@ -45,7 +45,7 @@ class TopicSummary {
         get { zip(itemTitles, itemLinks).map { SummaryItem(title: $0, link: $1) } }
         set {
             itemTitles = newValue.map { $0.title }
-            itemLinks  = newValue.map { $0.link }
+            itemLinks = newValue.map { $0.link }
         }
     }
 
@@ -55,6 +55,6 @@ class TopicSummary {
         self.summaryText = summaryText
         self.createdAt = Date()
         self.itemTitles = items.map { $0.title }
-        self.itemLinks  = items.map { $0.link }
+        self.itemLinks = items.map { $0.link }
     }
 }

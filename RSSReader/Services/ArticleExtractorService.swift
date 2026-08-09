@@ -24,49 +24,49 @@ class ArticleExtractorService: NSObject, ObservableObject, WKNavigationDelegate 
         "[class*=\"sidebar\"]", "[class*=\"related\"]", "[class*=\"comment\"]",
         "[class*=\"share\"]", "[class*=\"social\"]", "[class*=\"newsletter\"]",
         "[class*=\"subscribe\"]", "[class*=\"cookie\"]", "[role=\"complementary\"]",
-        "[role=\"navigation\"]", "[role=\"banner\"]"
+        "[role=\"navigation\"]", "[role=\"banner\"]",
     ]
 
     private static let contentSelectors: [String] = [
         "article", "[role=\"main\"]", "main",
         ".entry-content", ".post-content", ".article-body", ".article-content",
         ".story-body", ".post-body", ".content-body", ".body-text",
-        "#article-body", "#content", ".post", ".article"
+        "#article-body", "#content", ".post", ".article",
     ]
 
     private static let extractorJS: String = buildExtractorJS()
 
     private static func buildExtractorJS() -> String {
         let encoder = JSONEncoder()
-        let noiseJS   = (try? encoder.encode(noiseSelectors)).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        let noiseJS = (try? encoder.encode(noiseSelectors)).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let contentJS = (try? encoder.encode(contentSelectors)).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
 
         return """
-        (function() {
-            var noise = \(noiseJS);
-            var selectors = \(contentJS);
+            (function() {
+                var noise = \(noiseJS);
+                var selectors = \(contentJS);
 
-            noise.forEach(function(sel) {
-                try {
-                    document.querySelectorAll(sel).forEach(function(el) { el.remove(); });
-                } catch(e) {}
-            });
+                noise.forEach(function(sel) {
+                    try {
+                        document.querySelectorAll(sel).forEach(function(el) { el.remove(); });
+                    } catch(e) {}
+                });
 
-            for (var i = 0; i < selectors.length; i++) {
-                var el = document.querySelector(selectors[i]);
-                if (el && el.innerText && el.innerText.length > 200) {
-                    return el.innerHTML;
+                for (var i = 0; i < selectors.length; i++) {
+                    var el = document.querySelector(selectors[i]);
+                    if (el && el.innerText && el.innerText.length > 200) {
+                        return el.innerHTML;
+                    }
                 }
-            }
 
-            var best = document.body, bestLen = 0;
-            document.querySelectorAll('div, section').forEach(function(el) {
-                var len = el.innerText ? el.innerText.length : 0;
-                if (len > bestLen && len > 500) { bestLen = len; best = el; }
-            });
-            return best ? best.innerHTML : document.body.innerHTML;
-        })()
-        """
+                var best = document.body, bestLen = 0;
+                document.querySelectorAll('div, section').forEach(function(el) {
+                    var len = el.innerText ? el.innerText.length : 0;
+                    if (len > bestLen && len > 500) { bestLen = len; best = el; }
+                });
+                return best ? best.innerHTML : document.body.innerHTML;
+            })()
+            """
     }
 
     // MARK: - Extractie
@@ -132,7 +132,9 @@ class ArticleExtractorService: NSObject, ObservableObject, WKNavigationDelegate 
         }
     }
 
-    nonisolated func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    nonisolated func webView(
+        _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error
+    ) {
         Task { @MainActor in
             logger.error("Provisional navigation failed: \(error.localizedDescription)")
             self.cleanup(with: error)

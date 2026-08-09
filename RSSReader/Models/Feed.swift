@@ -9,10 +9,10 @@ class Feed {
     var feedDescription: String?
     var lastRefreshed: Date?
     var faviconURL: String?
-    var retentionDays: Int?          // nil = gebruik globale standaard; 0 = nooit verwijderen
-    var biasScore: Int?              // -2 (links) … +2 (rechts), nil = onbekend
-    var reliabilityLevel: String?    // "high", "mixed", "low"
-    var ratingSource: String?        // bijv. "AllSides, MBFC"
+    var retentionDays: Int?  // nil = gebruik globale standaard; 0 = nooit verwijderen
+    var biasScore: Int?  // -2 (links) … +2 (rechts), nil = onbekend
+    var reliabilityLevel: String?  // "high", "mixed", "low"
+    var ratingSource: String?  // bijv. "AllSides, MBFC"
     var biasRatedAt: Date?
     @Relationship var folder: FeedFolder?
     @Relationship(deleteRule: .cascade) var items: [FeedItem] = []

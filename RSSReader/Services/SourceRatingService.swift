@@ -31,7 +31,7 @@ final class SourceRatingService: Sendable {
 
     private init() {
         guard
-            let url  = Bundle.main.url(forResource: "source_ratings", withExtension: "json"),
+            let url = Bundle.main.url(forResource: "source_ratings", withExtension: "json"),
             let data = try? Data(contentsOf: url)
         else {
             logger.error("source_ratings.json niet gevonden in bundle")
@@ -65,9 +65,9 @@ final class SourceRatingService: Sendable {
     @MainActor
     func applyRating(to feed: Feed) {
         guard let r = rating(forFeedURL: feed.url) else { return }
-        feed.biasScore        = r.biasScore
+        feed.biasScore = r.biasScore
         feed.reliabilityLevel = r.reliability
-        feed.ratingSource     = r.raters.joined(separator: ", ")
-        feed.biasRatedAt      = Date()
+        feed.ratingSource = r.raters.joined(separator: ", ")
+        feed.biasRatedAt = Date()
     }
 }

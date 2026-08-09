@@ -153,7 +153,10 @@ struct FeedListView: View {
     private func folderSection(_ folder: FeedFolder) -> some View {
         let isExpanded = Binding(
             get: { folder.isExpanded },
-            set: { folder.isExpanded = $0; try? modelContext.save() }
+            set: {
+                folder.isExpanded = $0
+                try? modelContext.save()
+            }
         )
         let sortedFeeds = folder.feeds.sorted { $0.title < $1.title }
 
@@ -313,7 +316,8 @@ struct SectionHeaderView: View {
 struct FeedRowView: View {
     let feed: Feed
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
-    @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale) private var feedListScale = AppConfiguration.defaultFeedListScale
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale) private var feedListScale = AppConfiguration
+        .defaultFeedListScale
 
     private var brand: Color { Theme.brandColor(for: feed.title.isEmpty ? feed.url : feed.title) }
 

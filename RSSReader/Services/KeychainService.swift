@@ -19,9 +19,9 @@ enum KeychainService {
         guard let data = value.data(using: .utf8) else { return false }
 
         let query: [CFString: Any] = [
-            kSecClass:       kSecClassGenericPassword,
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
-            kSecAttrAccount: key
+            kSecAttrAccount: key,
         ]
 
         SecItemDelete(query as CFDictionary)
@@ -40,11 +40,11 @@ enum KeychainService {
 
     static func load(forKey key: String) -> String? {
         let query: [CFString: Any] = [
-            kSecClass:       kSecClassGenericPassword,
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: key,
-            kSecReturnData:  kCFBooleanTrue as Any,
-            kSecMatchLimit:  kSecMatchLimitOne
+            kSecReturnData: kCFBooleanTrue as Any,
+            kSecMatchLimit: kSecMatchLimitOne,
         ]
 
         var result: CFTypeRef?
@@ -70,9 +70,9 @@ enum KeychainService {
     @discardableResult
     static func delete(forKey key: String) -> Bool {
         let query: [CFString: Any] = [
-            kSecClass:       kSecClassGenericPassword,
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
-            kSecAttrAccount: key
+            kSecAttrAccount: key,
         ]
         let status = SecItemDelete(query as CFDictionary)
         if status != errSecSuccess && status != errSecItemNotFound {

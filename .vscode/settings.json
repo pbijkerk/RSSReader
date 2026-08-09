@@ -4,9 +4,11 @@
 
   // --- Swift / SourceKit-LSP ---
   // Code-intelligence vereist buildServer.json (zie README / xcode-build-server).
+  // Formatteren gebeurt met swift-format uit de Xcode-toolchain, gestuurd door
+  // .swift-format in de repo-root; de officiële Swift-extensie roept die aan.
   "swift.autoGenerateLaunchConfigurations": false,
   "[swift]": {
-    "editor.defaultFormatter": "vknabel.vscode-swiftformat",
+    "editor.defaultFormatter": "swiftlang.swift-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
     "editor.insertSpaces": true

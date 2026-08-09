@@ -107,10 +107,12 @@ final class RSSReaderTests: XCTestCase {
         let service = TopicClusteringService()
         // Beide onderwerpen scoren 1 ruwe treffer op "alpha"; het onderwerp met de
         // kortere frasenlijst heeft de hogere genormaliseerde score en wint.
-        let topics = normalized(service, [
-            ("Breed", ["alpha", "beta", "gamma"]),   // normalized = 1/3
-            ("Smal",  ["alpha"])                     // normalized = 1/1
-        ])
+        let topics = normalized(
+            service,
+            [
+                ("Breed", ["alpha", "beta", "gamma"]),  // normalized = 1/3
+                ("Smal", ["alpha"]),  // normalized = 1/1
+            ])
         let text = service.wordBoundaryText("an alpha release")
 
         XCTAssertEqual(
@@ -120,10 +122,12 @@ final class RSSReaderTests: XCTestCase {
         )
 
         // Ongevoelig voor lijstvolgorde: omgekeerde volgorde geeft hetzelfde resultaat.
-        let reversed = normalized(service, [
-            ("Smal",  ["alpha"]),
-            ("Breed", ["alpha", "beta", "gamma"])
-        ])
+        let reversed = normalized(
+            service,
+            [
+                ("Smal", ["alpha"]),
+                ("Breed", ["alpha", "beta", "gamma"]),
+            ])
         XCTAssertEqual(
             service.assignedTopic(forText: text, normalizedTopics: reversed, minimumScore: 1),
             "Smal"

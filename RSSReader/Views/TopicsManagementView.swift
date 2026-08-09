@@ -70,7 +70,9 @@ struct TopicsManagementView: View {
                             topic.isLiked.toggle()
                             try? modelContext.save()
                         } label: {
-                            Label(topic.isLiked ? "Unlike" : "Like", systemImage: topic.isLiked ? "heart.slash" : "heart.fill")
+                            Label(
+                                topic.isLiked ? "Unlike" : "Like",
+                                systemImage: topic.isLiked ? "heart.slash" : "heart.fill")
                         }
                         .tint(topic.isLiked ? .gray : .pink)
                     }

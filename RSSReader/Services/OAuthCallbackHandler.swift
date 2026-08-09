@@ -33,7 +33,7 @@ class OAuthCallbackHandler {
         NotificationCenter.default.post(name: .oauthCallbackReceived, object: nil)
 
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let code = components.queryItems?.first(where: { $0.name == "code" })?.value
+            let code = components.queryItems?.first(where: { $0.name == "code" })?.value
         else {
             finish(throwing: MastodonError.oauthFailed("Geen autorisatiecode ontvangen"))
             return

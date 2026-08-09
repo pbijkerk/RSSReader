@@ -153,9 +153,10 @@ struct OPMLImportView: View {
                 errorMessage = "No feeds found in this file. Make sure it's a valid OPML file."
             } else {
                 parsedFeeds = feeds
-                selectedFeeds = Set(feeds.indices.filter { idx in
-                    !existingFeeds.contains(where: { $0.url == feeds[idx].xmlURL })
-                })
+                selectedFeeds = Set(
+                    feeds.indices.filter { idx in
+                        !existingFeeds.contains(where: { $0.url == feeds[idx].xmlURL })
+                    })
             }
         } catch {
             errorMessage = "Failed to read file: \(error.localizedDescription)"
