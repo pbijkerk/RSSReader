@@ -30,6 +30,26 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_FILE: RSSReader/Info.plist
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: 68K8BCC3DL
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.news
         ENABLE_PREVIEWS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
+    scheme:
+      testTargets:
+        - RSSReaderTests
+
+  RSSReaderTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: RSSReaderTests
+    dependencies:
+      - target: RSSReader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.peterbijkerk.rssreader.tests
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 68K8BCC3DL
+        GENERATE_INFOPLIST_FILE: YES
