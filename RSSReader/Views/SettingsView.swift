@@ -16,6 +16,7 @@ private let retentionOptions: [(label: String, days: Int)] = [
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query private var mastodonAccounts: [MastodonAccount]
 
     /// API-sleutels uit Keychain — geladen via .onAppear, opgeslagen via .onChange
@@ -105,10 +106,16 @@ struct SettingsView: View {
                 samenvattingenSection
                 bronanalyseSection
                 bewaarperiodeSection
+                onderwerpenSection
                 mastodonSection
                 overSection
             }
             .navigationTitle("Instellingen")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Gereed") { dismiss() }
+                }
+            }
         }
         .onAppear(perform: loadStoredValues)
         .onDisappear { claudeValidationTask?.cancel() }
@@ -319,7 +326,19 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - 6. Mastodon
+    // MARK: - 6. Onderwerpen
+
+    private var onderwerpenSection: some View {
+        Section("Onderwerpen") {
+            NavigationLink {
+                TopicsManagementView()
+            } label: {
+                Label("Onderwerpen beheren", systemImage: "tag")
+            }
+        }
+    }
+
+    // MARK: - 7. Mastodon
 
     private var mastodonSection: some View {
         Section("Mastodon") {
@@ -346,7 +365,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - 7. Over
+    // MARK: - 8. Over
 
     private var overSection: some View {
         Section("Over") {

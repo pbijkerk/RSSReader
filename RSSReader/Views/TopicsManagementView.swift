@@ -9,28 +9,26 @@ struct TopicsManagementView: View {
     @State private var topicToEdit: Topic?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if topics.isEmpty {
-                    emptyState
-                } else {
-                    topicList
+        Group {
+            if topics.isEmpty {
+                emptyState
+            } else {
+                topicList
+            }
+        }
+        .navigationTitle("Onderwerpen")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Add Topic", systemImage: "plus") {
+                    showAddTopic = true
                 }
             }
-            .navigationTitle("Topics")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add Topic", systemImage: "plus") {
-                        showAddTopic = true
-                    }
-                }
-            }
-            .sheet(isPresented: $showAddTopic) {
-                TopicEditView(topic: nil)
-            }
-            .sheet(item: $topicToEdit) { topic in
-                TopicEditView(topic: topic)
-            }
+        }
+        .sheet(isPresented: $showAddTopic) {
+            TopicEditView(topic: nil)
+        }
+        .sheet(item: $topicToEdit) { topic in
+            TopicEditView(topic: topic)
         }
     }
 

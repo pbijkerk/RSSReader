@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Tabbalk teruggebracht van vijf naar drie tabbladen (Vandaag, Artikelen, Bewaard) met leesbaardere labels van 11pt: Onderwerpen staat nu in Instellingen en Instellingen opent via een tandwielknop in de toolbar van Vandaag
 - Releaseworkflow beschrijft nu het installeren van de nieuwe versie op de iPhone als vaste stap, inclusief de eis om device-builds buiten de iCloud-map te bouwen (anders faalt `codesign`)
 
 ## [1.4.2] - 2026-08-09
