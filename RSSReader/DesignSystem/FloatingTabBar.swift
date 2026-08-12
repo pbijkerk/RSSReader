@@ -9,11 +9,9 @@ struct FloatingTab: Identifiable {
 }
 
 let appTabs: [FloatingTab] = [
-    FloatingTab(id: 0, icon: "list.bullet.rectangle", title: "Feeds"),
-    FloatingTab(id: 1, icon: "newspaper", title: "Samenvatting"),
-    FloatingTab(id: 2, icon: "tag", title: "Topics"),
-    FloatingTab(id: 3, icon: "bookmark", title: "Bewaard"),
-    FloatingTab(id: 4, icon: "gearshape", title: "Instellingen"),
+    FloatingTab(id: 0, icon: "newspaper", title: "Vandaag"),
+    FloatingTab(id: 1, icon: "list.bullet.rectangle", title: "Artikelen"),
+    FloatingTab(id: 2, icon: "bookmark", title: "Bewaard"),
 ]
 
 // MARK: - Zwevende tab bar
@@ -56,9 +54,8 @@ struct FloatingTabBar: View {
                     .symbolVariant(isSelected ? .fill : .none)
                     .font(.system(size: 18, weight: .semibold))
                 Text(tab.title)
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
             }
             .foregroundStyle(isSelected ? Color.white : Theme.textSecondary)
             .frame(maxWidth: .infinity)

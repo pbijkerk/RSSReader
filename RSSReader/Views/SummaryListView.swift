@@ -4,6 +4,8 @@ struct SummaryListView: View {
     @Binding var clusters: [TopicCluster]
     let isLoading: Bool
 
+    @State private var showSettings = false
+
     var body: some View {
         NavigationStack {
             Group {
@@ -16,6 +18,16 @@ struct SummaryListView: View {
                 }
             }
             .navigationTitle("Summaries")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Instellingen", systemImage: "gearshape") {
+                        showSettings = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
         }
     }
 

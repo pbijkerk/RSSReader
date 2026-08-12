@@ -10,33 +10,27 @@ struct ContentView: View {
     @State private var clusteringService = TopicClusteringService()
 
     @State private var clusters: [TopicCluster] = []
-    @State private var selectedTab = 1
+    @State private var selectedTab = 0
     @State private var lastClusteredAt: Date? = nil
 
     private let clusteringDebounce: TimeInterval = 120  // 2 minuten
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            FeedListView(
-                refreshService: refreshService,
-                onRefreshComplete: { await regenerateSummaries() }
-            )
-            .tag(0)
-
             SummaryListView(
                 clusters: $clusters,
                 isLoading: clusteringService.isClustering || refreshService.isRefreshing
             )
+            .tag(0)
+
+            FeedListView(
+                refreshService: refreshService,
+                onRefreshComplete: { await regenerateSummaries() }
+            )
             .tag(1)
 
-            TopicsManagementView()
-                .tag(2)
-
             SavedArticlesView()
-                .tag(3)
-
-            SettingsView()
-                .tag(4)
+                .tag(2)
         }
         .floatingTabBar(selection: $selectedTab)
         .tint(Theme.accent)
