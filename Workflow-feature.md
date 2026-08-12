@@ -10,6 +10,14 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 ## 2. Build-check
 - Draai `xcodebuild` voor de iOS Simulator. De build moet slagen vóór er gecommit wordt.
 - Faalt de build: eerst herstellen, daarna verder.
+- Geef altijd een `OS=` mee in de destination. Zonder die sleutel kiest `xcodebuild`
+  `OS:latest`, en dan faalt de build met *"Unable to find a device matching the provided
+  destination specifier"* zodra die simulator niet in de nieuwste iOS-versie bestaat:
+  ```bash
+  xcodebuild -project RSSReader.xcodeproj -scheme RSSReader \
+    -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' build
+  ```
+  Welke combinaties er zijn: `xcrun simctl list devices available`.
 
 ## 3. CHANGELOG.md bijwerken
 - Voeg onder de sectie `## [Unreleased]` één bondige regel toe (Nederlands) onder de juiste kop (`### Toegevoegd`, `### Gewijzigd` of `### Opgelost`).
