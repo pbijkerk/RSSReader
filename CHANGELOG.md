@@ -11,6 +11,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Vandaag toont nu de samenvatting zelf als kaartenscherm per onderwerp — beweringen met klikbare bronchips, bronduiding en fact-checkwaarschuwing direct zichtbaar — in plaats van een inhoudsopgave die eerst naar de samenvatting doorlinkt; bij meer dan drie beweringen verschijnt een "Toon meer"-knop, en alle teksten zijn nu Nederlands
 - Tabbalk teruggebracht van vijf naar drie tabbladen (Vandaag, Artikelen, Bewaard) met leesbaardere labels van 11pt: Onderwerpen staat nu in Instellingen en Instellingen opent via een tandwielknop in de toolbar van Vandaag, als sheet met een Gereed-knop om te sluiten
 - Releaseworkflow beschrijft nu het installeren van de nieuwe versie op de iPhone als vaste stap, inclusief de eis om device-builds buiten de iCloud-map te bouwen (anders faalt `codesign`)
+- `CLAUDE.md` waarschuwt nu bij de toolchain dat de buildoutput van een device-build buiten de projectmap moet vallen (anders faalt `codesign`), en `Workflow-feature.md` benoemt het waargenomen attribuut (`com.apple.provenance`) plus dat `xattr -rc` het probleem niet oplost
 
 ## [1.4.2] - 2026-08-09
 
