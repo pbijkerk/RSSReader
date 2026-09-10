@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Gewijzigd
+- `Versiebeheer.md` noemt bij de installatiestap nu dezelfde oorzaak als `CLAUDE.md` en `Workflow-feature.md`: iCloud Drive zet extended attributes op de buildoutput (waargenomen: `com.apple.provenance`) en `xattr -rc` lost dat niet op
+
 ## [1.5.0] - 2026-09-10
 
 ### Gewijzigd
