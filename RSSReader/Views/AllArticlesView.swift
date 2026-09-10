@@ -8,6 +8,7 @@ struct AllArticlesView: View {
 
     @Query(sort: \FeedItem.pubDate, order: .reverse) private var allItems: [FeedItem]
     @Query(sort: \FeedFolder.sortOrder) private var folders: [FeedFolder]
+    @Query private var feeds: [Feed]
 
     var refreshService: FeedRefreshService
     var onRefreshComplete: () async -> Void
@@ -41,6 +42,15 @@ struct AllArticlesView: View {
                 .navigationBarTitleDisplayMode(.large)
                 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        if refreshService.isRefreshing {
+                            ProgressView()
+                        } else {
+                            Button("Vernieuwen", systemImage: "arrow.clockwise") {
+                                Task { await refreshFeeds() }
+                            }
+                        }
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             Button("Feeds beheren", systemImage: "list.bullet.rectangle") {
@@ -105,6 +115,61 @@ struct AllArticlesView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .refreshable { await refreshFeeds() }
+        // Overlay in plaats van een vervangende view: de lijst blijft bestaan, dus
+        // pull-to-refresh werkt ook wanneer er nog niets te tonen is.
+        .overlay {
+            if items.isEmpty {
+                emptyState
+            }
+        }
+    }
+
+    /// Drie situaties met een eigen uitleg: geen feeds, een filter dat niets oplevert,
+    /// of feeds die (nog) geen artikelen hebben.
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "newspaper")
+                .font(.system(size: 60))
+                .foregroundStyle(.secondary)
+
+            if feeds.isEmpty {
+                Text("Nog geen feeds")
+                    .font(.title2.bold())
+                Text("Voeg RSS-feeds toe; hun artikelen verschijnen hier.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                Button("Feeds beheren") { showFeedManagement = true }
+                    .buttonStyle(.borderedProminent)
+            } else if let activeFolder {
+                Text("Geen artikelen in \(activeFolder.name)")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text("De feeds in deze map hebben nog geen artikelen. Kies \"Alle\" om alles te zien.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                Button("Toon alle artikelen") { folderFilterID = "" }
+                    .buttonStyle(.bordered)
+            } else {
+                Text("Nog geen artikelen")
+                    .font(.title2.bold())
+                Text(hideReadArticles
+                     ? "Alles is gelezen. Vernieuw om nieuwe artikelen op te halen."
+                     : "Vernieuw om artikelen op te halen.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
+        }
+        .padding()
+    }
+
+    private func refreshFeeds() async {
+        await refreshService.refreshAll(feeds: feeds, context: modelContext)
+        await onRefreshComplete()
     }
 
     /// Staat buiten het scrollgebied (safe-area inset), dus blijft staan tijdens het scrollen.
