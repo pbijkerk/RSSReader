@@ -24,6 +24,11 @@ struct FeedSettingsView: View {
 
     /// Lokale kopie van retentionDays voor de Picker (Int? werkt niet direct als Picker-selection).
     @State private var selectedDays: Int? = nil
+    @State private var includedInSummary = true
+
+    /// Draait een nieuwe clustering-ronde zodat het effect van de schakelaar direct
+    /// zichtbaar is op Vandaag.
+    var onSummaryInclusionChanged: (() async -> Void)? = nil
 
     private var effectiveLabel: String {
         feedRetentionOptions.first(where: { $0.days == defaultRetentionDays })?.label
@@ -45,6 +50,17 @@ struct FeedSettingsView: View {
                             .font(.caption)
                             .lineLimit(1)
                     }
+                }
+
+                Section {
+                    Toggle("Meenemen in samenvatting", isOn: $includedInSummary)
+                } footer: {
+                    Text(
+                        includedInSummary
+                            ? "Artikelen van deze feed tellen mee in de samenvatting op Vandaag."
+                            : "Artikelen van deze feed tellen niet mee in de samenvatting op Vandaag. Ze blijven wel gewoon zichtbaar in Artikelen en Bewaard."
+                    )
+                    .font(.caption)
                 }
 
                 Section {
@@ -85,16 +101,27 @@ struct FeedSettingsView: View {
                     Button("Annuleer") { dismiss() }
                 }
             }
-            .onAppear { selectedDays = feed.retentionDays }
+            .onAppear {
+                selectedDays = feed.retentionDays
+                includedInSummary = feed.includedInSummary
+            }
         }
     }
 
     private func save() {
+        let inclusionChanged = feed.includedInSummary != includedInSummary
+
         feed.retentionDays = selectedDays
+        feed.includedInSummary = includedInSummary
         // Onmiddellijk opruimen als een kortere periode is ingesteld
         let refreshService = FeedRefreshService()
         refreshService.pruneOldItems(feed: feed, context: modelContext)
         try? modelContext.save()
         dismiss()
+
+        // Pas na het opslaan: de samenvatting hoort de nieuwe instelling te weerspiegelen.
+        if inclusionChanged, let onSummaryInclusionChanged {
+            Task { await onSummaryInclusionChanged() }
+        }
     }
 }

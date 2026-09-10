@@ -219,7 +219,10 @@ struct FeedListView: View {
             }
         }
         .sheet(item: $feedForSettings) { feed in
-            FeedSettingsView(feed: feed)
+            FeedSettingsView(feed: feed) {
+                // Nieuwe clustering-ronde, zodat Vandaag de gewijzigde instelling toont.
+                await onRefreshComplete()
+            }
         }
     }
 

@@ -117,6 +117,11 @@ private struct ItemSnapshot: Sendable {
 class TopicClusteringService {
     var isClustering = false
 
+    /// De lopende clusteringronde. Een nieuwe aanroep annuleert deze: zijn invoer is
+    /// dan verouderd (bijvoorbeeld een feed die zojuist is uitgesloten), dus zijn
+    /// uitkomst mag de nieuwe niet overschrijven.
+    private var activeClustering: Task<[TopicCluster]?, Never>?
+
     private let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.clustering
@@ -182,13 +187,38 @@ class TopicClusteringService {
         ),
     ]
 
+    /// Geeft `nil` wanneer deze ronde is verdrongen door een nieuwere of is geannuleerd.
+    /// De aanroeper hoort het bestaande resultaat dan te laten staan in plaats van het
+    /// met een lege of verouderde lijst te overschrijven.
     func cluster(
         items: [FeedItem],
         savedTopics: [Topic],
         claudeAPIKey: String?
-    ) async -> [TopicCluster] {
+    ) async -> [TopicCluster]? {
+        // De nieuwste aanroep wint: hij kent de actuele feeds en instellingen.
+        activeClustering?.cancel()
+
+        let task = Task { [weak self] in
+            await self?.performCluster(
+                items: items, savedTopics: savedTopics, claudeAPIKey: claudeAPIKey
+            ) ?? nil
+        }
+        activeClustering = task
+
+        let result = await task.value
+        if activeClustering == task {
+            activeClustering = nil
+            isClustering = false
+        }
+        return result
+    }
+
+    private func performCluster(
+        items: [FeedItem],
+        savedTopics: [Topic],
+        claudeAPIKey: String?
+    ) async -> [TopicCluster]? {
         isClustering = true
-        defer { isClustering = false }
 
         logger.info("Starting clustering of \(items.count) items")
 
@@ -247,7 +277,7 @@ class TopicClusteringService {
         }
         guard let assignment else {
             logger.info("Clustering geannuleerd tijdens de toewijzing")
-            return []
+            return nil
         }
         let snapshots = assignment.snapshots
         let indexMap = assignment.indexMap
@@ -294,6 +324,12 @@ class TopicClusteringService {
                     items: sorted,
                     statements: validated(statements, topicName: name)
                 ))
+        }
+
+        // Verdrongen door een nieuwere ronde: die kent de actuele situatie.
+        if Task.isCancelled {
+            logger.info("Clustering verdrongen door een nieuwere ronde")
+            return nil
         }
 
         logger.info("Clustering complete: created \(result.count) clusters")
