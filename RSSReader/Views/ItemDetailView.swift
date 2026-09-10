@@ -79,7 +79,10 @@ struct ItemDetailView: View {
     private var audioLayout: some View {
         if let audioURL = item.directAudioURL {
             VStack(spacing: 0) {
+                // Vrij van de zwevende iOS 26-balk: de speler staat bovenaan en werd
+                // er anders door afgesneden (#63).
                 AudioPlayerView(url: audioURL)
+                    .padding(.top, CGFloat(AppConfiguration.floatingNavBarClearance))
                 ReaderWebView(
                     html: displayHTML,
                     baseURL: articleURL,
@@ -106,6 +109,7 @@ struct ItemDetailView: View {
     private func safariPlayerLayout(playerURL: URL) -> some View {
         VStack(spacing: 0) {
             VideoPlayButton(isPresented: $showingVideoPlayer, playerURL: playerURL)
+                .padding(.top, CGFloat(AppConfiguration.floatingNavBarClearance))
             ReaderWebView(html: descriptionHTML, baseURL: articleURL, onOpenURL: openInAppBrowser)
         }
         .ignoresSafeArea(edges: .bottom)
@@ -115,6 +119,7 @@ struct ItemDetailView: View {
         VStack(spacing: 0) {
             NativeVideoPlayer(url: videoURL)
                 .frame(height: UIScreen.main.bounds.width * 9 / 16)
+                .padding(.top, CGFloat(AppConfiguration.floatingNavBarClearance))
             if !displayHTML.isEmpty {
                 ReaderWebView(html: displayHTML, baseURL: articleURL, onOpenURL: openInAppBrowser)
             }
@@ -229,8 +234,15 @@ struct ItemDetailView: View {
             feedName: item.feed?.title,
             date: item.pubDate,
             fontSize: articleFontSize,
-            fontFamily: articleFontFamily
+            fontFamily: articleFontFamily,
+            topPadding: htmlTopPadding
         )
+    }
+
+    /// De webview staat alleen bij de reader-layout bovenaan; bij audio en video zit er
+    /// een speler boven die de balk al vrijhoudt.
+    private var htmlTopPadding: Int {
+        (item.isAudioItem || item.isVideoItem) ? 16 : AppConfiguration.floatingNavBarClearance
     }
 
     // MARK: - Content laden
@@ -254,7 +266,8 @@ struct ItemDetailView: View {
                 date: item.pubDate,
                 articleLink: articleLink,
                 fontSize: articleFontSize,
-                fontFamily: articleFontFamily
+                fontFamily: articleFontFamily,
+                topPadding: htmlTopPadding
             )
         } else {
             displayHTML = ArticleHTMLBuilder.build(
@@ -265,7 +278,8 @@ struct ItemDetailView: View {
                 date: item.pubDate,
                 articleLink: articleLink,
                 fontSize: articleFontSize,
-                fontFamily: articleFontFamily
+                fontFamily: articleFontFamily,
+                topPadding: htmlTopPadding
             )
         }
     }
@@ -282,7 +296,8 @@ struct ItemDetailView: View {
                 feedName: item.feed?.title,
                 date: item.pubDate,
                 fontSize: articleFontSize,
-                fontFamily: articleFontFamily
+                fontFamily: articleFontFamily,
+                topPadding: htmlTopPadding
             )
         } catch {
             extractionFailed = true
@@ -304,7 +319,8 @@ enum ArticleHTMLBuilder {
         date: Date?,
         articleLink: String? = nil,
         fontSize: Int = AppConfiguration.defaultArticleFontSize,
-        fontFamily: String = AppConfiguration.defaultArticleFontFamily
+        fontFamily: String = AppConfiguration.defaultArticleFontFamily,
+        topPadding: Int = AppConfiguration.floatingNavBarClearance
     ) -> String {
         let dateStr: String
         if let date {
@@ -370,9 +386,10 @@ enum ArticleHTMLBuilder {
                 line-height: 1.72;
                 color: var(--text);
                 background: var(--bg);
-                /* Ruim bovenaan: de zwevende iOS 26-balk zweeft over de inhoud, dus
-                   het eerste element (bronlabel) moet daar vrij van beginnen (#63). */
-                padding: 72px 24px 64px;
+                /* Bovenmarge komt van buiten: bij de reader-layout staat de webview
+                   bovenaan en moet de tekst vrij van de zwevende balk beginnen; bij audio
+                   en video staat er een speler boven en is die ruimte niet nodig (#63). */
+                padding: \(topPadding)px 24px 64px;
                 max-width: 680px;
                 margin: 0 auto;
                 word-break: break-word;
