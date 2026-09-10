@@ -5,11 +5,14 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.7.0] - 2026-09-10
 
 ### Toegevoegd
-- Een clusteringronde die door een nieuwere wordt ingehaald, overschrijft het resultaat niet meer; de nieuwste ronde wint, omdat die de actuele feeds en instellingen kent
 - Per feed instelbaar of die meetelt in de AI-samenvatting op Vandaag ("Meenemen in samenvatting" in de feedinstellingen, standaard aan). Een uitgesloten feed verdwijnt niet: de artikelen blijven gewoon zichtbaar in Artikelen en Bewaard. Bij het wijzigen draait de clustering direct opnieuw
+
+### Opgelost
+- Een clusteringronde die door een nieuwere wordt ingehaald, overschrijft het resultaat niet meer; de nieuwste ronde wint, omdat die de actuele feeds en instellingen kent
+- Een afgebroken clusteringronde maakte de samenvatting op Vandaag leeg in plaats van het bestaande resultaat te laten staan
 
 ## [1.6.2] - 2026-09-10
 
