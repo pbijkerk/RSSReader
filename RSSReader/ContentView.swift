@@ -23,7 +23,7 @@ struct ContentView: View {
             )
             .tag(0)
 
-            FeedListView(
+            AllArticlesView(
                 refreshService: refreshService,
                 onRefreshComplete: { await regenerateSummaries() }
             )

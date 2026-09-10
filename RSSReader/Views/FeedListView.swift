@@ -23,70 +23,69 @@ struct FeedListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if feeds.isEmpty {
-                    emptyState
+        Group {
+            if feeds.isEmpty {
+                emptyState
+            } else {
+                feedList
+            }
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .navigationTitle("Feeds")
+        .toolbar {
+            // Alles rechts: als pushbestemming is de leading-plek van de terugknop.
+            ToolbarItem(placement: .topBarTrailing) {
+                if editMode == .active {
+                    Button("Gereed") {
+                        withAnimation { editMode = .inactive }
+                    }
+                } else if refreshService.isRefreshing {
+                    ProgressView()
                 } else {
-                    feedList
-                }
-            }
-            .background(Theme.background.ignoresSafeArea())
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .navigationTitle("Feeds")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Feed toevoegen", systemImage: "plus") {
-                            showAddFeed = true
-                        }
-                        Button("OPML importeren", systemImage: "square.and.arrow.down") {
-                            showOPMLImport = true
-                        }
-                        Divider()
-                        Button("Folders beheren", systemImage: "folder.badge.gear") {
-                            showFolderManagement = true
-                        }
-                        Button("Volgorde wijzigen", systemImage: "arrow.up.arrow.down") {
-                            withAnimation { editMode = .active }
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    if editMode == .active {
-                        Button("Gereed") {
-                            withAnimation { editMode = .inactive }
-                        }
-                    } else if refreshService.isRefreshing {
-                        ProgressView()
-                    } else {
-                        Button("Vernieuwen", systemImage: "arrow.clockwise") {
-                            Task { await refreshFeeds() }
-                        }
+                    Button("Vernieuwen", systemImage: "arrow.clockwise") {
+                        Task { await refreshFeeds() }
                     }
                 }
             }
-            .sheet(isPresented: $showAddFeed) {
-                AddFeedView(refreshService: refreshService) {
-                    Task { await onRefreshComplete() }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Feed toevoegen", systemImage: "plus") {
+                        showAddFeed = true
+                    }
+                    Button("OPML importeren", systemImage: "square.and.arrow.down") {
+                        showOPMLImport = true
+                    }
+                    Divider()
+                    Button("Folders beheren", systemImage: "folder.badge.gear") {
+                        showFolderManagement = true
+                    }
+                    Button("Volgorde wijzigen", systemImage: "arrow.up.arrow.down") {
+                        withAnimation { editMode = .active }
+                    }
+                } label: {
+                    Image(systemName: "plus")
                 }
             }
-            .sheet(isPresented: $showOPMLImport) {
-                OPMLImportView(refreshService: refreshService) {
-                    Task { await onRefreshComplete() }
-                }
+        }
+        .sheet(isPresented: $showAddFeed) {
+            AddFeedView(refreshService: refreshService) {
+                Task { await onRefreshComplete() }
             }
-            .sheet(isPresented: $showFolderManagement) {
-                FolderManagementView()
+        }
+        .sheet(isPresented: $showOPMLImport) {
+            OPMLImportView(refreshService: refreshService) {
+                Task { await onRefreshComplete() }
             }
-            .alert("Feed verwijderen", isPresented: $showDeleteConfirm, presenting: feedToDelete) { feed in
-                Button("Verwijderen", role: .destructive) { delete(feed: feed) }
-                Button("Annuleren", role: .cancel) {}
-            } message: { feed in
-                Text("Wil je \"\(feed.title)\" en alle artikelen verwijderen?")
-            }
+        }
+        .sheet(isPresented: $showFolderManagement) {
+            FolderManagementView()
+        }
+        .alert("Feed verwijderen", isPresented: $showDeleteConfirm, presenting: feedToDelete) { feed in
+            Button("Verwijderen", role: .destructive) { delete(feed: feed) }
+            Button("Annuleren", role: .cancel) {}
+        } message: { feed in
+            Text("Wil je \"\(feed.title)\" en alle artikelen verwijderen?")
         }
     }
 
@@ -113,13 +112,6 @@ struct FeedListView: View {
 
     private var feedList: some View {
         List {
-            Section {
-                NavigationLink(destination: AllArticlesView()) {
-                    Label("All", systemImage: "tray.full")
-                        .font(.headline)
-                }
-            }
-
             ForEach(folders) { folder in
                 folderSection(folder)
             }
@@ -199,7 +191,7 @@ struct FeedListView: View {
             } label: {
                 Label("Vernieuwen", systemImage: "arrow.clockwise")
             }
-            .tint(.blue)
+            .tint(Theme.accent)
         }
         .contextMenu {
             Menu("Verplaats naar folder") {
@@ -274,7 +266,7 @@ struct SectionHeaderView: View {
                     HStack(spacing: 8) {
                         Image(systemName: icon)
                             .font(.system(size: iconSize))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Theme.accent)
                             .frame(width: iconFrame)
                         Text(title)
                             .font(titleFont)
@@ -285,7 +277,7 @@ struct SectionHeaderView: View {
             } else {
                 Image(systemName: icon)
                     .font(.system(size: iconSize))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Theme.accent)
                     .frame(width: iconFrame)
                 Text(title)
                     .font(titleFont)
