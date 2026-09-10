@@ -17,7 +17,8 @@ struct SummaryListView: View {
                     clusterList
                 }
             }
-            .navigationTitle("Summaries")
+            .background(Theme.background)
+            .navigationTitle("Vandaag")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Instellingen", systemImage: "gearshape") {
@@ -35,77 +36,104 @@ struct SummaryListView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.5)
-            Text("Analyzing your feeds…")
-                .foregroundStyle(.secondary)
+            Text("Je feeds worden geanalyseerd…")
+                .foregroundStyle(Theme.textSecondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.background)
     }
 
     private var emptyView: some View {
         VStack(spacing: 20) {
             Image(systemName: "newspaper")
                 .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            Text("No Summaries Yet")
-                .font(.title2.bold())
-            Text("Add RSS feeds and summaries will appear here grouped by topic.")
+                .foregroundStyle(Theme.textSecondary)
+            Text("Nog geen samenvattingen")
+                .font(Theme.title(22))
+            Text("Voeg RSS-feeds toe; samenvattingen verschijnen hier gegroepeerd per onderwerp.")
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .padding(.horizontal)
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.background)
     }
 
     private var clusterList: some View {
-        List(clusters, id: \.topicName) { cluster in
-            NavigationLink(destination: SummaryDetailView(cluster: cluster)) {
-                TopicClusterRowView(cluster: cluster)
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(clusters, id: \.topicName) { cluster in
+                    TopicSummaryCardView(cluster: cluster)
+                }
             }
+            .padding()
         }
+        .background(Theme.background)
     }
 }
 
-struct TopicClusterRowView: View {
+/// Kaart per onderwerp op Vandaag: de samenvatting zelf — beweringen met bronchips,
+/// bronduiding en fact-checkwaarschuwing — in plaats van een link naar de samenvatting.
+struct TopicSummaryCardView: View {
     let cluster: TopicCluster
+
+    @State private var isExpanded = false
 
     private var accent: Color { Theme.brandColor(for: cluster.topicName) }
 
+    private var visibleStatements: [SummaryStatement] {
+        isExpanded
+            ? cluster.statements
+            : Array(cluster.statements.prefix(AppConfiguration.summaryCardCollapsedStatementCount))
+    }
+
+    private var sourceCountLabel: String {
+        cluster.sourceCount == 1 ? "1 bron" : "\(cluster.sourceCount) bronnen"
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(accent)
-                .frame(width: 4)
+        VStack(alignment: .leading, spacing: 14) {
+            NavigationLink(destination: SummaryDetailView(cluster: cluster)) {
+                header
+            }
+            .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(cluster.topicName)
-                        .font(.headline)
-                    Spacer()
-                    Text("\(cluster.items.count) articles")
-                        .font(.caption)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(accent, in: Capsule())
-                }
-
-                Text(cluster.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-
-                TopicSourceRatingView(cluster: cluster)
-
-                if cluster.hasDisputedClaim {
-                    FactCheckWarningView(results: cluster.disputedFactChecks, compact: true)
-                }
-
-                if let latest = cluster.items.first?.pubDate {
-                    Text("Latest: \(latest, style: .relative)")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(visibleStatements) { statement in
+                    StatementRowView(statement: statement, itemsByID: cluster.itemsByID, accent: accent)
                 }
             }
+
+            if cluster.statements.count > AppConfiguration.summaryCardCollapsedStatementCount {
+                Button {
+                    withAnimation { isExpanded.toggle() }
+                } label: {
+                    Text(isExpanded ? "Toon minder" : "Toon meer")
+                        .font(.subheadline.bold())
+                }
+                .tint(accent)
+            }
+
+            TopicSourceRatingView(cluster: cluster)
+
+            if cluster.hasDisputedClaim {
+                FactCheckWarningView(results: cluster.disputedFactChecks, compact: true)
+            }
         }
-        .padding(.vertical, 6)
+        .padding(18)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous))
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(cluster.topicName.uppercased())
+                .font(Theme.headline(15))
+                .foregroundStyle(accent)
+            Spacer()
+            Text(sourceCountLabel)
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+        }
     }
 }

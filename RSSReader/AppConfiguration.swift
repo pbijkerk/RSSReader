@@ -47,6 +47,9 @@ enum AppConfiguration {
     /// Maximale breedte van een bron-chip in de samenvatting (begrenst lange titels)
     static let summarySourceChipMaxWidth: CGFloat = 220
 
+    /// Aantal beweringen dat een Vandaag-kaart standaard toont vóór "Toon meer"
+    static let summaryCardCollapsedStatementCount = 3
+
     // MARK: - Clustering
 
     /// Minimum aantal trefwoord-treffers (op woordgrens) voordat een artikel aan

@@ -31,6 +31,12 @@ struct TopicCluster {
     /// Platte previewtekst (samengevoegde beweringen) voor lijstweergaven.
     var summary: String { statements.map(\.text).joined(separator: " ") }
 
+    /// `items` opzoekbaar via id — gedeeld tussen de kaarten op Vandaag en `SummaryDetailView`
+    /// voor het herleiden van bron-ids uit `SummaryStatement.sourceItemIDs`.
+    var itemsByID: [UUID: FeedItem] {
+        Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
     // MARK: - Fact-check-waarschuwing (R7)
     // Non-persistente, deterministische aggregatie (geen AI) over de fact-checks
     // van de artikelen in dit cluster. Toont niets zonder betwijfeld verdict.
@@ -57,6 +63,9 @@ struct TopicCluster {
         }
         return feeds
     }
+
+    /// Aantal distinct bronfeeds van dit cluster — getoond op de Vandaag-kaart.
+    var sourceCount: Int { distinctFeeds.count }
 
     /// Bekende bias-posities van de distinct bronnen — voedt de `BiasSpectrumStrip`.
     var sourceBiasScores: [Int] {
