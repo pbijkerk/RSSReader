@@ -49,8 +49,7 @@ struct SavedArticlesView: View {
                 }
             }
             .navigationTitle("Bewaard")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

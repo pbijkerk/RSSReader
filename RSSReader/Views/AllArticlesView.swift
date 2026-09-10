@@ -39,8 +39,7 @@ struct AllArticlesView: View {
                 }
                 .background(Theme.background.ignoresSafeArea())
                 .navigationTitle("Artikelen")
-                .navigationBarTitleDisplayMode(.large)
-                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         if refreshService.isRefreshing {
