@@ -3,6 +3,7 @@ import SwiftUI
 struct SummaryListView: View {
     @Binding var clusters: [TopicCluster]
     let isLoading: Bool
+    var onRefresh: () async -> Void
 
     @State private var showSettings = false
 
@@ -18,6 +19,7 @@ struct SummaryListView: View {
                 }
             }
             .background(Theme.background)
+            .refreshable { await onRefresh() }
             .navigationTitle("Vandaag")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -43,7 +45,19 @@ struct SummaryListView: View {
         .background(Theme.background)
     }
 
+    /// In een ScrollView met altijd-bounce, zodat pull-to-refresh ook werkt
+    /// wanneer er nog geen samenvattingen zijn.
     private var emptyView: some View {
+        ScrollView {
+            // Vult de hoogte van de ScrollView, zodat de tekst gecentreerd blijft
+            // in plaats van bovenaan te plakken.
+            emptyContent.containerRelativeFrame(.vertical)
+        }
+        .scrollBounceBehavior(.always)
+        .background(Theme.background)
+    }
+
+    private var emptyContent: some View {
         VStack(spacing: 20) {
             Image(systemName: "newspaper")
                 .font(.system(size: 60))
@@ -56,8 +70,7 @@ struct SummaryListView: View {
                 .padding(.horizontal)
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background)
+        .frame(maxWidth: .infinity)
     }
 
     private var clusterList: some View {

@@ -13,13 +13,12 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var lastClusteredAt: Date? = nil
 
-    private let clusteringDebounce: TimeInterval = 120  // 2 minuten
-
     var body: some View {
         TabView(selection: $selectedTab) {
             SummaryListView(
                 clusters: $clusters,
-                isLoading: clusteringService.isClustering || refreshService.isRefreshing
+                isLoading: clusteringService.isClustering || refreshService.isRefreshing,
+                onRefresh: { await refreshAndCluster(force: true) }
             )
             .tag(0)
 
@@ -42,15 +41,20 @@ struct ContentView: View {
         }
     }
 
-    private func refreshAndCluster() async {
+    /// `force` slaat de debounce over: bij een expliciete pull vraagt de gebruiker er zelf
+    /// om en hoort hij een nieuw resultaat te zien, ook binnen twee minuten.
+    private func refreshAndCluster(force: Bool = false) async {
         await refreshService.refreshAll(feeds: feeds, context: modelContext)
 
-        let now = Date()
-        let shouldCluster = lastClusteredAt.map { now.timeIntervalSince($0) > clusteringDebounce } ?? true
+        let shouldCluster =
+            force
+            || (lastClusteredAt.map { Date().timeIntervalSince($0) > AppConfiguration.clusteringDebounce } ?? true)
         guard shouldCluster else { return }
 
+        // regenerateSummaries() zet lastClusteredAt zelf, op het moment dat de clustering
+        // klaar is. Hier niets meer overschrijven: dat zou de klok terugzetten naar vóór
+        // het ophalen en clusteren, waardoor de debounce te vroeg vervalt.
         await regenerateSummaries()
-        lastClusteredAt = now
     }
 
     private func regenerateSummaries() async {

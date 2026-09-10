@@ -7,7 +7,12 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Toegevoegd
+- Pull-to-refresh op het startscherm Vandaag: naar beneden trekken ververst alle feeds en draait de clustering opnieuw, ook binnen de debounce van twee minuten (bij automatisch verversen blijft die debounce gelden)
+
 ### Gewijzigd
+- Een tweede refresh die start terwijl de eerste nog loopt, wacht die af in plaats van een tweede ronde te draaien; de aanroeper gaat pas verder als de data compleet is
+- `clusteringDebounce` staat nu in `AppConfiguration` in plaats van los in `ContentView`
 - `Versiebeheer.md` noemt bij de installatiestap nu dezelfde oorzaak als `CLAUDE.md` en `Workflow-feature.md`: iCloud Drive zet extended attributes op de buildoutput (waargenomen: `com.apple.provenance`) en `xattr -rc` lost dat niet op
 
 ## [1.5.0] - 2026-09-10

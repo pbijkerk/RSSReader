@@ -11,6 +11,10 @@ enum AppConfiguration {
     /// Maximum aantal feeds dat parallel ververst kan worden
     static let maxParallelRefreshes = 10
 
+    /// Minimale tijd tussen twee automatische clusteringrondes. Geldt niet wanneer de
+    /// gebruiker zelf om een refresh vraagt (pull-to-refresh).
+    static let clusteringDebounce: TimeInterval = 120
+
     // MARK: - Retention
 
     /// Standaard aantal dagen dat artikelen bewaard blijven (als feed geen eigen instelling heeft)
