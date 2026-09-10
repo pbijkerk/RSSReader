@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.5.0] - 2026-09-10
 
 ### Gewijzigd
 - Artikelen opent nu direct op de artikelstroom met een blijvende filterbalk per map ("Alle" plus een chip per map, keuze blijft bewaard na herstart), zodat elk artikel met één tik bereikbaar is; feedbeheer verhuisde naar "Feeds beheren" in het toolbarmenu en de hardgecodeerde blauwtinten in de feedlijst zijn vervangen door themakleuren. Het tabblad heeft een eigen Vernieuwen-knop en pull-to-refresh, en toont een uitleg wanneer er niets te zien is (geen feeds, een filter zonder artikelen, of feeds die nog leeg zijn)
