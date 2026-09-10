@@ -21,12 +21,14 @@ geen `mcp__xcodebuildmcp__*`-tools.
 - **Aanbevolen VS Code-extensies:** zie `.vscode/extensions.json`.
 
 ### Bouwen voor een fysiek apparaat
-Bouw **niet** met `-derivedDataPath` binnen de projectmap (dus niet naar `build/`).
-Die map staat in iCloud Drive; codesign faalt dan met *"resource fork, Finder
-information, or similar detritus not allowed"*. Laat `-derivedDataPath` weg — dan
-gebruikt xcodebuild `~/Library/Developer/Xcode/DerivedData` en slaagt de build.
+Laat de buildoutput **buiten de projectmap** vallen. Die staat in iCloud Drive;
+bouw je naar `build/` binnen de projectmap, dan faalt codesign met *"resource fork,
+Finder information, or similar detritus not allowed"*. Twee werkende opties:
+`-derivedDataPath` naar een pad buiten de projectmap (zo doet stap 9 van
+`Workflow-feature.md` het), of de vlag weglaten zodat xcodebuild
+`~/Library/Developer/Xcode/DerivedData` gebruikt. Volg je stap 9, houd dan
+`-derivedDataPath` aan: de installatiestap daar verwacht `$DERIVED`.
 Simulatorbuilds hebben er geen last van (die worden niet ondertekend).
-Zie stap 9 van `Workflow-feature.md` voor de volledige installatieprocedure.
 
 ## Architectuur
 - `RSSReader/Models/` — SwiftData-modellen (Feed, FeedItem, MastodonAccount, Topic)
