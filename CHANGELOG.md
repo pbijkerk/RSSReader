@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Opgelost
+- Artikeltekst liep op iOS 26 onder de zwevende navigatiebalk door: het bronlabel was half onleesbaar bij het openen van een artikel. De balk krijgt geen eigen materiaal meer opgelegd (iOS legt zelf een scroll-edge-effect neer), de webview is niet langer volledig doorzichtig zodat dat effect iets heeft om overheen te vervagen, en de eerste regel begint onder de balk
+
 ## [1.6.0] - 2026-09-10
 
 ### Toegevoegd

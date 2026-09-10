@@ -53,7 +53,9 @@ struct ItemDetailView: View {
         .overlay(alignment: .top) { readingProgressBar }
         .navigationTitle(item.feed?.title ?? "Artikel")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        // Geen eigen .toolbarBackground: op iOS 26 is de balk een zwevende capsule die
+        // zelf een scroll-edge-effect over de inhoud legt. Een afgedwongen materiaal
+        // verdringt dat effect, waardoor tekst er scherp doorheen komt (#63).
         .toolbar { toolbarContent }
         .sheet(item: $safariItem) { item in
             SafariVideoPlayer(url: item.url).ignoresSafeArea()
@@ -368,7 +370,9 @@ enum ArticleHTMLBuilder {
                 line-height: 1.72;
                 color: var(--text);
                 background: var(--bg);
-                padding: 16px 24px 64px;
+                /* Ruim bovenaan: de zwevende iOS 26-balk zweeft over de inhoud, dus
+                   het eerste element (bronlabel) moet daar vrij van beginnen (#63). */
+                padding: 72px 24px 64px;
                 max-width: 680px;
                 margin: 0 auto;
                 word-break: break-word;
@@ -510,9 +514,12 @@ struct ReaderWebView: UIViewRepresentable {
         wv.navigationDelegate = context.coordinator
         wv.scrollView.delegate = context.coordinator
         wv.scrollView.contentInsetAdjustmentBehavior = .automatic
-        wv.isOpaque = false
-        wv.backgroundColor = .clear
-        wv.scrollView.backgroundColor = .clear
+        // Ondoorzichtig, met dezelfde kleur als de HTML-achtergrond (Theme.background en
+        // --bg delen hun waarden). Een doorzichtige webview geeft het scroll-edge-effect
+        // niets om overheen te vervagen; de tekst kwam er dan recht doorheen (#63).
+        wv.isOpaque = true
+        wv.backgroundColor = UIColor(Theme.background)
+        wv.scrollView.backgroundColor = UIColor(Theme.background)
         return wv
     }
 
