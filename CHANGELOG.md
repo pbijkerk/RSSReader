@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.6.2] - 2026-09-10
 
 ### Gewijzigd
 - De schermtitel staat nu vast compact in het midden van de navigatiebalk in plaats van eerst groot boven de lijst; de balk is daardoor smaller en de titel blijft altijd zichtbaar
