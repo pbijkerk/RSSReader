@@ -58,7 +58,9 @@ struct ContentView: View {
     }
 
     private func regenerateSummaries() async {
-        let allItems = feeds.flatMap { $0.items }
+        // Alleen feeds die de gebruiker in de samenvatting wil; hun artikelen blijven
+        // wel gewoon zichtbaar in Artikelen en Bewaard.
+        let allItems = feeds.filter { $0.includedInSummary }.flatMap { $0.items }
         let apiKey =
             KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)

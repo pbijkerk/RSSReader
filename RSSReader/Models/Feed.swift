@@ -14,6 +14,9 @@ class Feed {
     var reliabilityLevel: String?  // "high", "mixed", "low"
     var ratingSource: String?  // bijv. "AllSides, MBFC"
     var biasRatedAt: Date?
+    /// Telt deze feed mee in de AI-samenvatting op Vandaag? Staat los van zichtbaarheid:
+    /// een uitgesloten feed blijft gewoon in Artikelen en Bewaard staan.
+    var includedInSummary: Bool = true
     @Relationship var folder: FeedFolder?
     @Relationship(deleteRule: .cascade) var items: [FeedItem] = []
 
