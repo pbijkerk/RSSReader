@@ -65,11 +65,17 @@ struct ContentView: View {
             KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
             ?? ""
-        clusters = await clusteringService.cluster(
-            items: allItems,
-            savedTopics: topics,
-            claudeAPIKey: apiKey.isEmpty ? nil : apiKey
-        )
+        // nil betekent: verdrongen door een nieuwere ronde of geannuleerd. Het bestaande
+        // resultaat laten staan; de ronde die won werkt de samenvatting zelf bij.
+        guard
+            let result = await clusteringService.cluster(
+                items: allItems,
+                savedTopics: topics,
+                claudeAPIKey: apiKey.isEmpty ? nil : apiKey
+            )
+        else { return }
+
+        clusters = result
         lastClusteredAt = Date()
     }
 }

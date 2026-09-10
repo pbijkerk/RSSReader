@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Toegevoegd
+- Een clusteringronde die door een nieuwere wordt ingehaald, overschrijft het resultaat niet meer; de nieuwste ronde wint, omdat die de actuele feeds en instellingen kent
 - Per feed instelbaar of die meetelt in de AI-samenvatting op Vandaag ("Meenemen in samenvatting" in de feedinstellingen, standaard aan). Een uitgesloten feed verdwijnt niet: de artikelen blijven gewoon zichtbaar in Artikelen en Bewaard. Bij het wijzigen draait de clustering direct opnieuw
 
 ## [1.6.2] - 2026-09-10
