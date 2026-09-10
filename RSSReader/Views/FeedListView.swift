@@ -31,8 +31,8 @@ struct FeedListView: View {
             }
         }
         .background(Theme.background.ignoresSafeArea())
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .navigationTitle("Feeds")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Alles rechts: als pushbestemming is de leading-plek van de terugknop.
             ToolbarItem(placement: .topBarTrailing) {

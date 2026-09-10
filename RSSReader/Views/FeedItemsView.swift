@@ -81,8 +81,7 @@ struct FeedItemsView: View {
             await refreshService.refresh(feed: feed, context: modelContext)
         }
         .navigationTitle(feed.title)
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Refresh", systemImage: "arrow.clockwise") {

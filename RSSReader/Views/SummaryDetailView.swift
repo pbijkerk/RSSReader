@@ -27,7 +27,7 @@ struct SummaryDetailView: View {
             .padding()
         }
         .navigationTitle(cluster.topicName)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             checkIfTopicSaved()
         }

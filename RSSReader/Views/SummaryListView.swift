@@ -21,6 +21,7 @@ struct SummaryListView: View {
             .background(Theme.background)
             .refreshable { await onRefresh() }
             .navigationTitle("Vandaag")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Instellingen", systemImage: "gearshape") {

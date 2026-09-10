@@ -7,7 +7,11 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- De schermtitel staat nu vast compact in het midden van de navigatiebalk in plaats van eerst groot boven de lijst; de balk is daardoor smaller en de titel blijft altijd zichtbaar
+
 ### Opgelost
+- De titel verdween op iOS 26 volledig zodra je in een lijst scrolde: het afgedwongen balkmateriaal (`.toolbarBackground(.ultraThinMaterial)`) onderdrukte de compacte titel. Dat materiaal is uit alle lijstschermen gehaald, zodat iOS zijn eigen scroll-edge-effect neerlegt
 - De audiospeler werd op iOS 26 bovenaan afgesneden door de zwevende navigatiebalk. De spelers in de audio- en videolayout houden die balk nu vrij, en de artikeltekst eronder krijgt niet langer de bovenmarge die alleen bij de reader-layout hoort
 
 ## [1.6.1] - 2026-09-10
