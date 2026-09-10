@@ -11,6 +11,10 @@ enum AppConfiguration {
     /// Maximum aantal feeds dat parallel ververst kan worden
     static let maxParallelRefreshes = 10
 
+    /// Ruimte die het eerste element vrij moet houden van de zwevende iOS 26-navigatiebalk.
+    /// Die balk zweeft over de inhoud, dus wat bovenaan begint verdwijnt er anders achter.
+    static let floatingNavBarClearance = 72
+
     /// Minimale tijd tussen twee automatische clusteringrondes. Geldt niet wanneer de
     /// gebruiker zelf om een refresh vraagt (pull-to-refresh).
     static let clusteringDebounce: TimeInterval = 120

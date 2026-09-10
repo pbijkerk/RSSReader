@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Opgelost
+- De audiospeler werd op iOS 26 bovenaan afgesneden door de zwevende navigatiebalk. De spelers in de audio- en videolayout houden die balk nu vrij, en de artikeltekst eronder krijgt niet langer de bovenmarge die alleen bij de reader-layout hoort
+
 ## [1.6.1] - 2026-09-10
 
 ### Opgelost
