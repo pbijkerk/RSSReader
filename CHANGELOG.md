@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.6.0] - 2026-09-10
 
 ### Toegevoegd
 - Pull-to-refresh op het startscherm Vandaag: naar beneden trekken ververst alle feeds en draait de clustering opnieuw, ook binnen de debounce van twee minuten (bij automatisch verversen blijft die debounce gelden)
