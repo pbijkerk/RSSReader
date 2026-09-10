@@ -38,5 +38,8 @@ Pas bij alle ontwikkelwerkzaamheden de volgende best practices toe:
   commando's. Dit gebeurt alleen bij een release, niet na gewoon featurewerk.
 - Draai `xcodegen generate` vóór de device-build: de versie staat in `project.yml` en komt pas
   in het `.xcodeproj` na regeneratie.
-- Bouw device-builds naar een `-derivedDataPath` buiten de projectmap (die in iCloud Drive
-  staat), anders faalt `codesign` op `com.apple.FinderInfo`.
+- Bouw device-builds naar een `-derivedDataPath` buiten de projectmap. Die staat in iCloud
+  Drive, dat extended attributes op de buildoutput zet (waargenomen: `com.apple.provenance`;
+  ook `com.apple.FinderInfo` komt voor), waarna `codesign` faalt met *"resource fork, Finder
+  information, or similar detritus not allowed"*. `xattr -rc` lost dit niet op — die
+  attributen komen terug of zijn niet te verwijderen.
