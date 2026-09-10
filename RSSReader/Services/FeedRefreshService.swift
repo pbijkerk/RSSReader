@@ -16,6 +16,12 @@ class FeedRefreshService {
 
     // Each refresh gets its own parser instance — no shared mutable state
     func refreshAll(feeds: [Feed], context: ModelContext) async {
+        // Twee keer snel achter elkaar trekken mag geen tweede ronde starten: die zou
+        // dezelfde feeds parallel schrijven en isRefreshing te vroeg op false zetten.
+        guard !isRefreshing else {
+            logger.info("Refresh already in progress, ignoring duplicate request")
+            return
+        }
         isRefreshing = true
         lastError = nil
 
