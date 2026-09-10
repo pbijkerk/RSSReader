@@ -46,13 +46,15 @@ struct ContentView: View {
     private func refreshAndCluster(force: Bool = false) async {
         await refreshService.refreshAll(feeds: feeds, context: modelContext)
 
-        let now = Date()
         let shouldCluster =
-            force || (lastClusteredAt.map { now.timeIntervalSince($0) > AppConfiguration.clusteringDebounce } ?? true)
+            force
+            || (lastClusteredAt.map { Date().timeIntervalSince($0) > AppConfiguration.clusteringDebounce } ?? true)
         guard shouldCluster else { return }
 
+        // regenerateSummaries() zet lastClusteredAt zelf, op het moment dat de clustering
+        // klaar is. Hier niets meer overschrijven: dat zou de klok terugzetten naar vóór
+        // het ophalen en clusteren, waardoor de debounce te vroeg vervalt.
         await regenerateSummaries()
-        lastClusteredAt = now
     }
 
     private func regenerateSummaries() async {

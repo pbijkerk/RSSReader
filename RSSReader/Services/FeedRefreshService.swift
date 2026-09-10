@@ -9,19 +9,33 @@ class FeedRefreshService {
     var isRefreshing = false
     var lastError: String?
 
+    /// De lopende volledige refresh, zodat een tweede aanroep erop kan wachten
+    /// in plaats van een eigen ronde te starten.
+    private var activeRefresh: Task<Void, Never>?
+
     private let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.feed
     )
 
-    // Each refresh gets its own parser instance — no shared mutable state
+    /// Een tweede aanroep start geen tweede ronde maar wacht op de lopende. Twee rondes
+    /// zouden dezelfde feeds parallel schrijven; vroegtijdig terugkeren zou de aanroeper
+    /// laten clusteren op data die nog binnenkomt.
     func refreshAll(feeds: [Feed], context: ModelContext) async {
-        // Twee keer snel achter elkaar trekken mag geen tweede ronde starten: die zou
-        // dezelfde feeds parallel schrijven en isRefreshing te vroeg op false zetten.
-        guard !isRefreshing else {
-            logger.info("Refresh already in progress, ignoring duplicate request")
+        if let activeRefresh {
+            logger.info("Refresh already in progress, awaiting the running one")
+            await activeRefresh.value
             return
         }
+
+        let task = Task { await performRefreshAll(feeds: feeds, context: context) }
+        activeRefresh = task
+        await task.value
+        activeRefresh = nil
+    }
+
+    // Each refresh gets its own parser instance — no shared mutable state
+    private func performRefreshAll(feeds: [Feed], context: ModelContext) async {
         isRefreshing = true
         lastError = nil
 
