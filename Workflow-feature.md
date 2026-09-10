@@ -73,7 +73,9 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
   ```
 - Controleer na afloop dat de geïnstalleerde build het verwachte versienummer heeft:
   `/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app/Info.plist"`
-- **Bouw niet binnen de projectmap.** Die staat in iCloud Drive; iCloud zet dan
-  `com.apple.FinderInfo` op de `.app` en `codesign` faalt met *"resource fork, Finder
-  information, or similar detritus not allowed"*. Simulatorbuilds hebben hier geen last van
-  omdat die niet worden ondertekend.
+- **Bouw niet binnen de projectmap.** Die staat in iCloud Drive, dat extended attributes op
+  de buildoutput zet (waargenomen: `com.apple.provenance`; ook `com.apple.FinderInfo` komt
+  voor). `codesign` faalt dan met *"resource fork, Finder information, or similar detritus
+  not allowed"*. `xattr -rc` lost dit niet op — die attributen komen terug of zijn niet te
+  verwijderen; bouw naar een pad buiten de projectmap. Simulatorbuilds hebben hier geen last
+  van omdat die niet worden ondertekend.
