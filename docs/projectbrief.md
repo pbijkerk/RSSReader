@@ -60,6 +60,7 @@ Afgeleid van de gewenste uitkomst; geprioriteerd volgens MoSCoW. Elke actionable
 - R6: Minder betrouwbare bronnen worden getoond en geduid, niet uit de samenvatting weggelaten — reden: de lezer moet zelf kunnen wegen; weglaten verbergt wat mist. (sub-issue onder #11)
 - R7: Bij een onderwerp met een betwijfelde bewering toont de app een fact-check-waarschuwing — reden: versterkt betrouwbaarheid; hangt af van herstel fact-check (#13). (sub-issue onder #11)
 - R10: Per onderwerp behandelt de samenvatting de belangrijkste ontwikkelingen op basis van minimaal 2 onderliggende bronnen waar er meerdere beschikbaar zijn — reden: maakt "uitgebreider" toetsbaar. (sub-issue onder #14)
+- R12: De gebruiker kan per feed instellen of deze meetelt in de AI-samenvatting; uitgesloten feeds blijven gewoon leesbaar in Artikelen en Bewaard — reden: voorkomt dat een feed die niet relevant is voor het nieuwsoverzicht de samenvatting verwatert, zonder de feed te hoeven verwijderen; de hoofdpagina functioneert ook zonder deze instelling. (#68)
 
 ### Could — meerwaarde als er ruimte is
 - R5: Per losse bron/artikel zijn betrouwbaarheid en politieke kleur zichtbaar via de bronverwijzing — reden: detailverdieping bovenop de duiding per onderwerp. (sub-issue onder #11)
