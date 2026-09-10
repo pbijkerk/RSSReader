@@ -81,6 +81,8 @@ enum AppConfiguration {
         static let summaryLength = "summaryLength"
         static let showBiasIndicators = "showBiasIndicators"
         static let analysisTextSize = "analysisTextSize"
+        /// UUID-string van de actieve mapfilter op de artikelstroom; leeg = alle mappen.
+        static let articlesFolderFilter = "articlesFolderFilter"
     }
 
     // MARK: - Summary length

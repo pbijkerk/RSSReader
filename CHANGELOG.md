@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Artikelen opent nu direct op de artikelstroom met een blijvende filterbalk per map ("Alle" plus een chip per map, keuze blijft bewaard na herstart), zodat elk artikel met één tik bereikbaar is; feedbeheer verhuisde naar "Feeds beheren" in het toolbarmenu en de hardgecodeerde blauwtinten in de feedlijst zijn vervangen door themakleuren
 - Vandaag toont nu de samenvatting zelf als kaartenscherm per onderwerp — beweringen met klikbare bronchips, bronduiding en fact-checkwaarschuwing direct zichtbaar — in plaats van een inhoudsopgave die eerst naar de samenvatting doorlinkt; bij meer dan drie beweringen verschijnt een "Toon meer"-knop, en alle teksten zijn nu Nederlands
 - Tabbalk teruggebracht van vijf naar drie tabbladen (Vandaag, Artikelen, Bewaard) met leesbaardere labels van 11pt: Onderwerpen staat nu in Instellingen en Instellingen opent via een tandwielknop in de toolbar van Vandaag, als sheet met een Gereed-knop om te sluiten
 - Releaseworkflow beschrijft nu het installeren van de nieuwe versie op de iPhone als vaste stap, inclusief de eis om device-builds buiten de iCloud-map te bouwen (anders faalt `codesign`)
