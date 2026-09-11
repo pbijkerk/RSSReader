@@ -11,12 +11,12 @@ struct OPMLFeed {
 class OPMLParser: NSObject, XMLParserDelegate {
     private var feeds: [OPMLFeed] = []
     private var currentFolderName: String?  // name of the enclosing folder outline (if any)
-    private var depth = 0
+    private var folderDepth = 0  // tracks depth of folder outlines only, not feed outlines
 
     func parse(data: Data) -> [OPMLFeed] {
         feeds = []
         currentFolderName = nil
-        depth = 0
+        folderDepth = 0
         let parser = XMLParser(data: data)
         parser.delegate = self
         parser.parse()
@@ -46,11 +46,11 @@ class OPMLParser: NSObject, XMLParserDelegate {
             )
             feeds.append(feed)
         } else if !title.isEmpty {
-            // No xmlUrl → treat as folder outline; track depth so nested folders don't override
-            if depth == 0 {
+            // No xmlUrl  treat as folder outline; track folderDepth so nested folders don't override
+            if folderDepth == 0 {
                 currentFolderName = title
             }
-            depth += 1
+            folderDepth += 1
         }
     }
 
@@ -61,9 +61,9 @@ class OPMLParser: NSObject, XMLParserDelegate {
         qualifiedName qName: String?
     ) {
         guard elementName.lowercased() == "outline" else { return }
-        if depth > 0 {
-            depth -= 1
-            if depth == 0 {
+        if folderDepth > 0 {
+            folderDepth -= 1
+            if folderDepth == 0 {
                 currentFolderName = nil
             }
         }

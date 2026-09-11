@@ -68,6 +68,7 @@ class FeedRefreshService {
 
         logger.info("Refreshing \(accounts.count) Mastodon accounts")
 
+        var allErrors: [String] = []
         for account in accounts {
             guard let feed = account.feed else { continue }
             do {
@@ -78,12 +79,13 @@ class FeedRefreshService {
                     account.needsReauth = true
                     try? context.save()
                 }
-                lastError = e.errorDescription
+                allErrors.append(e.errorDescription ?? "Onbekende fout")
             } catch {
                 logger.error("Mastodon refresh failed: \(error.localizedDescription)")
-                lastError = "Mastodon: \(error.localizedDescription)"
+                allErrors.append("Mastodon: \(error.localizedDescription)")
             }
         }
+        lastError = allErrors.isEmpty ? nil : allErrors.joined(separator: "; ")
 
         logger.info("Refresh completed")
         isRefreshing = false
