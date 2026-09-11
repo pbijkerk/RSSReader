@@ -79,3 +79,40 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
   not allowed"*. `xattr -rc` lost dit niet op — die attributen komen terug of zijn niet te
   verwijderen; bouw naar een pad buiten de projectmap. Simulatorbuilds hebben hier geen last
   van omdat die niet worden ondertekend.
+## 10. Continue Integration (CI) met GitHub Actions
+
+Naast de handmatige stappen in deze workflow draait er een **automatische CI-pipeline**
+ die de volgende taken uitvoert:
+
+- **Bouwen**: Valideert dat de code compileert voor iOS Simulator
+- **Testen**: Voert unit tests uit (indien aanwezig)
+- **Linten**: Controleert code style met SwiftLint
+- **Code Coverage**: Genereert een rapport van testdekking
+
+De CI-pipeline is **optioneel** maar sterk aanbevolen voor:
+- Vroegtijdige detectie van buildfouten
+- Automatische validatie van codekwaliteit
+- Zichtbaarheid in de ontwikkelingstekst (bv. voor AI-assistentie)
+
+### Wanneer draait de CI?
+- **Automatisch** bij push naar `main` of Pull Requests
+- **Handmatig** via GitHub → Actions tab
+
+### Relatie tot deze workflow
+| Stap in deze workflow | CI equivalent |
+|------------------------|----------------|
+| Stap 2 (Build-check)   | ✅ Build job in CI |
+| Stap 6 (Review)        | ✅ Test/Lint jobs in CI |
+
+### Voor wie is CI bedoeld?
+- **AI/automatische validatie**: Altijd nuttig (valideert code voordat deze gemerged wordt)
+- **Externe testers (TestFlight)**: Optioneel (zie stap 8-9 in deze workflow)
+- **App Store publicatie**: Optioneel (zie stap 8-9 in deze workflow)
+
+### Kosten
+- **Gratis** voor openbare repositories
+- **Gratis** voor private repositories (tot 200 macOS minuten/maand)
+
+### Workflow bestand
+- **Locatie:** `.github/workflows/ci.yml`
+- **Jobs:** `build-and-test`, `lint`, `coverage`, `release-build`
