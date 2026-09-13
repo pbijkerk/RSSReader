@@ -275,6 +275,11 @@ struct ArticlePageView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        // De pagina-TabView houdt ruimte tussen twee pagina's; die ruimte toont de
+        // achtergrond van de container. Zonder deze regel is dat de systeemstandaard
+        // (wit in lichte modus) in plaats van Theme.background (#F4F3EF), wat je bij
+        // elke veeg als een witte flits ziet.
+        .background(Theme.background.ignoresSafeArea())
         .ignoresSafeArea(edges: .bottom)
     }
 }
