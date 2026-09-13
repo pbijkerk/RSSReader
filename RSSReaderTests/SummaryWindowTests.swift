@@ -17,7 +17,9 @@ import XCTest
 final class SummaryWindowTests: XCTestCase {
 
     private var container: ModelContainer!
-    /// Vast ijkpunt, zodat de tests niet van de echte klok afhangen.
+    /// Vast ijkpunt, zodat de tests niet van de echte klok afhangen. Alles wat een
+    /// leeftijd beoordeelt (`withinSummaryWindow`, `pruneOldItems`) krijgt dit moment
+    /// expliciet mee; anders vergelijkt de test een verzonnen datum met de echte klok.
     private let nu = Date(timeIntervalSince1970: 1_800_000_000)
 
     override func setUpWithError() throws {
@@ -141,7 +143,7 @@ final class SummaryWindowTests: XCTestCase {
             context.insert(item)
         }
 
-        FeedRefreshService.pruneOldItems(feed: feed, context: context)
+        FeedRefreshService.pruneOldItems(feed: feed, context: context, now: nu)
 
         let overgebleven = feed.items.map(\.title)
         XCTAssertFalse(
@@ -164,7 +166,7 @@ final class SummaryWindowTests: XCTestCase {
         feed.items.append(bewaard)
         context.insert(bewaard)
 
-        FeedRefreshService.pruneOldItems(feed: feed, context: context)
+        FeedRefreshService.pruneOldItems(feed: feed, context: context, now: nu)
 
         XCTAssertEqual(feed.items.map(\.title), ["Bewaard"])
     }
