@@ -19,6 +19,11 @@ enum AppConfiguration {
     /// gebruiker zelf om een refresh vraagt (pull-to-refresh).
     static let clusteringDebounce: TimeInterval = 120
 
+    /// Hoe ver de samenvatting op Vandaag terugkijkt. 48 uur houdt "gisteren en vandaag"
+    /// binnen bereik — een dag overslaan kost geen nieuws — terwijl artikelen uit de rest
+    /// van de bewaarperiode buiten de samenvatting blijven (#89).
+    static let summaryWindow: TimeInterval = 48 * 3600
+
     // MARK: - Retention
 
     /// Standaard aantal dagen dat artikelen bewaard blijven (als feed geen eigen instelling heeft)

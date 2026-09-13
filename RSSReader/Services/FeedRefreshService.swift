@@ -184,7 +184,9 @@ class FeedRefreshService {
     /// Verwijdert artikelen ouder dan de effectieve bewaarperiode (feed-instelling of globale standaard).
     /// Static, zodat `MastodonService` dezelfde logica kan aanroepen zonder een eigen
     /// instantie te maken: die houdt `isRefreshing`/`lastError` bij en hoort bij een scherm.
-    static func pruneOldItems(feed: Feed, context: ModelContext) {
+    /// `now` is injecteerbaar zodat het opruimen toetsbaar is zonder van de echte klok
+    /// af te hangen; in de app blijft het gewoon "nu".
+    static func pruneOldItems(feed: Feed, context: ModelContext, now: Date = Date()) {
         let globalDefault =
             UserDefaults.standard.object(
                 forKey: AppConfiguration.UserDefaultsKeys.retentionDays
@@ -193,12 +195,17 @@ class FeedRefreshService {
         let effective = feed.retentionDays ?? globalDefault
         guard effective > 0 else { return }
 
-        guard let cutoff = Calendar.current.date(byAdding: .day, value: -effective, to: Date()) else {
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -effective, to: now) else {
             Self.logger.warning("Failed to calculate cutoff date for pruning")
             return
         }
 
-        let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
+        // `effectiveDate` valt terug op `fetchedAt`, zodat een artikel zonder publicatie-
+        // datum ook opruimbaar is. Rijen van vóór #89 hebben geen van beide; die blijven
+        // staan (`.distantFuture`), zodat er niets onverwachts verdwijnt.
+        let toDelete = feed.items.filter {
+            ($0.effectiveDate ?? .distantFuture) < cutoff && !$0.isSaved
+        }
 
         if !toDelete.isEmpty {
             Self.logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")

@@ -5,6 +5,14 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Gewijzigd
+- De samenvatting op Vandaag kijkt 48 uur terug in plaats van de volle bewaarperiode van 30 dagen. De lege staat legt dat venster uit; de artikelen zelf blijven zichtbaar in Artikelen en Bewaard (#89)
+
+### Opgelost
+- Artikelen zonder publicatiedatum werden nooit opgeruimd: de bewaarperiode behandelde een ontbrekende datum als oneindig ver in de toekomst. Ze krijgen nu een ophaalmoment (`fetchedAt`) en verouderen daarmee gewoon (#89)
+
 ## [1.7.1] - 2026-09-13
 
 ### Toegevoegd

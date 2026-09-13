@@ -18,6 +18,12 @@ class FeedItem {
     @Relationship(deleteRule: .cascade) var factCheckResults: [FactCheckResult] = []
     var factCheckCheckedAt: Date?  // nil = nooit gecontroleerd
 
+    /// Wanneer dit artikel is opgehaald. Terugval voor `pubDate`, die uit de feed komt
+    /// en leeg kan zijn: zonder eigen stempel veroudert een datumloos artikel nooit,
+    /// waardoor het buiten elk venster valt én nooit wordt opgeruimd (#89).
+    /// `nil` bij rijen van vóór deze wijziging; die blijven zich gedragen als voorheen.
+    var fetchedAt: Date?
+
     // Transient cache — niet bewaard, opnieuw berekend na SwiftData fault
     @Transient private var _cachedPlainDescription: String? = nil
 
@@ -29,9 +35,11 @@ class FeedItem {
         guid: String? = nil,
         enclosureURL: String? = nil,
         enclosureMIMEType: String? = nil,
-        imageURL: String? = nil
+        imageURL: String? = nil,
+        fetchedAt: Date? = Date()
     ) {
         self.id = UUID()
+        self.fetchedAt = fetchedAt
         self.title = title
         self.link = link
         self.itemDescription = itemDescription
@@ -42,6 +50,10 @@ class FeedItem {
         self.enclosureMIMEType = enclosureMIMEType
         self.imageURL = imageURL
     }
+
+    /// De leeftijd waarop de app dit artikel beoordeelt: de publicatiedatum, en anders
+    /// het moment van ophalen. `nil` bij rijen van vóór #89 die geen van beide hebben.
+    var effectiveDate: Date? { pubDate ?? fetchedAt }
 
     var plainDescription: String {
         if let cached = _cachedPlainDescription { return cached }

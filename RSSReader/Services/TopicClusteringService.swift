@@ -190,6 +190,22 @@ class TopicClusteringService {
     /// Geeft `nil` wanneer deze ronde is verdrongen door een nieuwere of is geannuleerd.
     /// De aanroeper hoort het bestaande resultaat dan te laten staan in plaats van het
     /// met een lege of verouderde lijst te overschrijven.
+    /// De artikelen die binnen het recentheidsvenster vallen. Een artikel zonder
+    /// `pubDate` telt mee vanaf het moment dat het is opgehaald; een artikel zonder
+    /// beide (een rij van vóór #89) valt buiten het venster, zoals het zich feitelijk
+    /// ook nu al gedraagt.
+    static func withinSummaryWindow(
+        _ items: [FeedItem],
+        window: TimeInterval = AppConfiguration.summaryWindow,
+        now: Date = Date()
+    ) -> [FeedItem] {
+        let cutoff = now.addingTimeInterval(-window)
+        return items.filter { item in
+            guard let date = item.effectiveDate else { return false }
+            return date >= cutoff
+        }
+    }
+
     func cluster(
         items: [FeedItem],
         savedTopics: [Topic],

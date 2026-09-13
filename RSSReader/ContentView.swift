@@ -60,7 +60,11 @@ struct ContentView: View {
     private func regenerateSummaries() async {
         // Alleen feeds die de gebruiker in de samenvatting wil; hun artikelen blijven
         // wel gewoon zichtbaar in Artikelen en Bewaard.
-        let allItems = feeds.filter { $0.includedInSummary }.flatMap { $0.items }
+        // Alleen artikelen binnen het recentheidsvenster: een samenvatting van "Vandaag"
+        // hoort niet uit de volle bewaarperiode te putten (#89).
+        let recenteItems = TopicClusteringService.withinSummaryWindow(
+            feeds.filter { $0.includedInSummary }.flatMap { $0.items }
+        )
         let apiKey =
             KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
@@ -69,7 +73,7 @@ struct ContentView: View {
         // resultaat laten staan; de ronde die won werkt de samenvatting zelf bij.
         guard
             let result = await clusteringService.cluster(
-                items: allItems,
+                items: recenteItems,
                 savedTopics: topics,
                 claudeAPIKey: apiKey.isEmpty ? nil : apiKey
             )
