@@ -132,6 +132,17 @@ dat code compileert en werkt.
 Vereist het repository secret `CLAUDE_CODE_OAUTH_TOKEN`; zonder dat secret faalt de job.
 Draait op `ubuntu-latest`, dus zonder de 10×-vermenigvuldiging van de macOS-runs.
 
+### @claude in issues en PR's
+`.github/workflows/claude.yml` reageert wanneer je `@claude` noemt in een issue, een reactie
+op een PR of een review. De opdracht is je eigen tekst; er is geen vaste prompt. Hij mag de
+CI-resultaten van een PR lezen, dus vragen als "waarom staat de build rood?" werken.
+
+De job heeft bewust alleen leesrechten: hij analyseert en antwoordt, maar pusht niets. Wil je
+dat hij wel commits maakt, dan moet `contents` naar `write` — een bewuste keuze, want dan mag
+een workflow die op een reactie afgaat de repository schrijven.
+
+Gebruikt hetzelfde secret als de review hierboven.
+
 ### De workflow-bestanden
 - **Locatie:** `.github/workflows/ci.yml` (build + tests) en
   `.github/workflows/claude-code-review.yml` (review)
