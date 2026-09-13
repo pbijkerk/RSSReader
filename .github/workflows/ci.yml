@@ -33,6 +33,17 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
+      # Het getrackte .xcodeproj is gegenereerde uitvoer. Wijkt het af van wat
+      # project.yml oplevert, dan mist Xcode lokaal bestanden die CI wél bouwt —
+      # een test kan dan in Xcode onzichtbaar zijn terwijl CI hem draait (#92).
+      - name: Gegenereerd project is actueel
+        run: |
+          if ! git diff --exit-code --stat RSSReader.xcodeproj/; then
+            echo "::error::Het getrackte .xcodeproj loopt achter op project.yml."
+            echo "Draai lokaal 'xcodegen generate' en commit het resultaat."
+            exit 1
+          fi
+
       # Zonder toestelnaam, conform stap 2 van Workflow-feature.md.
       - name: Build-check
         run: |
