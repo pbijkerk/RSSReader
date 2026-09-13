@@ -18,6 +18,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - De samenvatting op Vandaag kijkt 48 uur terug in plaats van de volle bewaarperiode van 30 dagen. De lege staat legt dat venster uit; de artikelen zelf blijven zichtbaar in Artikelen en Bewaard (#89)
 
 ### Opgelost
+- Bij het bladeren door artikelen flitste er wit tussen twee pagina's: de pagina-TabView en het artikelscherm hadden geen eigen achtergrond, waardoor de systeemstandaard (wit) zichtbaar werd in plaats van `Theme.background`
 - Artikelen zonder publicatiedatum werden nooit opgeruimd: de bewaarperiode behandelde een ontbrekende datum als oneindig ver in de toekomst. Ze krijgen nu een ophaalmoment (`fetchedAt`) en verouderen daarmee gewoon (#89)
 
 ## [1.7.1] - 2026-09-13

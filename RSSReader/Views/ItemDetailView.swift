@@ -50,6 +50,9 @@ struct ItemDetailView: View {
                 }
             }
         }
+        // Ook het artikel zelf: tot de webview zijn eerste frame tekent, toont een
+        // achtergrondloze VStack de systeemstandaard in plaats van de appkleur.
+        .background(Theme.background.ignoresSafeArea())
         .overlay(alignment: .top) { readingProgressBar }
         .navigationTitle(item.feed?.title ?? "Artikel")
         .navigationBarTitleDisplayMode(.inline)
