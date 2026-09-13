@@ -3,6 +3,9 @@ build/
 DerivedData/
 *.xcuserstate
 
+# Gebruikersspecifieke Xcode-state (schema-volgorde, zichtbaarheid) — per machine anders
+RSSReader.xcodeproj/xcuserdata/
+
 # macOS
 .DS_Store
 
