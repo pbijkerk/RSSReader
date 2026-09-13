@@ -58,6 +58,10 @@ struct SummaryListView: View {
         .background(Theme.background)
     }
 
+    private var vensterInUren: Int {
+        Int(AppConfiguration.summaryWindow / 3600)
+    }
+
     private var emptyContent: some View {
         VStack(spacing: 20) {
             Image(systemName: "newspaper")
@@ -65,10 +69,15 @@ struct SummaryListView: View {
                 .foregroundStyle(Theme.textSecondary)
             Text("Nog geen samenvattingen")
                 .font(Theme.title(22))
-            Text("Voeg RSS-feeds toe; samenvattingen verschijnen hier gegroepeerd per onderwerp.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Theme.textSecondary)
-                .padding(.horizontal)
+            // Benoemt het venster: zonder die uitleg lijkt een rustige dag op een storing.
+            Text(
+                "Vandaag vat de artikelen van de afgelopen \(vensterInUren) uur samen. "
+                    + "Staat hier niets, dan is er in die periode niets binnengekomen — "
+                    + "de artikelen zelf blijven gewoon in Artikelen en Bewaard staan."
+            )
+            .multilineTextAlignment(.center)
+            .foregroundStyle(Theme.textSecondary)
+            .padding(.horizontal)
         }
         .padding()
         .frame(maxWidth: .infinity)

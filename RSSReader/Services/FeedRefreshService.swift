@@ -198,7 +198,12 @@ class FeedRefreshService {
             return
         }
 
-        let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
+        // `effectiveDate` valt terug op `fetchedAt`, zodat een artikel zonder publicatie-
+        // datum ook opruimbaar is. Rijen van vóór #89 hebben geen van beide; die blijven
+        // staan (`.distantFuture`), zodat er niets onverwachts verdwijnt.
+        let toDelete = feed.items.filter {
+            ($0.effectiveDate ?? .distantFuture) < cutoff && !$0.isSaved
+        }
 
         if !toDelete.isEmpty {
             Self.logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
