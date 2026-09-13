@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Toegevoegd
+- Unit-tests voor `RSSParser`: velden, datumformaten, mediatype, afbeeldingen en randgevallen
 - CI op GitHub Actions: elke pull request naar `main` draait de build-check en de unit-tests op een iOS-simulator
 - Unit-tests voor `OPMLParser` die de mapindeling van geïmporteerde feeds vastleggen
 
