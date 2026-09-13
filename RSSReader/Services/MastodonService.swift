@@ -363,7 +363,7 @@ class MastodonService {
         feed.lastRefreshed = Date()
 
         // Bewaarperiode toepassen
-        FeedRefreshService.shared.pruneOldItems(feed: feed, context: context)
+        FeedRefreshService.pruneOldItems(feed: feed, context: context)
 
         try context.save()
     }

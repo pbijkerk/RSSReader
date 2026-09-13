@@ -13,7 +13,7 @@ class FeedRefreshService {
     /// in plaats van een eigen ronde te starten.
     private var activeRefresh: Task<Void, Never>?
 
-    private let logger = Logger(
+    private static let logger = Logger(
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.feed
     )
@@ -23,7 +23,7 @@ class FeedRefreshService {
     /// laten clusteren op data die nog binnenkomt.
     func refreshAll(feeds: [Feed], context: ModelContext) async {
         if let activeRefresh {
-            logger.info("Refresh already in progress, awaiting the running one")
+            Self.logger.info("Refresh already in progress, awaiting the running one")
             await activeRefresh.value
             return
         }
@@ -39,7 +39,7 @@ class FeedRefreshService {
         isRefreshing = true
         lastError = nil
 
-        logger.info("Starting refresh of \(feeds.count) feeds")
+        Self.logger.info("Starting refresh of \(feeds.count) feeds")
 
         // Parallel refresh voor betere performance, met limiet
         await withTaskGroup(of: Void.self) { group in
@@ -66,7 +66,7 @@ class FeedRefreshService {
         let mastodonDescriptor = FetchDescriptor<MastodonAccount>()
         let accounts = (try? context.fetch(mastodonDescriptor)) ?? []
 
-        logger.info("Refreshing \(accounts.count) Mastodon accounts")
+        Self.logger.info("Refreshing \(accounts.count) Mastodon accounts")
 
         var allErrors: [String] = []
         for account in accounts {
@@ -74,20 +74,20 @@ class FeedRefreshService {
             do {
                 try await MastodonService.shared.refreshFeed(account: account, feed: feed, context: context)
             } catch let e as MastodonError {
-                logger.error("Mastodon refresh failed: \(e.localizedDescription ?? "Unknown error")")
+                Self.logger.error("Mastodon refresh failed: \(e.localizedDescription ?? "Unknown error")")
                 if case .httpError(let code, _) = e, code == 401 {
                     account.needsReauth = true
                     try? context.save()
                 }
                 allErrors.append(e.errorDescription ?? "Onbekende fout")
             } catch {
-                logger.error("Mastodon refresh failed: \(error.localizedDescription)")
+                Self.logger.error("Mastodon refresh failed: \(error.localizedDescription)")
                 allErrors.append("Mastodon: \(error.localizedDescription)")
             }
         }
         lastError = allErrors.isEmpty ? nil : allErrors.joined(separator: "; ")
 
-        logger.info("Refresh completed")
+        Self.logger.info("Refresh completed")
         isRefreshing = false
     }
 
@@ -97,12 +97,12 @@ class FeedRefreshService {
             return
         }
         guard let url = URL(string: feed.url) else {
-            logger.warning("Invalid feed URL: \(feed.url)")
+            Self.logger.warning("Invalid feed URL: \(feed.url)")
             return
         }
 
         do {
-            logger.debug("Fetching feed: \(feed.title)")
+            Self.logger.debug("Fetching feed: \(feed.title)")
             let (data, _) = try await URLSession.shared.data(from: url)
 
             // Parse on a background thread with a fresh parser, return plain structs
@@ -114,10 +114,10 @@ class FeedRefreshService {
             applyParsedFeed(parsed, to: feed, context: context)
             try context.save()
 
-            logger.info("Successfully refreshed feed: \(feed.title)")
+            Self.logger.info("Successfully refreshed feed: \(feed.title)")
 
         } catch {
-            logger.error("Failed to refresh \(feed.title): \(error.localizedDescription)")
+            Self.logger.error("Failed to refresh \(feed.title): \(error.localizedDescription)")
             lastError = "Failed to refresh \(feed.title): \(error.localizedDescription)"
         }
     }
@@ -165,7 +165,7 @@ class FeedRefreshService {
         }
 
         // Verwijder artikelen die ouder zijn dan de bewaarperiode
-        pruneOldItems(feed: feed, context: context)
+        Self.pruneOldItems(feed: feed, context: context)
 
         feed.lastRefreshed = Date()
 
@@ -182,7 +182,9 @@ class FeedRefreshService {
     }
 
     /// Verwijdert artikelen ouder dan de effectieve bewaarperiode (feed-instelling of globale standaard).
-    func pruneOldItems(feed: Feed, context: ModelContext) {
+    /// Static, zodat `MastodonService` dezelfde logica kan aanroepen zonder een eigen
+    /// instantie te maken: die houdt `isRefreshing`/`lastError` bij en hoort bij een scherm.
+    static func pruneOldItems(feed: Feed, context: ModelContext) {
         let globalDefault =
             UserDefaults.standard.object(
                 forKey: AppConfiguration.UserDefaultsKeys.retentionDays
@@ -192,14 +194,14 @@ class FeedRefreshService {
         guard effective > 0 else { return }
 
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -effective, to: Date()) else {
-            logger.warning("Failed to calculate cutoff date for pruning")
+            Self.logger.warning("Failed to calculate cutoff date for pruning")
             return
         }
 
         let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
 
         if !toDelete.isEmpty {
-            logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
+            Self.logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
         }
 
         for item in toDelete {
@@ -251,21 +253,21 @@ class FeedRefreshService {
         guard let accounts = try? context.fetch(descriptor),
             let account = accounts.first(where: { $0.feed?.url == feed.url })
         else {
-            logger.warning("No Mastodon account found for feed: \(feed.url)")
+            Self.logger.warning("No Mastodon account found for feed: \(feed.url)")
             return
         }
 
         do {
             try await MastodonService.shared.refreshFeed(account: account, feed: feed, context: context)
         } catch let e as MastodonError {
-            logger.error("Mastodon feed refresh failed: \(e.localizedDescription ?? "Unknown")")
+            Self.logger.error("Mastodon feed refresh failed: \(e.localizedDescription ?? "Unknown")")
             if case .httpError(let code, _) = e, code == 401 {
                 account.needsReauth = true
                 try? context.save()
             }
             lastError = e.errorDescription
         } catch {
-            logger.error("Mastodon feed refresh failed: \(error.localizedDescription)")
+            Self.logger.error("Mastodon feed refresh failed: \(error.localizedDescription)")
             lastError = "Mastodon: \(error.localizedDescription)"
         }
     }
