@@ -269,14 +269,14 @@ class MastodonService {
         // Eerste afbeelding als enclosure én thumbnail
         if let first = images.first {
             item.enclosureURL = first.url
-            item.enclosureMIMEType = "image/jpeg"
+            item.enclosureMIMEType = mimeType(from: first.url)
             item.imageURL = first.previewUrl ?? first.url
         }
 
         // Alle afbeeldingen toevoegen aan de HTML-content (zichtbaar in detailweergave)
         if !images.isEmpty {
             let imgHTML = images.map { img in
-                "<img src=\"\(img.url)\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
+                "<img src=\"\(escape(img.url))\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
             }.joined(separator: "\n")
             item.itemDescription = (item.itemDescription ?? "") + "\n" + imgHTML
         }
@@ -310,6 +310,21 @@ class MastodonService {
             .replacingOccurrences(of: ">", with: "&gt;")
             .replacingOccurrences(of: "\"", with: "&quot;")
             .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
+    /// Leidt het MIME-type af uit de bestandsextensie van de URL; nil als die onbekend is.
+    private func mimeType(from urlString: String) -> String? {
+        guard let url = URL(string: urlString) else { return nil }
+        let ext = url.pathExtension.lowercased()
+
+        switch ext {
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png": return "image/png"
+        case "gif": return "image/gif"
+        case "webp": return "image/webp"
+        case "avif": return "image/avif"
+        default: return nil
+        }
     }
 
     // MARK: - Feed refresh
@@ -348,31 +363,7 @@ class MastodonService {
         feed.lastRefreshed = Date()
 
         // Bewaarperiode toepassen
-        let globalDefault =
-            UserDefaults.standard.object(
-                forKey: AppConfiguration.UserDefaultsKeys.retentionDays
-            ) as? Int ?? AppConfiguration.defaultRetentionDays
-
-        let effectiveDays = feed.retentionDays ?? globalDefault
-
-        if effectiveDays > 0 {
-            guard let cutoff = Calendar.current.date(byAdding: .day, value: -effectiveDays, to: Date()) else {
-                logger.warning("Failed to calculate cutoff date")
-                try context.save()
-                return
-            }
-
-            let toDelete = feed.items.filter { ($0.pubDate ?? .distantFuture) < cutoff && !$0.isSaved }
-
-            if !toDelete.isEmpty {
-                logger.debug("Pruning \(toDelete.count) old Mastodon items")
-            }
-
-            for item in toDelete {
-                feed.items.removeAll { $0.id == item.id }
-                context.delete(item)
-            }
-        }
+        FeedRefreshService.pruneOldItems(feed: feed, context: context)
 
         try context.save()
     }

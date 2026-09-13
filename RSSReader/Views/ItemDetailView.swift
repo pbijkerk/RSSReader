@@ -247,16 +247,27 @@ struct ItemDetailView: View {
 
     // MARK: - Content laden
 
+    private func escapeHTML(_ string: String) -> String {
+        string.replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
     private func loadContent() async {
         guard !item.isVideoItem else { return }
         let articleLink = item.feed?.isMastodonFeed == true ? nil : item.link
         var rssHTML = item.sanitisedHTML
+        // Artikelen die vóór de escaping-fix zijn opgeslagen bevatten de onbewerkte URL;
+        // daarom telt zowel de ge-escapete als de onbewerkte vorm als "staat er al in".
         if item.feed?.isMastodonFeed == true,
             let imgURL = item.enclosureURL,
+            !rssHTML.contains(escapeHTML(imgURL)),
             !rssHTML.contains(imgURL)
         {
             rssHTML +=
-                "\n<img src=\"\(imgURL)\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
+                "\n<img src=\"\(escapeHTML(imgURL))\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
         }
         if !rssHTML.isEmpty {
             displayHTML = ArticleHTMLBuilder.build(

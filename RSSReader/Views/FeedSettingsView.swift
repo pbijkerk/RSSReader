@@ -114,8 +114,7 @@ struct FeedSettingsView: View {
         feed.retentionDays = selectedDays
         feed.includedInSummary = includedInSummary
         // Onmiddellijk opruimen als een kortere periode is ingesteld
-        let refreshService = FeedRefreshService()
-        refreshService.pruneOldItems(feed: feed, context: modelContext)
+        FeedRefreshService.pruneOldItems(feed: feed, context: modelContext)
         try? modelContext.save()
         dismiss()
 

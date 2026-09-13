@@ -5,6 +5,21 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Toegevoegd
+- CI op GitHub Actions: elke pull request naar `main` draait de build-check en de unit-tests op een iOS-simulator
+- Unit-tests voor `OPMLParser` die de mapindeling van geïmporteerde feeds vastleggen
+
+### Opgelost
+- OPML-import verloor de mapindeling van elke feed na de eerste in een map; die feeds belandden in "Overig" (#78, #66)
+- Mastodon-afbeeldingen kregen altijd het MIME-type `image/jpeg`, ongeacht het werkelijke formaat (#81)
+- Afbeeldings-URL's werden niet ge-escaped voordat ze in HTML-attributen kwamen, waardoor een URL met een aanhalingsteken de HTML brak (#80, #82)
+- Bij meerdere Mastodon-accounts bleef alleen de laatste fout zichtbaar; alle fouten worden nu getoond (#83)
+
+### Gewijzigd
+- De bewaarperiode-logica staat nog maar op één plek: `MastodonService` roept `FeedRefreshService.pruneOldItems` aan (#84)
+
 ## [1.7.0] - 2026-09-10
 
 ### Toegevoegd
