@@ -10,6 +10,10 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ### Toegevoegd
 - CI faalt als het getrackte `RSSReader.xcodeproj` afwijkt van wat `project.yml` oplevert, zodat een vergeten `xcodegen generate` zichtbaar wordt in plaats van stil (#92)
 
+### Verwijderd
+- Vier verouderde documentatiebestanden uit `RSSReader/Views/` (`CODE_IMPROVEMENTS.md`, `PRE_FLIGHT_CHECKLIST.md`, `QUICK_FIX.md`, `TEST_INSTRUCTIONS.md`) — instructies uit juni die de huidige workflow tegenspraken (#64)
+- De dode kopie `RSSReader.xcodeproj/AppConfiguration.swift` en de gebruikersspecifieke `xcuserdata/`, die nu ook in `.gitignore` staat (#53)
+
 ### Gewijzigd
 - De samenvatting op Vandaag kijkt 48 uur terug in plaats van de volle bewaarperiode van 30 dagen. De lege staat legt dat venster uit; de artikelen zelf blijven zichtbaar in Artikelen en Bewaard (#89)
 
