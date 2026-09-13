@@ -67,7 +67,8 @@ final class TopicClusteringOrderTests: XCTestCase {
 
     func testArtikelenStaanNieuwsteEerst() async throws {
         let items = makeItems(count: 12)
-        let cluster = try XCTUnwrap(await clusterZeppelin(items: items))
+        let resultaat = await clusterZeppelin(items: items)
+        let cluster = try XCTUnwrap(resultaat)
 
         XCTAssertEqual(cluster.items.count, 12)
         XCTAssertEqual(
@@ -80,7 +81,8 @@ final class TopicClusteringOrderTests: XCTestCase {
     /// dus de bronnen van de beweringen horen de eerste N nieuwste artikelen te zijn.
     func testSamenvattingGebruiktDeNieuwsteArtikelen() async throws {
         let items = makeItems(count: 12)
-        let cluster = try XCTUnwrap(await clusterZeppelin(items: items))
+        let resultaat = await clusterZeppelin(items: items)
+        let cluster = try XCTUnwrap(resultaat)
 
         let gebruikteIDs = cluster.statements.flatMap(\.sourceItemIDs)
         XCTAssertFalse(gebruikteIDs.isEmpty, "Er hoort minstens één bewering te zijn")
@@ -100,7 +102,8 @@ final class TopicClusteringOrderTests: XCTestCase {
     /// dat niet gebeurde.
     func testEenNieuwerArtikelVerandertDeSamenvatting() async throws {
         let items = makeItems(count: 12)
-        let eerste = try XCTUnwrap(await clusterZeppelin(items: items))
+        let eersteResultaat = await clusterZeppelin(items: items)
+        let eerste = try XCTUnwrap(eersteResultaat)
         let voorIDs = eerste.statements.flatMap(\.sourceItemIDs)
 
         let context = container.mainContext
@@ -114,7 +117,8 @@ final class TopicClusteringOrderTests: XCTestCase {
         feed.items.append(nieuwste)
         context.insert(nieuwste)
 
-        let tweede = try XCTUnwrap(await clusterZeppelin(items: items + [nieuwste]))
+        let tweedeResultaat = await clusterZeppelin(items: items + [nieuwste])
+        let tweede = try XCTUnwrap(tweedeResultaat)
         let naIDs = tweede.statements.flatMap(\.sourceItemIDs)
 
         XCTAssertEqual(
@@ -139,7 +143,8 @@ final class TopicClusteringOrderTests: XCTestCase {
         feed.items.append(zonderDatum)
         context.insert(zonderDatum)
 
-        let cluster = try XCTUnwrap(await clusterZeppelin(items: [zonderDatum] + items))
+        let resultaat = await clusterZeppelin(items: [zonderDatum] + items)
+        let cluster = try XCTUnwrap(resultaat)
 
         XCTAssertEqual(cluster.items.count, 4)
         XCTAssertEqual(
