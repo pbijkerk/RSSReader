@@ -16,6 +16,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Unit-tests voor `OPMLParser` die de mapindeling van geïmporteerde feeds vastleggen
 
 ### Opgelost
+- De samenvatting op Vandaag werd gebaseerd op de eerst opgeslagen artikelen in plaats van de nieuwste. Bij een onderwerp met meer dan tien artikelen vielen nieuwe artikelen structureel buiten de samenvatting, waardoor die niet meer veranderde (#65)
 - De terugval op de eerste `<img>` in de beschrijving kwam nooit in de feed terecht: de afbeelding werd gezet op het item terwijl een eerder gemaakte kopie werd opgeslagen. Artikelen zonder expliciete afbeelding hadden daardoor altijd een lege thumbnail
 - OPML-import verloor de mapindeling van elke feed na de eerste in een map; die feeds belandden in "Overig" (#78, #66)
 - Mastodon-afbeeldingen kregen altijd het MIME-type `image/jpeg`, ongeacht het werkelijke formaat (#81)

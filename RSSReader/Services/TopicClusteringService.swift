@@ -296,8 +296,17 @@ class TopicClusteringService {
         for (name, indices) in indexMap {
             guard !indices.isEmpty else { continue }
 
-            let topicItems = indices.map { items[$0] }
-            let topicSnaps = indices.map { snapshots[$0] }
+            // Nieuwste eerst, vóór het samenvatten. De samenvatting gebruikt
+            // `prefix(maxArticlesPerSummary)`; zonder deze sortering is dat de volgorde
+            // waarin artikelen ooit zijn opgeslagen, waardoor nieuwe artikelen bij een
+            // onderwerp met meer dan tien artikelen structureel buiten de prompt vallen
+            // en de samenvatting niet meer verandert (#65).
+            let ordered = indices.sorted {
+                (items[$0].pubDate ?? .distantPast) > (items[$1].pubDate ?? .distantPast)
+            }
+
+            let topicItems = ordered.map { items[$0] }
+            let topicSnaps = ordered.map { snapshots[$0] }
             let keywords = topicKeywordsMap[name] ?? []
 
             let statements: [SummaryStatement]
@@ -313,15 +322,11 @@ class TopicClusteringService {
                 statements = localSummary(topicName: name, snapshots: topicSnaps)
             }
 
-            let sorted = topicItems.sorted {
-                ($0.pubDate ?? .distantPast) > ($1.pubDate ?? .distantPast)
-            }
-
             result.append(
                 TopicCluster(
                     topicName: name,
                     keywords: keywords,
-                    items: sorted,
+                    items: topicItems,
                     statements: validated(statements, topicName: name)
                 ))
         }
