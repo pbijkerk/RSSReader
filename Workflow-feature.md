@@ -118,6 +118,16 @@ Free-plan (2000 minuten/maand) is dat ruwweg 200 macOS-minuten, en een run kost 
 minuten — orde van grootte 20–30 runs per maand. Daarom: alleen op PR's, en
 `cancel-in-progress` zodat een nieuwe push de vorige run afbreekt.
 
+### Het gegenereerde project blijft actueel
+`RSSReader.xcodeproj` wordt uit `project.yml` gegenereerd, maar staat ook in Git. CI draait
+daarom `xcodegen generate` en faalt als dat een verschil oplevert. Voeg je een bestand toe,
+draai dan `xcodegen generate` en neem het resultaat mee in dezelfde commit.
+
+Waarom dit een controle verdient: zonder regeneratie mist je lokale Xcode-project bestanden
+die CI wél bouwt. Een test kan dan in Xcode onzichtbaar zijn terwijl CI hem gewoon draait —
+⌘U geeft dan groen over een halve suite. Zie #92 voor de afweging of deze bestanden
+überhaupt in Git horen.
+
 ### Automatische review
 `.github/workflows/claude-code-review.yml` draait de `/code-review`-plugin op een nieuwe PR
 (`opened`) en zodra een concept-PR klaar is (`ready_for_review`). **Niet** bij elke push:
