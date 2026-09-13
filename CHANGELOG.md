@@ -8,6 +8,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Toegevoegd
+- Automatische code-review op een nieuwe pull request via GitHub Actions (vereist het repository secret `CLAUDE_CODE_OAUTH_TOKEN`)
+- `@claude` noemen in een issue, PR-reactie of review start een Claude-run die antwoordt in dezelfde draad (alleen leesrechten; pusht niets)
+- R12 vastgelegd in de projectbrief: per feed instellen of die meetelt in de AI-samenvatting
 - Unit-tests voor `RSSParser`: velden, datumformaten, mediatype, afbeeldingen en randgevallen
 - CI op GitHub Actions: elke pull request naar `main` draait de build-check en de unit-tests op een iOS-simulator
 - Unit-tests voor `OPMLParser` die de mapindeling van geïmporteerde feeds vastleggen

@@ -118,8 +118,34 @@ Free-plan (2000 minuten/maand) is dat ruwweg 200 macOS-minuten, en een run kost 
 minuten — orde van grootte 20–30 runs per maand. Daarom: alleen op PR's, en
 `cancel-in-progress` zodat een nieuwe push de vorige run afbreekt.
 
-### Het workflow-bestand
-- **Locatie:** `.github/workflows/ci.yml`
+### Automatische review
+`.github/workflows/claude-code-review.yml` draait de `/code-review`-plugin op een nieuwe PR
+(`opened`) en zodra een concept-PR klaar is (`ready_for_review`). **Niet** bij elke push:
+`synchronize` zou per commit een nieuwe review starten met grotendeels dezelfde bevindingen.
+Een herhaalde review vraag je aan via Actions → *Claude Code Review* → *Run workflow*, met
+het PR-nummer als invoer.
+
+Dit vervangt stap 6 niet, het maakt die alleen moeilijker over te slaan. De review leest de
+diff en draait niets: de build-check en de tests hierboven zijn wat daadwerkelijk aantoont
+dat code compileert en werkt.
+
+Vereist het repository secret `CLAUDE_CODE_OAUTH_TOKEN`; zonder dat secret faalt de job.
+Draait op `ubuntu-latest`, dus zonder de 10×-vermenigvuldiging van de macOS-runs.
+
+### @claude in issues en PR's
+`.github/workflows/claude.yml` reageert wanneer je `@claude` noemt in een issue, een reactie
+op een PR of een review. De opdracht is je eigen tekst; er is geen vaste prompt. Hij mag de
+CI-resultaten van een PR lezen, dus vragen als "waarom staat de build rood?" werken.
+
+De job heeft bewust alleen leesrechten: hij analyseert en antwoordt, maar pusht niets. Wil je
+dat hij wel commits maakt, dan moet `contents` naar `write` — een bewuste keuze, want dan mag
+een workflow die op een reactie afgaat de repository schrijven.
+
+Gebruikt hetzelfde secret als de review hierboven.
+
+### De workflow-bestanden
+- **Locatie:** `.github/workflows/ci.yml` (build + tests) en
+  `.github/workflows/claude-code-review.yml` (review)
 - **Job:** `build-test`
 - De Xcode-versie is gepind op `latest-stable`. De runner-standaard verschuift; zonder pin
   wisselt de SDK waartegen gebouwd wordt stilzwijgend mee.
