@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.7.1] - 2026-09-13
 
 ### Toegevoegd
 - Automatische code-review op een nieuwe pull request via GitHub Actions (vereist het repository secret `CLAUDE_CODE_OAUTH_TOKEN`)
