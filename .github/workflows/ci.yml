@@ -1,186 +1,65 @@
-name: CI - Build, Test, Lint, Coverage
+name: CI
 
-# Trigger op push naar main of PRs, en handmatig
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
-# Environment variables voor hergebruik
-env:
-  SIMULATOR: "platform=iOS Simulator,name=iPhone 15"
-  SCHEME: "RSSReader"
-  PROJECT: "RSSReader.xcodeproj"
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # --- 1. Bouw en Test ---
-  build-and-test:
-    name: Build & Test (iOS Simulator)
+  build-test:
+    name: Build-check en tests (iOS Simulator)
     runs-on: macos-latest
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      - name: Select Xcode (use default on runner)
+      # Pin de Xcode-versie: de runner-standaard verschuift, en dan wisselt de
+      # SDK waartegen gebouwd wordt stilzwijgend mee.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Xcode-versie
+        run: xcodebuild -version
+
+      # Het .xcodeproj wordt gegenereerd uit project.yml (XcodeGen); zie CLAUDE.md.
+      - name: Project genereren
         run: |
-          # GitHub's macOS runners have Xcode pre-installed
-          # Find the actual Xcode path
-          XCODE_PATH=$(xcode-select -p)
-          if [ ! -d "$XCODE_PATH" ]; then
-            # Try common paths
-            if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
-              sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-            elif [ -d "/Applications/Xcode_15.app/Contents/Developer" ]; then
-              sudo xcode-select -s /Applications/Xcode_15.app/Contents/Developer
-            else
-              echo "Xcode not found in common locations"
-              exit 1
-            fi
-          fi
-          xcodebuild -version
+          brew install xcodegen
+          xcodegen generate
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project from project.yml
-        run: xcodegen --spec RSSReader/project.yml
-
-      - name: Build Debug
+      # Zonder toestelnaam, conform stap 2 van Workflow-feature.md.
+      - name: Build-check
         run: |
-          xcodebuild \
-            -project ${{ env.PROJECT }} \
-            -scheme ${{ env.SCHEME }} \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination "${{ env.SIMULATOR }}" \
-            clean build
+          xcodebuild -project RSSReader.xcodeproj -scheme RSSReader \
+            -destination 'generic/platform=iOS Simulator' build
 
-      - name: Run Unit Tests with Coverage
+      # Tests hebben wel een echt toestel nodig. Zoek er een op in plaats van een
+      # naam/OS-combinatie vast te leggen: die verschilt per Xcode-installatie.
+      - name: Simulator kiezen
+        id: sim
         run: |
-          xcodebuild \
-            -project ${{ env.PROJECT }} \
-            -scheme ${{ env.SCHEME }} \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination "${{ env.SIMULATOR }}" \
-            -enableCodeCoverage YES \
-            test
+          UDID=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          for runtime, entries in sorted(devices.items()):
+              if "iOS" not in runtime:
+                  continue
+              for device in entries:
+                  if "iPhone" in device["name"]:
+                      print(device["udid"])
+                      raise SystemExit
+          raise SystemExit("Geen iPhone-simulator beschikbaar")
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
 
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: Test-Results
-          path: build/Logs/Test/
-          retention-days: 14
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: RSSReader-App-Debug
-          path: |
-            build/Debug-iphonesimulator/
-            !build/**/*.dSYM
-          retention-days: 7
-
-  # --- 2. SwiftLint (Code Style) ---
-  lint:
-    name: SwiftLint
-    runs-on: macos-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install SwiftLint
-        run: brew install swiftlint
-
-      - name: Run SwiftLint (strict mode)
-        run: swiftlint --strict
-
-  # --- 3. Code Coverage Rapport ---
-  coverage:
-    name: Code Coverage Report
-    runs-on: macos-latest
-    timeout-minutes: 10
-    needs: build-and-test
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install lcov and genhtml
-        run: brew install lcov
-
-      - name: Download Test Results
-        uses: actions/download-artifact@v4
-        with:
-          name: Test-Results
-          path: build/Logs/Test/
-
-      - name: Generate Coverage Report
+      - name: Tests
         run: |
-          # Zoek lcov bestand
-          LCOV_FILE=$(find build/Logs/Test -name "*.lcov" | head -n 1)
-          if [ -n "$LCOV_FILE" ]; then
-            genhtml "$LCOV_FILE" -o coverage-report
-            echo "Coverage report generated from: $LCOV_FILE"
-          else
-            echo "No lcov file found"
-            mkdir -p coverage-report
-            echo "<h1>No coverage data available</h1>" > coverage-report/index.html
-          fi
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: Code-Coverage-Report
-          path: coverage-report/
-          retention-days: 14
-
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        if: success()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: build/Logs/Test/*.lcov
-          fail_ci_if_error: false
-
-  # --- 4. Release Build (voor code signing check) ---
-  release-build:
-    name: Release Build (No Signing)
-    runs-on: macos-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build Release (No Code Signing)
-        run: |
-          xcodebuild \
-            -project ${{ env.PROJECT }} \
-            -scheme ${{ env.SCHEME }} \
-            -configuration Release \
-            -sdk iphoneos \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build
-
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: RSSReader-App-Release
-          path: build/Release-iphoneos/
-          retention-days: 7
+          xcodebuild -project RSSReader.xcodeproj -scheme RSSReader \
+            -destination "id=${{ steps.sim.outputs.udid }}" test

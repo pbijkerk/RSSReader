@@ -312,12 +312,10 @@ class MastodonService {
             .replacingOccurrences(of: "'", with: "&#39;")
     }
 
-
-    /// Determines the MIME type from a URL's file extension.
+    /// Leidt het MIME-type af uit de bestandsextensie van de URL; nil als die onbekend is.
     private func mimeType(from urlString: String) -> String? {
-        guard let url = URL(string: urlString),
-              let ext = url.pathExtension.lowercased()
-        else { return nil }
+        guard let url = URL(string: urlString) else { return nil }
+        let ext = url.pathExtension.lowercased()
 
         switch ext {
         case "jpg", "jpeg": return "image/jpeg"

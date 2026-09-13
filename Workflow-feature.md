@@ -79,40 +79,50 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
   not allowed"*. `xattr -rc` lost dit niet op — die attributen komen terug of zijn niet te
   verwijderen; bouw naar een pad buiten de projectmap. Simulatorbuilds hebben hier geen last
   van omdat die niet worden ondertekend.
-## 10. Continue Integration (CI) met GitHub Actions
 
-Naast de handmatige stappen in deze workflow draait er een **automatische CI-pipeline**
- die de volgende taken uitvoert:
+## 10. Continuous integration (GitHub Actions)
 
-- **Bouwen**: Valideert dat de code compileert voor iOS Simulator
-- **Testen**: Voert unit tests uit (indien aanwezig)
-- **Linten**: Controleert code style met SwiftLint
-- **Code Coverage**: Genereert een rapport van testdekking
+Naast de handmatige stappen hierboven draait er een CI-workflow op elke pull request naar
+`main`. Die doet precies twee dingen:
 
-De CI-pipeline is **optioneel** maar sterk aanbevolen voor:
-- Vroegtijdige detectie van buildfouten
-- Automatische validatie van codekwaliteit
-- Zichtbaarheid in de ontwikkelingstekst (bv. voor AI-assistentie)
+- **Build-check** — dezelfde controle als stap 2, met `generic/platform=iOS Simulator`.
+- **Tests** — de unit-tests in `RSSReaderTests` op een simulator die de workflow zelf opzoekt.
+
+Dat is bewust smal gehouden: het valideert wat een agent of reviewer anders handmatig moet
+draaien, en niets meer.
 
 ### Wanneer draait de CI?
-- **Automatisch** bij push naar `main` of Pull Requests
-- **Handmatig** via GitHub → Actions tab
+- Automatisch bij elke pull request naar `main`.
+- Handmatig via GitHub → Actions → *CI* → *Run workflow*.
 
-### Relatie tot deze workflow
-| Stap in deze workflow | CI equivalent |
-|------------------------|----------------|
-| Stap 2 (Build-check)   | ✅ Build job in CI |
-| Stap 6 (Review)        | ✅ Test/Lint jobs in CI |
+Niet bij een push naar `main`: dat verdubbelt het verbruik zonder dat het iets toevoegt aan
+wat de PR-run al heeft gecontroleerd.
 
-### Voor wie is CI bedoeld?
-- **AI/automatische validatie**: Altijd nuttig (valideert code voordat deze gemerged wordt)
-- **Externe testers (TestFlight)**: Optioneel (zie stap 8-9 in deze workflow)
-- **App Store publicatie**: Optioneel (zie stap 8-9 in deze workflow)
+### Verhouding tot deze workflow
+CI **vervangt stap 2 niet**. Draai de build-check lokaal vóór het committen; CI is het
+vangnet dat betrapt wat er op een andere machine misgaat, niet de eerste keer dat je hoort
+dat de build faalt. Stap 6 (review) blijft mensenwerk — CI toetst geen correctheid.
+
+### Wat er bewust níét in zit
+- **Release-/device-builds.** Signing werkt niet op een runner: `DEVELOPMENT_TEAM` staat vast
+  in `project.yml` en er is geen certificaat. Met signing uitgeschakeld valideer je niets
+  extra's. De distributie loopt via stap 9, op het toestel zelf.
+- **SwiftLint.** Dit project gebruikt swift-format en heeft geen `.swiftlint.yml`; een
+  strict-run op de standaardregels zou permanent rood staan.
+- **Code coverage / Codecov.** `xcodebuild` levert een `.xcresult`, geen `.lcov`, en er is
+  geen Codecov-token. Toe te voegen zodra er iets met die cijfers gedaan wordt.
 
 ### Kosten
-- **Gratis** voor openbare repositories
-- **Gratis** voor private repositories (tot 200 macOS minuten/maand)
+De repository is privé, dus macOS-minuten tellen **10×** tegen het inbegrepen quotum. Op het
+Free-plan (2000 minuten/maand) is dat ruwweg 200 macOS-minuten, en een run kost al gauw 6–10
+minuten — orde van grootte 20–30 runs per maand. Daarom: alleen op PR's, en
+`cancel-in-progress` zodat een nieuwe push de vorige run afbreekt.
 
-### Workflow bestand
+### Het workflow-bestand
 - **Locatie:** `.github/workflows/ci.yml`
-- **Jobs:** `build-and-test`, `lint`, `coverage`, `release-build`
+- **Job:** `build-test`
+- De Xcode-versie is gepind op `latest-stable`. De runner-standaard verschuift; zonder pin
+  wisselt de SDK waartegen gebouwd wordt stilzwijgend mee.
+- Het toestel voor de testrun wordt opgezocht via `xcrun simctl`, niet vastgelegd. Zie de
+  waarschuwing bij stap 2: een vaste toestel/OS-combinatie breekt zodra die combinatie niet
+  bestaat.

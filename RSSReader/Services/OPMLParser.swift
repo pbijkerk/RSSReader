@@ -46,7 +46,7 @@ class OPMLParser: NSObject, XMLParserDelegate {
             )
             feeds.append(feed)
         } else if !title.isEmpty {
-            // No xmlUrl  treat as folder outline; track folderDepth so nested folders don't override
+            // Geen xmlUrl -> mapelement; folderDepth telt alleen mappen, zodat geneste mappen de buitenste niet overschrijven
             if folderDepth == 0 {
                 currentFolderName = title
             }

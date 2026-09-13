@@ -259,9 +259,12 @@ struct ItemDetailView: View {
         guard !item.isVideoItem else { return }
         let articleLink = item.feed?.isMastodonFeed == true ? nil : item.link
         var rssHTML = item.sanitisedHTML
+        // Artikelen die vóór de escaping-fix zijn opgeslagen bevatten de onbewerkte URL;
+        // daarom telt zowel de ge-escapete als de onbewerkte vorm als "staat er al in".
         if item.feed?.isMastodonFeed == true,
             let imgURL = item.enclosureURL,
-            !rssHTML.contains(escapeHTML(imgURL))
+            !rssHTML.contains(escapeHTML(imgURL)),
+            !rssHTML.contains(imgURL)
         {
             rssHTML +=
                 "\n<img src=\"\(escapeHTML(imgURL))\" alt=\"\" style=\"max-width:100%;border-radius:8px;margin:8px 0;display:block;\">"
