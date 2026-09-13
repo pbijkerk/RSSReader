@@ -145,9 +145,13 @@ class RSSParser: NSObject, XMLParserDelegate {
             case "guid", "id":
                 currentItem?.guid = text
             case "item", "entry":
-                if let item = currentItem {
+                // `var`, niet `let`: ParsedFeedItem is een struct. Bij `let` werd de
+                // gevonden afbeelding op `currentItem` gezet terwijl de al gemaakte kopie
+                // werd toegevoegd, waardoor de terugval op de eerste <img> in de
+                // beschrijving nooit in de feed terechtkwam.
+                if var item = currentItem {
                     if item.imageURL == nil, !item.description.isEmpty {
-                        currentItem?.imageURL = extractImageURL(from: item.description)
+                        item.imageURL = extractImageURL(from: item.description)
                     }
                     result.items.append(item)
                 }

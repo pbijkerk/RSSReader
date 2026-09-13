@@ -13,6 +13,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Unit-tests voor `OPMLParser` die de mapindeling van geïmporteerde feeds vastleggen
 
 ### Opgelost
+- De terugval op de eerste `<img>` in de beschrijving kwam nooit in de feed terecht: de afbeelding werd gezet op het item terwijl een eerder gemaakte kopie werd opgeslagen. Artikelen zonder expliciete afbeelding hadden daardoor altijd een lege thumbnail
 - OPML-import verloor de mapindeling van elke feed na de eerste in een map; die feeds belandden in "Overig" (#78, #66)
 - Mastodon-afbeeldingen kregen altijd het MIME-type `image/jpeg`, ongeacht het werkelijke formaat (#81)
 - Afbeeldings-URL's werden niet ge-escaped voordat ze in HTML-attributen kwamen, waardoor een URL met een aanhalingsteken de HTML brak (#80, #82)
