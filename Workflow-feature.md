@@ -83,8 +83,10 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 ## 10. Continuous integration (GitHub Actions)
 
 Naast de handmatige stappen hierboven draait er een CI-workflow op elke pull request naar
-`main`. Die doet precies twee dingen:
+`main`. Die doet precies drie dingen:
 
+- **Opmaak** — draait swift-format over `RSSReader/` en `RSSReaderTests/` en faalt als dat
+  een diff oplevert.
 - **Build-check** — dezelfde controle als stap 2, met `generic/platform=iOS Simulator`.
 - **Tests** — de unit-tests in `RSSReaderTests` op een simulator die de workflow zelf opzoekt.
 
@@ -109,6 +111,12 @@ dat de build faalt. Stap 6 (review) blijft mensenwerk — CI toetst geen correct
   extra's. De distributie loopt via stap 9, op het toestel zelf.
 - **SwiftLint.** Dit project gebruikt swift-format en heeft geen `.swiftlint.yml`; een
   strict-run op de standaardregels zou permanent rood staan.
+- **`swift format lint`.** De opmaakstap toetst of de broncode door de formatter is gehaald,
+  niet of hij aan alle lint-regels voldoet. Dat verschil is bewust: 27 regels zijn langer dan
+  de ingestelde 120 tekens en allemaal string-literals — de CSS-blokken in `ItemDetailView`,
+  de promptteksten in `AppConfiguration`, uitlegteksten in de instellingen. De formatter kan
+  een literal niet afbreken (`reflowMultilineStringLiterals` staat op `never`), dus een
+  lint-run zou daar permanent rood op staan zonder dat er iets aan te doen valt.
 - **Code coverage / Codecov.** `xcodebuild` levert een `.xcresult`, geen `.lcov`, en er is
   geen Codecov-token. Toe te voegen zodra er iets met die cijfers gedaan wordt.
 

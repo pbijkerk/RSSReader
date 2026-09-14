@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Toegevoegd
+- CI controleert of de broncode met swift-format is opgemaakt en faalt als dat niet zo is
 - CI faalt als het getrackte `RSSReader.xcodeproj` afwijkt van wat `project.yml` oplevert, zodat een vergeten `xcodegen generate` zichtbaar wordt in plaats van stil (#92)
 
 ### Verwijderd

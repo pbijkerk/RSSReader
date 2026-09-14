@@ -155,12 +155,14 @@ struct AllArticlesView: View {
             } else {
                 Text("Nog geen artikelen")
                     .font(.title2.bold())
-                Text(hideReadArticles
-                     ? "Alles is gelezen. Vernieuw om nieuwe artikelen op te halen."
-                     : "Vernieuw om artikelen op te halen.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
+                Text(
+                    hideReadArticles
+                        ? "Alles is gelezen. Vernieuw om nieuwe artikelen op te halen."
+                        : "Vernieuw om artikelen op te halen."
+                )
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
             }
         }
         .padding()

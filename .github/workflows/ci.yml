@@ -27,6 +27,22 @@ jobs:
       - name: Xcode-versie
         run: xcodebuild -version
 
+      # Opmaakcontrole, geen lint-run: `swift format lint` zou permanent rood staan
+      # op regels die de formatter niet kán afbreken — de CSS-blokken in
+      # ItemDetailView en de promptteksten in AppConfiguration zijn string-literals
+      # boven de 120 tekens. Dit toetst wat wél te halen is: is de broncode door de
+      # formatter gehaald? De formatter komt uit dezelfde Xcode als hierboven, zodat
+      # CI en een Mac dezelfde versie gebruiken.
+      - name: Opmaak
+        run: |
+          swift format --version
+          swift format -i -r RSSReader RSSReaderTests
+          if ! git diff --exit-code -- '*.swift'; then
+            echo "::error::De broncode is niet opgemaakt met swift-format."
+            echo "Draai lokaal 'swift format -i -r RSSReader RSSReaderTests' en commit het resultaat."
+            exit 1
+          fi
+
       # Het .xcodeproj wordt gegenereerd uit project.yml (XcodeGen); zie CLAUDE.md.
       - name: Project genereren
         run: |
