@@ -7,6 +7,12 @@ struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let item: FeedItem
 
+    /// Of dit scherm zijn eigen knoppen in de navigatiebalk zet. Een pagina-`TabView`
+    /// houdt de buurpagina's in leven, en elke levende pagina levert zijn toolbar aan
+    /// dezelfde navigatiebalk — die stond dan dubbel. `ArticlePageView` geeft daarom
+    /// alleen de zichtbare pagina `true` mee.
+    var providesToolbar = true
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration
         .defaultArticleFontSize
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily) private var articleFontFamily = AppConfiguration
@@ -194,7 +200,7 @@ struct ItemDetailView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        if let url = articleURL {
+        if providesToolbar, let url = articleURL {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if extractionFailed {
                     Button {
