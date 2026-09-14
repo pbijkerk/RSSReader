@@ -270,7 +270,7 @@ struct ArticlePageView: View {
     var body: some View {
         TabView(selection: $currentIndex) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                ItemDetailView(item: item)
+                ItemDetailView(item: item, providesToolbar: index == currentIndex)
                     .tag(index)
             }
         }
