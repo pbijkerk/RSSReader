@@ -218,31 +218,40 @@ struct FeedItemCard: View {
         .opacity(item.isRead ? 0.72 : 1)
     }
 
+    /// De afbeelding mag de breedte van de kaart niet bepalen. `contentMode: .fill`
+    /// maakt de view zo breed als de beeldverhouding vraagt (bij 3:1 is dat 504 pt bij
+    /// een hoogte van 168), en een `.frame(maxWidth:)` erná kan een kind dat al een
+    /// vaste maat heeft opgeëist niet meer kleiner maken — de kaart werd dan breder dan
+    /// het scherm (#96). Daarom bepaalt een lege `Color.clear` het kader en hangt de
+    /// afbeelding daar als overlay in: die kan het kader niet oprekken.
     @ViewBuilder
     private func bannerImage(url: URL) -> some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            case .empty:
-                ZStack {
-                    brand.opacity(0.12)
-                    ProgressView()
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 168)
+            .overlay {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    case .empty:
+                        ZStack {
+                            brand.opacity(0.12)
+                            ProgressView()
+                        }
+                    case .failure:
+                        ZStack {
+                            brand.opacity(0.12)
+                            Image(systemName: "photo").foregroundStyle(brand.opacity(0.5))
+                        }
+                    @unknown default:
+                        brand.opacity(0.12)
+                    }
                 }
-            case .failure:
-                ZStack {
-                    brand.opacity(0.12)
-                    Image(systemName: "photo").foregroundStyle(brand.opacity(0.5))
-                }
-            @unknown default:
-                brand.opacity(0.12)
             }
-        }
-        .frame(height: 168)
-        .frame(maxWidth: .infinity)
-        .clipped()
+            .clipped()
     }
 
     /// Relatieve tijd zonder seconden: onder een minuut → "Zojuist".

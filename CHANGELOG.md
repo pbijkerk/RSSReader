@@ -19,6 +19,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ### Opgelost
 - De knoppen rechtsboven in het artikelscherm (bewaren, open in browser, delen) stonden dubbel: de pagina-TabView houdt de buurpagina in leven en die leverde zijn toolbar aan dezelfde navigatiebalk (#98)
+- Een artikelkaart met een brede bannerafbeelding liep buiten het scherm, waardoor de tekst aan beide zijden werd afgekapt: de afbeelding bepaalde de breedte van de kaart in plaats van andersom (#96)
 - Bij het bladeren door artikelen flitste er wit tussen twee pagina's: de pagina-TabView en het artikelscherm hadden geen eigen achtergrond, waardoor de systeemstandaard (wit) zichtbaar werd in plaats van `Theme.background`
 - Artikelen zonder publicatiedatum werden nooit opgeruimd: de bewaarperiode behandelde een ontbrekende datum als oneindig ver in de toekomst. Ze krijgen nu een ophaalmoment (`fetchedAt`) en verouderen daarmee gewoon (#89)
 
