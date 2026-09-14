@@ -191,7 +191,10 @@ final class RSSParserTests: XCTestCase {
 
     func testAfbeeldingUitDeBeschrijvingAlsErGeenExpliciteIs() {
         let feed = parse(
-            rss(item: #"<description>&lt;p&gt;Tekst&lt;img src="https://example.com/in.jpg"&gt;&lt;/p&gt;</description>"#))
+            rss(
+                item:
+                    #"<description>&lt;p&gt;Tekst&lt;img src="https://example.com/in.jpg"&gt;&lt;/p&gt;</description>"#)
+        )
         XCTAssertEqual(feed.items.first?.imageURL, "https://example.com/in.jpg")
     }
 
