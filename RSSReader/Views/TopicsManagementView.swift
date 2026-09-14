@@ -19,7 +19,7 @@ struct TopicsManagementView: View {
         .navigationTitle("Onderwerpen")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Add Topic", systemImage: "plus") {
+                Button("Onderwerp toevoegen", systemImage: "plus") {
                     showAddTopic = true
                 }
             }
@@ -37,13 +37,13 @@ struct TopicsManagementView: View {
             Image(systemName: "tag")
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("No Saved Topics")
+            Text("Nog geen onderwerpen")
                 .font(.title2.bold())
-            Text("Topics you like from summaries will appear here. You can also add custom topics.")
+            Text("Onderwerpen die je in samenvattingen als favoriet markeert, verschijnen hier. Je kunt ook zelf onderwerpen toevoegen.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
-            Button("Add Topic") { showAddTopic = true }
+            Button("Onderwerp toevoegen") { showAddTopic = true }
                 .buttonStyle(.borderedProminent)
         }
         .padding()
@@ -60,7 +60,7 @@ struct TopicsManagementView: View {
                             modelContext.delete(topic)
                             try? modelContext.save()
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label("Verwijderen", systemImage: "trash")
                         }
                     }
                     .swipeActions(edge: .leading) {
@@ -69,7 +69,7 @@ struct TopicsManagementView: View {
                             try? modelContext.save()
                         } label: {
                             Label(
-                                topic.isLiked ? "Unlike" : "Like",
+                                topic.isLiked ? "Favoriet verwijderen" : "Favoriet maken",
                                 systemImage: topic.isLiked ? "heart.slash" : "heart.fill")
                         }
                         .tint(topic.isLiked ? .gray : .pink)
