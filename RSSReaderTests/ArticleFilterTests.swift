@@ -36,8 +36,8 @@ final class ArticleFilterTests: XCTestCase {
     private func maakTestdata() -> (techFeed: Feed, sportFeed: Feed, losseFeed: Feed) {
         let context = container.mainContext
 
-        let techMap = FeedFolder(name: "Tech")
-        let sportMap = FeedFolder(name: "Sport")
+        let techMap = FeedFolder(name: "Tech", sortOrder: 0)
+        let sportMap = FeedFolder(name: "Sport", sortOrder: 1)
         context.insert(techMap)
         context.insert(sportMap)
 
