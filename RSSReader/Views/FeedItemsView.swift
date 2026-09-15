@@ -269,10 +269,17 @@ struct FeedItemCard: View {
 
 struct ArticlePageView: View {
     let items: [FeedItem]
+
+    /// Wordt aangeroepen zodra je op het laatste geladen artikel belandt. De artikelenlijst
+    /// laadt per pagina (#106); zonder dit stopt het vegen bij het laatst opgehaalde
+    /// artikel. De andere schermen die deze view gebruiken pagineren niet en laten dit leeg.
+    var onReachEnd: (() -> Void)?
+
     @State private var currentIndex: Int
 
-    init(items: [FeedItem], initialIndex: Int) {
+    init(items: [FeedItem], initialIndex: Int, onReachEnd: (() -> Void)? = nil) {
         self.items = items
+        self.onReachEnd = onReachEnd
         self._currentIndex = State(initialValue: initialIndex)
     }
 
@@ -284,6 +291,9 @@ struct ArticlePageView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        .onChange(of: currentIndex, initial: true) { _, index in
+            if index >= items.count - 1 { onReachEnd?() }
+        }
         // De pagina-TabView houdt ruimte tussen twee pagina's; die ruimte toont de
         // achtergrond van de container. Zonder deze regel is dat de systeemstandaard
         // (wit in lichte modus) in plaats van Theme.background (#F4F3EF), wat je bij

@@ -210,7 +210,10 @@ private struct ArticleListView<EmptyState: View>: View {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 ZStack {
                     FeedItemCard(item: item)
-                    NavigationLink(destination: ArticlePageView(items: items, initialIndex: index)) {
+                    NavigationLink(
+                        destination: ArticlePageView(
+                            items: items, initialIndex: index, onReachEnd: onReachEnd)
+                    ) {
                         EmptyView()
                     }
                     .opacity(0)
