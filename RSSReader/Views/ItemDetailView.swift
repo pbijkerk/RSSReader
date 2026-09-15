@@ -7,6 +7,16 @@ struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let item: FeedItem
 
+    /// Of dit de pagina is die de gebruiker daadwerkelijk bekijkt. Een pagina-`TabView`
+    /// houdt de buurpagina's in leven, en die zijn niet gratis: elke levende pagina zette
+    /// zijn knoppen in dezelfde navigatiebalk (die stonden dan dubbel, #98) en startte
+    /// artikel-extractie plus een fact-check — netwerkwerk tijdens de veeg, voor een
+    /// pagina die je misschien nooit ziet (#106).
+    ///
+    /// `ArticlePageView` geeft alleen de zichtbare pagina `true` mee. Standaard `true`,
+    /// zodat het scherm losstaand — vanuit de samenvatting — ongewijzigd werkt.
+    var isActive = true
+
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontSize) private var articleFontSize = AppConfiguration
         .defaultArticleFontSize
     @AppStorage(AppConfiguration.UserDefaultsKeys.articleFontFamily) private var articleFontFamily = AppConfiguration
@@ -63,16 +73,20 @@ struct ItemDetailView: View {
         .sheet(item: $safariItem) { item in
             SafariVideoPlayer(url: item.url).ignoresSafeArea()
         }
-        .task {
+        // `task(id:)` en niet `task`: het werk start zodra deze pagina de zichtbare wordt,
+        // en wordt afgebroken zodra je doorveegt. Een `.task` zonder id zou bij een
+        // buurpagina één keer draaien en daarna nooit meer, ook niet als je er belandt.
+        .task(id: isActive) {
+            guard isActive else { return }
             async let content: Void = loadContent()
             async let factCheck: Void = FactCheckService.shared.checkItem(item, context: modelContext)
             _ = await (content, factCheck)
         }
-        .onAppear {
-            if !item.isRead {
-                item.isRead = true
-                try? modelContext.save()
-            }
+        // Gelezen is wat je bekeken hebt, niet wat naast je scherm klaarstond.
+        .onChange(of: isActive, initial: true) { _, active in
+            guard active, !item.isRead else { return }
+            item.isRead = true
+            try? modelContext.save()
         }
     }
 
@@ -194,7 +208,7 @@ struct ItemDetailView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        if let url = articleURL {
+        if isActive, let url = articleURL {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if extractionFailed {
                     Button {

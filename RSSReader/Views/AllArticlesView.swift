@@ -6,7 +6,6 @@ struct AllArticlesView: View {
     @AppStorage(AppConfiguration.UserDefaultsKeys.hideReadArticles) private var hideReadArticles = false
     @AppStorage(AppConfiguration.UserDefaultsKeys.articlesFolderFilter) private var folderFilterID = ""
 
-    @Query(sort: \FeedItem.pubDate, order: .reverse) private var allItems: [FeedItem]
     @Query(sort: \FeedFolder.sortOrder) private var folders: [FeedFolder]
     @Query private var feeds: [Feed]
 
@@ -21,105 +20,57 @@ struct AllArticlesView: View {
         return folders.first { $0.id.uuidString == folderFilterID }
     }
 
-    var sortedItems: [FeedItem] {
-        var items = hideReadArticles ? allItems.filter { !$0.isRead } : allItems
-        if let activeFolder {
-            items = items.filter { $0.feed?.folder?.id == activeFolder.id }
-        }
-        return items
+    /// De id's van de feeds in de actieve map, of `nil` als er geen mapfilter staat.
+    /// Dit loopt over de feeds (tientallen), niet over de artikelen (duizenden): het
+    /// artikelenscherm filterde eerder per artikel op `$0.feed?.folder?.id`, en elke
+    /// stap daarvan laadde een `Feed` en een `FeedFolder` in vanuit de database — op
+    /// de main thread (#108).
+    private var activeFeedIDs: [UUID]? {
+        guard let activeFolder else { return nil }
+        return feeds.filter { $0.folder?.id == activeFolder.id }.map(\.id)
     }
 
     var body: some View {
         NavigationStack {
-            articleList
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    if !folders.isEmpty {
-                        filterBar
-                    }
-                }
-                .background(Theme.background.ignoresSafeArea())
-                .navigationTitle("Artikelen")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        if refreshService.isRefreshing {
-                            ProgressView()
-                        } else {
-                            Button("Vernieuwen", systemImage: "arrow.clockwise") {
-                                Task { await refreshFeeds() }
-                            }
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button("Feeds beheren", systemImage: "list.bullet.rectangle") {
-                                showFeedManagement = true
-                            }
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                    }
-                }
-                .navigationDestination(isPresented: $showFeedManagement) {
-                    FeedListView(
-                        refreshService: refreshService,
-                        onRefreshComplete: onRefreshComplete
-                    )
-                }
-        }
-    }
-
-    private var articleList: some View {
-        // Eén keer berekenen per hertekening: in de ForEach-body zou zowel de rij als
-        // elke NavigationLink-bestemming de hele lijst opnieuw filteren (O(n²)).
-        let items = sortedItems
-
-        return List {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                ZStack {
-                    FeedItemCard(item: item)
-                    NavigationLink(destination: ArticlePageView(items: items, initialIndex: index)) {
-                        EmptyView()
-                    }
-                    .opacity(0)
-                }
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button {
-                        item.isRead.toggle()
-                        try? modelContext.save()
-                    } label: {
-                        Label(
-                            item.isRead ? "Ongelezen" : "Gelezen",
-                            systemImage: item.isRead ? "envelope.badge" : "envelope.open"
-                        )
-                    }
-                    .tint(.gray)
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                    Button {
-                        item.isSaved.toggle()
-                        try? modelContext.save()
-                    } label: {
-                        Label(
-                            item.isSaved ? "Niet bewaard" : "Bewaar",
-                            systemImage: item.isSaved ? "bookmark.slash" : "bookmark"
-                        )
-                    }
-                    .tint(Theme.accentSecondary)
+            ArticleListView(
+                hideRead: hideReadArticles,
+                feedIDs: activeFeedIDs,
+                onRefresh: { await refreshFeeds() },
+                emptyState: { emptyState }
+            )
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if !folders.isEmpty {
+                    filterBar
                 }
             }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .refreshable { await refreshFeeds() }
-        // Overlay in plaats van een vervangende view: de lijst blijft bestaan, dus
-        // pull-to-refresh werkt ook wanneer er nog niets te tonen is.
-        .overlay {
-            if items.isEmpty {
-                emptyState
+            .background(Theme.background.ignoresSafeArea())
+            .navigationTitle("Artikelen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if refreshService.isRefreshing {
+                        ProgressView()
+                    } else {
+                        Button("Vernieuwen", systemImage: "arrow.clockwise") {
+                            Task { await refreshFeeds() }
+                        }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Feeds beheren", systemImage: "list.bullet.rectangle") {
+                            showFeedManagement = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showFeedManagement) {
+                FeedListView(
+                    refreshService: refreshService,
+                    onRefreshComplete: onRefreshComplete
+                )
             }
         }
     }
@@ -155,12 +106,14 @@ struct AllArticlesView: View {
             } else {
                 Text("Nog geen artikelen")
                     .font(.title2.bold())
-                Text(hideReadArticles
-                     ? "Alles is gelezen. Vernieuw om nieuwe artikelen op te halen."
-                     : "Vernieuw om artikelen op te halen.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
+                Text(
+                    hideReadArticles
+                        ? "Alles is gelezen. Vernieuw om nieuwe artikelen op te halen."
+                        : "Vernieuw om artikelen op te halen."
+                )
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
             }
         }
         .padding()
@@ -207,5 +160,143 @@ struct AllArticlesView: View {
                 }
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// De artikelenlijst zelf, met een `@Query` die het filteren aan SQLite overlaat.
+///
+/// Waarom dit een eigen view is: `@Query` krijgt zijn predicaat bij initialisatie, en
+/// `@AppStorage`-waarden zijn daar nog niet beschikbaar. `AllArticlesView` leest de
+/// instellingen en geeft ze hier als gewone parameters door; de `init` bouwt daarmee het
+/// predicaat. Wijzigt een van die parameters, dan maakt SwiftUI de view opnieuw aan en
+/// draait de query met het nieuwe predicaat (#108).
+private struct ArticleListView<EmptyState: View>: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var items: [FeedItem]
+
+    private let onRefresh: () async -> Void
+    private let emptyState: () -> EmptyState
+
+    init(
+        hideRead: Bool,
+        feedIDs: [UUID]?,
+        onRefresh: @escaping () async -> Void,
+        @ViewBuilder emptyState: @escaping () -> EmptyState
+    ) {
+        self.onRefresh = onRefresh
+        self.emptyState = emptyState
+
+        _items = Query(ArticleFilter.descriptor(hideRead: hideRead, feedIDs: feedIDs))
+    }
+
+    var body: some View {
+        List {
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                ZStack {
+                    FeedItemCard(item: item)
+                    NavigationLink(destination: ArticlePageView(items: items, initialIndex: index)) {
+                        EmptyView()
+                    }
+                    .opacity(0)
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button {
+                        item.isRead.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(
+                            item.isRead ? "Ongelezen" : "Gelezen",
+                            systemImage: item.isRead ? "envelope.badge" : "envelope.open"
+                        )
+                    }
+                    .tint(.gray)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button {
+                        item.isSaved.toggle()
+                        try? modelContext.save()
+                    } label: {
+                        Label(
+                            item.isSaved ? "Niet bewaard" : "Bewaar",
+                            systemImage: item.isSaved ? "bookmark.slash" : "bookmark"
+                        )
+                    }
+                    .tint(Theme.accentSecondary)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .refreshable { await onRefresh() }
+        // Overlay in plaats van een vervangende view: de lijst blijft bestaan, dus
+        // pull-to-refresh werkt ook wanneer er nog niets te tonen is.
+        .overlay {
+            if items.isEmpty {
+                emptyState()
+            }
+        }
+    }
+}
+
+/// Bouwt het predicaat voor de artikelenlijst.
+///
+/// Los van de view, en met opzet niet `private`: een fout in een `#Predicate` blijkt pas
+/// als hij draait, niet bij het compileren. Zo kan een test hem tegen een echte
+/// in-memory store uitvoeren en vangt CI een stukgelopen predicaat (#108).
+///
+/// De mapfilter gebruikt `if let feed = item.feed` en niet `item.feed?.id`. Een optionele
+/// keten maakt de macro stuk: van `?.id` verwacht hij een `KeyPath<Feed, UUID?>` terwijl
+/// `id` niet-optioneel is, en een `??` eromheen levert een `Optional<Bool>` op waar `&&`
+/// een `Bool` wil. De `if`-vorm moet daarom de hele body van de closure zijn — als
+/// deel van een grotere expressie is een `if` in Swift geen expressie.
+enum ArticleFilter {
+
+    /// De volledige beschrijving waarmee de artikelenlijst zijn artikelen ophaalt.
+    ///
+    /// `relationshipKeyPathsForPrefetching` is hier het punt. Elke kaart in de lijst leest
+    /// `item.feed` (voor de kleur, het bronlabel en de bias-indicatoren) en
+    /// `item.factCheckResults`. Zonder prefetching haalt SwiftData die per rij afzonderlijk
+    /// op: één databaseleesactie per relatie per zichtbare rij, synchroon op de main thread.
+    /// De meting bij #106 laat dat zien als `ArticleListView.body.get` → `libsqlite3` →
+    /// `pread`, met een main thread die wacht op schijf in plaats van rekent. Met
+    /// prefetching komen die relaties in één keer mee.
+    static func descriptor(hideRead: Bool, feedIDs: [UUID]?) -> FetchDescriptor<FeedItem> {
+        var descriptor = FetchDescriptor<FeedItem>(
+            predicate: predicate(hideRead: hideRead, feedIDs: feedIDs),
+            sortBy: [SortDescriptor(\FeedItem.pubDate, order: .reverse)]
+        )
+        descriptor.relationshipKeyPathsForPrefetching = [\FeedItem.feed, \FeedItem.factCheckResults]
+        return descriptor
+    }
+
+    /// - Parameters:
+    ///   - hideRead: gelezen artikelen weglaten.
+    ///   - feedIDs: alleen artikelen uit deze feeds; `nil` betekent geen mapfilter.
+    static func predicate(hideRead: Bool, feedIDs: [UUID]?) -> Predicate<FeedItem> {
+        switch (hideRead, feedIDs) {
+        case (true, .some(let ids)):
+            return #Predicate<FeedItem> { item in
+                if let feed = item.feed {
+                    item.isRead == false && ids.contains(feed.id)
+                } else {
+                    false
+                }
+            }
+        case (false, .some(let ids)):
+            return #Predicate<FeedItem> { item in
+                if let feed = item.feed {
+                    ids.contains(feed.id)
+                } else {
+                    false
+                }
+            }
+        case (true, .none):
+            return #Predicate<FeedItem> { item in item.isRead == false }
+        case (false, .none):
+            return #Predicate<FeedItem> { _ in true }
+        }
     }
 }

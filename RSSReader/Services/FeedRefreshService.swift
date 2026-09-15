@@ -164,6 +164,10 @@ class FeedRefreshService {
             context.insert(item)
         }
 
+        // Rijen die vóór deze controle zijn opgeslagen dragen hun onwaarschijnlijke datum
+        // nog; zonder deze stap blijven ze bovenaan staan tot de gebruiker de feed verwijdert.
+        Self.clearImplausibleDates(feed: feed)
+
         // Verwijder artikelen die ouder zijn dan de bewaarperiode
         Self.pruneOldItems(feed: feed, context: context)
 
@@ -178,6 +182,21 @@ class FeedRefreshService {
         // Auto-assign to system folder if not already in a folder
         if feed.folder == nil {
             detectAndAssignFolder(feed: feed, parsed: parsed, context: context)
+        }
+    }
+
+    /// Wist een publicatiedatum die ver in de toekomst ligt. De parser weert zulke datums
+    /// sinds #103, maar artikelen die er al mee in de database staan komen anders bij elke
+    /// verversing terug: ze sorteren bovenaan en de bewaarperiode raakt ze nooit.
+    /// Het artikel zelf blijft staan en valt terug op `fetchedAt`.
+    static func clearImplausibleDates(feed: Feed, now: Date = Date()) {
+        for item in feed.items {
+            guard let date = item.pubDate,
+                !RSSParser.isPlausiblePublicationDate(date, now: now)
+            else { continue }
+            Self.logger.warning("Onwaarschijnlijke publicatiedatum gewist: \(item.title, privacy: .public)")
+            item.pubDate = nil
+            if item.fetchedAt == nil { item.fetchedAt = now }
         }
     }
 

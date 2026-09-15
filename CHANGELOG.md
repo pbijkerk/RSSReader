@@ -7,7 +7,25 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Onderwerpenbeheer (`TopicsManagementView`, `TopicEditView`) was nog volledig Engels; alle zichtbare tekst is nu Nederlands, met "favoriet" als consistente term voor `isLiked` (#61)
+
+## [1.8.1] - 2026-09-15
+
+### Gewijzigd
+- De artikelenlijst haalt `feed` en `factCheckResults` vooruit op in plaats van per rij afzonderlijk; dat scheelt een databaseleesactie per relatie per zichtbare rij (#106)
+- Het artikelenscherm filtert nu in de database in plaats van in het geheugen. Het haalde eerder elk artikel op en filterde daarna per artikel over `feed.folder`, wat duizenden losse database-acties op de main thread opleverde (#108)
+- Artikel-extractie en fact-check draaien alleen nog voor het artikel dat je bekijkt, niet voor de buurpagina's van de pagina-TabView; een artikel geldt ook pas als gelezen zodra het de zichtbare pagina is (#106)
+- Stap 8 en 9 van `Workflow-feature.md`: taggen pas na het mergen van de release-PR, en het onderscheid tussen het `devicectl`-id en de hardware-UDID die `xcodebuild` wil
+- Stap 9 van `Workflow-feature.md` beschrijft Xcode als aanbevolen route voor het installeren op het toestel; de terminalroute staat er als alternatief onder
+
+### Opgelost
+- Een artikel met een publicatiedatum eeuwen in de toekomst bleef na elke verversing terugkomen: het sorteerde bovenaan, viel binnen elk samenvattingsvenster en werd door de bewaarperiode nooit opgeruimd. De parser weigert nu een datum die meer dan een etmaal vóórloopt, en bestaande rijen worden bij de eerstvolgende verversing gecorrigeerd (#103)
+
+## [1.8.0] - 2026-09-14
+
 ### Toegevoegd
+- CI controleert of de broncode met swift-format is opgemaakt en faalt als dat niet zo is
 - CI faalt als het getrackte `RSSReader.xcodeproj` afwijkt van wat `project.yml` oplevert, zodat een vergeten `xcodegen generate` zichtbaar wordt in plaats van stil (#92)
 
 ### Verwijderd
@@ -18,7 +36,8 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - De samenvatting op Vandaag kijkt 48 uur terug in plaats van de volle bewaarperiode van 30 dagen. De lege staat legt dat venster uit; de artikelen zelf blijven zichtbaar in Artikelen en Bewaard (#89)
 
 ### Opgelost
-- Onderwerpenbeheer (`TopicsManagementView`, `TopicEditView`) was nog volledig Engels; alle zichtbare tekst is nu Nederlands, met "favoriet" als consistente term voor `isLiked` (#61)
+- De knoppen rechtsboven in het artikelscherm (bewaren, open in browser, delen) stonden dubbel: de pagina-TabView houdt de buurpagina in leven en die leverde zijn toolbar aan dezelfde navigatiebalk (#98)
+- Een artikelkaart met een brede bannerafbeelding liep buiten het scherm, waardoor de tekst aan beide zijden werd afgekapt: de afbeelding bepaalde de breedte van de kaart in plaats van andersom (#96)
 - Bij het bladeren door artikelen flitste er wit tussen twee pagina's: de pagina-TabView en het artikelscherm hadden geen eigen achtergrond, waardoor de systeemstandaard (wit) zichtbaar werd in plaats van `Theme.background`
 - Artikelen zonder publicatiedatum werden nooit opgeruimd: de bewaarperiode behandelde een ontbrekende datum als oneindig ver in de toekomst. Ze krijgen nu een ophaalmoment (`fetchedAt`) en verouderen daarmee gewoon (#89)
 

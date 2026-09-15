@@ -141,7 +141,9 @@ class RSSParser: NSObject, XMLParserDelegate {
                     currentItem?.description = text
                 }
             case "pubdate", "published", "updated", "dc:date":
-                currentItem?.pubDate = parseDate(text)
+                // Alleen overschrijven bij een geslaagde parse: een <updated> dat niet te
+                // lezen is mag een wél gelezen <published> niet wissen.
+                if let date = parseDate(text) { currentItem?.pubDate = date }
             case "guid", "id":
                 currentItem?.guid = text
             case "item", "entry":
@@ -190,6 +192,13 @@ class RSSParser: NSObject, XMLParserDelegate {
 
     // MARK: - Hulpfuncties
 
+    /// Leest een publicatiedatum, en wantrouwt de uitkomst wanneer die ver in de toekomst
+    /// ligt. `DateFormatter.date(from:)` matcht een *prefix*: een veld dat toevallig met
+    /// iets datumachtigs begint levert dan een datum op die nooit is bedoeld. Zo'n datum
+    /// blijft hangen — het artikel sorteert bovenaan, valt binnen elk samenvattingsvenster
+    /// en wordt door de bewaarperiode nooit opgeruimd, dus het komt na elke verversing
+    /// terug. Een mislukte parse is daarom beter dan een verzonnen datum: zonder datum valt
+    /// het artikel terug op `fetchedAt` en gedraagt het zich gewoon (#89).
     private func parseDate(_ string: String) -> Date? {
         let formats = [
             "EEE, dd MMM yyyy HH:mm:ss Z",
@@ -205,9 +214,20 @@ class RSSParser: NSObject, XMLParserDelegate {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         for format in formats {
             formatter.dateFormat = format
-            if let date = formatter.date(from: string) { return date }
+            guard let date = formatter.date(from: string) else { continue }
+            // Geen `return nil` hier: een volgend formaat kan dezelfde tekst wél
+            // geloofwaardig lezen.
+            if Self.isPlausiblePublicationDate(date) { return date }
+            logger.warning("Onwaarschijnlijke publicatiedatum genegeerd: \(string, privacy: .public)")
         }
         return nil
+    }
+
+    /// Een publicatiedatum mag hooguit `maxFutureDateSkew` vóórlopen op de klok.
+    /// Datums in het verleden blijven onaangeroerd: die corrigeren zichzelf — ze sorteren
+    /// achteraan en vallen vanzelf buiten de bewaarperiode.
+    static func isPlausiblePublicationDate(_ date: Date, now: Date = Date()) -> Bool {
+        date <= now.addingTimeInterval(AppConfiguration.maxFutureDateSkew)
     }
 
     private func extractImageURL(from html: String) -> String? {

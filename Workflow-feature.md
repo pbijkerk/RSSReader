@@ -49,7 +49,9 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 ## 8. Release (alleen op expliciet verzoek)
 - Versie bumpen volgens SemVer: MINOR bij een feature, PATCH bij een fix.
 - `## [Unreleased]` in CHANGELOG.md omzetten naar `## [X.Y.Z] - JJJJ-MM-DD`.
-- Git-tag `vX.Y.Z` aanmaken en pushen.
+- Git-tag `vX.Y.Z` aanmaken en pushen — **pas nadat de release-PR op `main` is gemerged**.
+  Tag je daarvoor, dan wijst de tag naar een commit zonder de bump en bouw je een oude versie.
+  Controleer het met `git show vX.Y.Z:project.yml | grep MARKETING_VERSION`.
 - Voer nooit een release uit zonder expliciete bevestiging (zie Versiebeheer.md).
 
 ## 9. Installeren op de iPhone (alleen na een release, stap 8)
@@ -58,33 +60,67 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 - Zonder App Store-distributie is een release pas af als de nieuwe versie op het toestel staat.
 - Regenereer eerst het project: stap 8 bumpt `MARKETING_VERSION` in `project.yml`, en zonder
   `xcodegen generate` bouw je een `.xcodeproj` met het oude versienummer.
-- Zoek het toestel op in plaats van een identifier over te typen; die verandert bij herkoppelen,
-  een ander toestel of een andere Mac. De regel moet `available (paired)` tonen.
-- Bouw en installeer:
-  ```bash
-  xcodegen generate
-  DEVICE=$(xcrun devicectl list devices | grep iPhone | grep 'available (paired)' \
-    | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)
-  DERIVED=~/Library/Developer/Xcode/DerivedData/RSSReader-device
-  xcodebuild -project RSSReader.xcodeproj -scheme RSSReader -configuration Release \
-    -destination "id=$DEVICE" -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
-  xcrun devicectl device install app --device "$DEVICE" \
-    "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app"
-  ```
-- Controleer na afloop dat de geïnstalleerde build het verwachte versienummer heeft:
-  `/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app/Info.plist"`
-- **Bouw niet binnen de projectmap.** Die staat in iCloud Drive, dat extended attributes op
-  de buildoutput zet (waargenomen: `com.apple.provenance`; ook `com.apple.FinderInfo` komt
-  voor). `codesign` faalt dan met *"resource fork, Finder information, or similar detritus
-  not allowed"*. `xattr -rc` lost dit niet op — die attributen komen terug of zijn niet te
-  verwijderen; bouw naar een pad buiten de projectmap. Simulatorbuilds hebben hier geen last
-  van omdat die niet worden ondertekend.
+- Sluit het toestel met een kabel aan en ontgrendel het vóór de build. Wordt het alleen over
+  het netwerk gezocht, dan loopt de build vast in *"Timed out waiting for all destinations…"*.
+
+### Via Xcode (aanbevolen)
+Toestelherkenning, koppeling en signing zijn precies waar de terminalroute struikelt; Xcode
+doet dat zelf en meldt in gewone taal wat er mankeert. Ook de iCloud-valkuil hieronder zit er
+al in: Xcode bouwt standaard naar `~/Library/Developer/Xcode/DerivedData`, buiten de projectmap.
+
+1. `xcodegen generate` in de terminal.
+2. `RSSReader.xcodeproj` openen; iPhone aangesloten en ontgrendeld.
+3. **Product → Scheme → Edit Scheme → Run → Build Configuration: `Release`.** Sla je dit over,
+   dan installeer je een Debug-build.
+4. Het toestel kiezen in de toolbar en `⌘R`. Daarna de debugger stoppen met `⌘.`; de app blijft
+   geïnstalleerd.
+5. Controleren dat het verwachte versienummer op het toestel staat.
+
+### Via de terminal (alternatief)
+Bruikbaar als je het onbemand wilt draaien. Let op: **twee verschillende identifiers, niet door
+elkaar halen.** `devicectl` werkt met zijn eigen UUID (`A500BDFC-…`), `xcodebuild -destination
+id=` met de hardware-UDID van het toestel (`00008110-…`). Geef je de eerste aan `xcodebuild`,
+dan meldt die *"CoreDeviceService was unable to locate a device matching the requested device
+identifier"* — de foutmelding somt de juiste UDID wel op onder *Available destinations*.
+Daarom hieronder: `xcodebuild` op toestelnaam (dat scheelt het overtypen van een UDID) en
+`devicectl` op zijn eigen id. Zoek dat id op in plaats van het over te typen; het verandert bij
+herkoppelen, een ander toestel of een andere Mac. De regel moet `available (paired)` tonen.
+
+```bash
+xcodegen generate
+DEVICE=$(xcrun devicectl list devices | grep iPhone | grep 'available (paired)' \
+  | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)
+DERIVED=~/Library/Developer/Xcode/DerivedData/RSSReader-device
+xcodebuild -project RSSReader.xcodeproj -scheme RSSReader -configuration Release \
+  -destination 'platform=iOS,name=iPhone van Peter' \
+  -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
+xcrun devicectl device install app --device "$DEVICE" \
+  "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app"
+```
+
+Heet het toestel anders, pas dan de naam aan; `xcrun devicectl list devices` toont hem.
+Controleer na afloop het versienummer:
+
+```bash
+/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
+  "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app/Info.plist"
+```
+
+### Bouw niet binnen de projectmap
+Die staat in iCloud Drive, dat extended attributes op de buildoutput zet (waargenomen:
+`com.apple.provenance`; ook `com.apple.FinderInfo` komt voor). `codesign` faalt dan met
+*"resource fork, Finder information, or similar detritus not allowed"*. `xattr -rc` lost dit
+niet op — die attributen komen terug of zijn niet te verwijderen; bouw naar een pad buiten de
+projectmap. Xcode doet dat standaard al. Simulatorbuilds hebben hier geen last van omdat die
+niet worden ondertekend.
 
 ## 10. Continuous integration (GitHub Actions)
 
 Naast de handmatige stappen hierboven draait er een CI-workflow op elke pull request naar
-`main`. Die doet precies twee dingen:
+`main`. Die doet precies drie dingen:
 
+- **Opmaak** — draait swift-format over `RSSReader/` en `RSSReaderTests/` en faalt als dat
+  een diff oplevert.
 - **Build-check** — dezelfde controle als stap 2, met `generic/platform=iOS Simulator`.
 - **Tests** — de unit-tests in `RSSReaderTests` op een simulator die de workflow zelf opzoekt.
 
@@ -109,6 +145,12 @@ dat de build faalt. Stap 6 (review) blijft mensenwerk — CI toetst geen correct
   extra's. De distributie loopt via stap 9, op het toestel zelf.
 - **SwiftLint.** Dit project gebruikt swift-format en heeft geen `.swiftlint.yml`; een
   strict-run op de standaardregels zou permanent rood staan.
+- **`swift format lint`.** De opmaakstap toetst of de broncode door de formatter is gehaald,
+  niet of hij aan alle lint-regels voldoet. Dat verschil is bewust: 27 regels zijn langer dan
+  de ingestelde 120 tekens en allemaal string-literals — de CSS-blokken in `ItemDetailView`,
+  de promptteksten in `AppConfiguration`, uitlegteksten in de instellingen. De formatter kan
+  een literal niet afbreken (`reflowMultilineStringLiterals` staat op `never`), dus een
+  lint-run zou daar permanent rood op staan zonder dat er iets aan te doen valt.
 - **Code coverage / Codecov.** `xcodebuild` levert een `.xcresult`, geen `.lcov`, en er is
   geen Codecov-token. Toe te voegen zodra er iets met die cijfers gedaan wordt.
 
