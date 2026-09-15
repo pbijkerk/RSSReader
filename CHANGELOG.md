@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- De artikelenlijst haalt artikelen per 50 op en laadt bij tijdens het scrollen, in plaats van de hele bewaarperiode in één keer (#106)
 - Onderwerpenbeheer (`TopicsManagementView`, `TopicEditView`) was nog volledig Engels; alle zichtbare tekst is nu Nederlands, met "favoriet" als consistente term voor `isLiked` (#61)
 
 ## [1.8.1] - 2026-09-15

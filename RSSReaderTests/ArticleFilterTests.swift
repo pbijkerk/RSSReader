@@ -149,6 +149,62 @@ final class ArticleFilterTests: XCTestCase {
         XCTAssertEqual(opgehaald.map(\.title), ["tech-ongelezen"])
     }
 
+    // MARK: - Paginering
+
+    /// Bouwt `aantal` artikelen, oplopend in tijd: "artikel 0" is het oudst.
+    private func maakOplopendeArtikelen(_ aantal: Int) {
+        let context = container.mainContext
+        let feed = Feed(url: "https://example.com/rss", title: "Testfeed")
+        context.insert(feed)
+
+        for index in 0..<aantal {
+            let item = FeedItem(
+                title: "artikel \(index)",
+                pubDate: Date(timeIntervalSince1970: 1_700_000_000 + Double(index) * 3600))
+            item.feed = feed
+            feed.items.append(item)
+            context.insert(item)
+        }
+    }
+
+    func testDeLimietGeeftDeNieuwsteArtikelen() throws {
+        maakOplopendeArtikelen(5)
+        let opgehaald = try container.mainContext.fetch(
+            ArticleFilter.descriptor(hideRead: false, feedIDs: nil, limit: 2))
+
+        XCTAssertEqual(
+            opgehaald.map(\.title), ["artikel 4", "artikel 3"],
+            "Een limiet knipt onderaan af, niet bovenaan: de nieuwste horen te blijven")
+    }
+
+    /// De lijst laadt bij zodra er precies zoveel artikelen terugkomen als gevraagd.
+    /// Komt er minder terug, dan is dat het einde — dat onderscheid moet kloppen.
+    func testEenLimietGroterDanDeVoorraadGeeftAlles() throws {
+        maakOplopendeArtikelen(3)
+        let opgehaald = try container.mainContext.fetch(
+            ArticleFilter.descriptor(hideRead: false, feedIDs: nil, limit: 50))
+
+        XCTAssertEqual(opgehaald.count, 3, "Minder dan de limiet betekent: dit is het einde")
+    }
+
+    func testZonderLimietKomtAllesTerug() throws {
+        maakOplopendeArtikelen(5)
+        let opgehaald = try container.mainContext.fetch(
+            ArticleFilter.descriptor(hideRead: false, feedIDs: nil))
+
+        XCTAssertEqual(opgehaald.count, 5)
+    }
+
+    func testDeLimietWerktSamenMetDeFilters() throws {
+        let feeds = maakTestdata()
+        let opgehaald = try container.mainContext.fetch(
+            ArticleFilter.descriptor(hideRead: true, feedIDs: [feeds.techFeed.id], limit: 10))
+
+        XCTAssertEqual(
+            opgehaald.map(\.title), ["tech-ongelezen"],
+            "De limiet mag het filter niet omzeilen")
+    }
+
     // MARK: - Randgevallen
 
     /// Een artikel zonder feed hoort buiten elke mapfilter te vallen. Dat is de `else`-tak

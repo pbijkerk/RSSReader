@@ -24,6 +24,12 @@ enum AppConfiguration {
     /// van de bewaarperiode buiten de samenvatting blijven (#89).
     static let summaryWindow: TimeInterval = 48 * 3600
 
+    /// Hoeveel artikelen de lijst in één keer ophaalt, en met hoeveel hij groeit zodra je
+    /// het einde nadert. Zonder begrenzing komt de hele bewaarperiode in één fetch van
+    /// schijf — de meting bij #106 liet zien dat dat de main thread seconden laat wachten
+    /// op I/O. Vijftig is ruim een schermvulling, zodat je de grens zelden voelt.
+    static let articlePageSize = 50
+
     /// Hoeveel een publicatiedatum vóór mag lopen op de klok voordat hij ongeloofwaardig is.
     /// Een uitgever met een afwijkende klok of een tijdzone die net verkeerd wordt opgegeven
     /// scheelt hooguit uren; een datum die verder in de toekomst ligt komt uit een verkeerd

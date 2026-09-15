@@ -14,6 +14,10 @@ struct AllArticlesView: View {
 
     @State private var showFeedManagement = false
 
+    /// Hoeveel artikelen de lijst nu ophaalt. Groeit terwijl je naar beneden scrolt en
+    /// begint opnieuw zodra een filter wijzigt — dan kijk je immers naar een andere lijst.
+    @State private var limit = AppConfiguration.articlePageSize
+
     /// Lege string of een verwijderde map betekent: geen filter.
     private var activeFolder: FeedFolder? {
         guard !folderFilterID.isEmpty else { return nil }
@@ -35,9 +39,13 @@ struct AllArticlesView: View {
             ArticleListView(
                 hideRead: hideReadArticles,
                 feedIDs: activeFeedIDs,
+                limit: limit,
+                onReachEnd: { limit += AppConfiguration.articlePageSize },
                 onRefresh: { await refreshFeeds() },
                 emptyState: { emptyState }
             )
+            .onChange(of: hideReadArticles) { limit = AppConfiguration.articlePageSize }
+            .onChange(of: folderFilterID) { limit = AppConfiguration.articlePageSize }
             .safeAreaInset(edge: .top, spacing: 0) {
                 if !folders.isEmpty {
                     filterBar
@@ -174,19 +182,27 @@ private struct ArticleListView<EmptyState: View>: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [FeedItem]
 
+    /// De gevraagde limiet. Zijn er precies zoveel artikelen geladen, dan kunnen er meer
+    /// zijn; is het er minder, dan is dit het einde van de lijst.
+    private let limit: Int
+    private let onReachEnd: () -> Void
     private let onRefresh: () async -> Void
     private let emptyState: () -> EmptyState
 
     init(
         hideRead: Bool,
         feedIDs: [UUID]?,
+        limit: Int,
+        onReachEnd: @escaping () -> Void,
         onRefresh: @escaping () async -> Void,
         @ViewBuilder emptyState: @escaping () -> EmptyState
     ) {
+        self.limit = limit
+        self.onReachEnd = onReachEnd
         self.onRefresh = onRefresh
         self.emptyState = emptyState
 
-        _items = Query(ArticleFilter.descriptor(hideRead: hideRead, feedIDs: feedIDs))
+        _items = Query(ArticleFilter.descriptor(hideRead: hideRead, feedIDs: feedIDs, limit: limit))
     }
 
     var body: some View {
@@ -202,6 +218,14 @@ private struct ArticleListView<EmptyState: View>: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                // Bij de laatste rij een pagina bijladen. `items.count == limit` betekent
+                // dat de database er precies zoveel gaf als gevraagd; dan zijn er
+                // waarschijnlijk meer. Gaf hij er minder, dan is dit het einde.
+                .onAppear {
+                    if index == items.count - 1, items.count == limit {
+                        onReachEnd()
+                    }
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button {
                         item.isRead.toggle()
@@ -263,12 +287,18 @@ enum ArticleFilter {
     /// De meting bij #106 laat dat zien als `ArticleListView.body.get` → `libsqlite3` →
     /// `pread`, met een main thread die wacht op schijf in plaats van rekent. Met
     /// prefetching komen die relaties in één keer mee.
-    static func descriptor(hideRead: Bool, feedIDs: [UUID]?) -> FetchDescriptor<FeedItem> {
+    /// - Parameter limit: hoeveel artikelen er hooguit worden opgehaald; `nil` is alles.
+    static func descriptor(
+        hideRead: Bool,
+        feedIDs: [UUID]?,
+        limit: Int? = nil
+    ) -> FetchDescriptor<FeedItem> {
         var descriptor = FetchDescriptor<FeedItem>(
             predicate: predicate(hideRead: hideRead, feedIDs: feedIDs),
             sortBy: [SortDescriptor(\FeedItem.pubDate, order: .reverse)]
         )
         descriptor.relationshipKeyPathsForPrefetching = [\FeedItem.feed, \FeedItem.factCheckResults]
+        descriptor.fetchLimit = limit
         return descriptor
     }
 
