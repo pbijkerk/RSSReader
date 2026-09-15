@@ -112,6 +112,45 @@ final class ArticleFilterTests: XCTestCase {
         XCTAssertTrue(try titels(hideRead: false, feedIDs: []).isEmpty)
     }
 
+    // MARK: - De beschrijving
+
+    /// De descriptor draait hetzelfde filter én vraagt de relaties vooruit op. Dat laatste
+    /// is niet aan de uitkomst te zien, maar wel of het de fetch stukmaakt: een verkeerd
+    /// keypath in `relationshipKeyPathsForPrefetching` blijkt pas als hij draait (#106).
+    func testDeBeschrijvingFiltertEnSorteertNieuwsteEerst() throws {
+        let context = container.mainContext
+        let feed = Feed(url: "https://tech.example/rss", title: "Tech")
+        context.insert(feed)
+
+        for (index, titel) in ["oudst", "midden", "nieuwst"].enumerated() {
+            let item = FeedItem(
+                title: titel,
+                pubDate: Date(timeIntervalSince1970: 1_700_000_000 + Double(index) * 3600))
+            item.feed = feed
+            feed.items.append(item)
+            context.insert(item)
+        }
+
+        let opgehaald = try context.fetch(ArticleFilter.descriptor(hideRead: false, feedIDs: nil))
+
+        XCTAssertEqual(
+            opgehaald.map(\.title), ["nieuwst", "midden", "oudst"],
+            "De lijst hoort nieuwste-eerst te staan")
+        XCTAssertEqual(
+            opgehaald.first?.feed?.title, "Tech",
+            "De vooruit opgehaalde relatie hoort gewoon leesbaar te zijn")
+    }
+
+    func testDeBeschrijvingRespecteertBeideFilters() throws {
+        let feeds = maakTestdata()
+        let opgehaald = try container.mainContext.fetch(
+            ArticleFilter.descriptor(hideRead: true, feedIDs: [feeds.techFeed.id]))
+
+        XCTAssertEqual(opgehaald.map(\.title), ["tech-ongelezen"])
+    }
+
+    // MARK: - Randgevallen
+
     /// Een artikel zonder feed hoort buiten elke mapfilter te vallen. Dat is de `else`-tak
     /// van het predicaat.
     func testArtikelZonderFeedValtBuitenEenMapfilter() throws {
