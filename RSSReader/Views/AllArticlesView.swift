@@ -250,25 +250,34 @@ private struct ArticleListView<EmptyState: View>: View {
 /// Los van de view, en met opzet niet `private`: een fout in een `#Predicate` blijkt pas
 /// als hij draait, niet bij het compileren. Zo kan een test hem tegen een echte
 /// in-memory store uitvoeren en vangt CI een stukgelopen predicaat (#108).
+///
+/// De mapfilter gebruikt `if let feed = item.feed` en niet `item.feed?.id`. Een optionele
+/// keten maakt de macro stuk: van `?.id` verwacht hij een `KeyPath<Feed, UUID?>` terwijl
+/// `id` niet-optioneel is, en een `??` eromheen levert een `Optional<Bool>` op waar `&&`
+/// een `Bool` wil. De `if`-vorm moet daarom de hele body van de closure zijn — als
+/// deel van een grotere expressie is een `if` in Swift geen expressie.
 enum ArticleFilter {
 
     /// - Parameters:
     ///   - hideRead: gelezen artikelen weglaten.
     ///   - feedIDs: alleen artikelen uit deze feeds; `nil` betekent geen mapfilter.
     static func predicate(hideRead: Bool, feedIDs: [UUID]?) -> Predicate<FeedItem> {
-        // Een verse id matcht geen enkele feed, dus een artikel zonder feed valt buiten
-        // een mapfilter. Zo hoeft het predicaat niet over een optionele relatie te
-        // redeneren, wat SwiftData niet in alle vormen aankan.
-        let geenFeed = UUID()
-
         switch (hideRead, feedIDs) {
         case (true, .some(let ids)):
             return #Predicate<FeedItem> { item in
-                item.isRead == false && ids.contains(item.feed?.id ?? geenFeed)
+                if let feed = item.feed {
+                    item.isRead == false && ids.contains(feed.id)
+                } else {
+                    false
+                }
             }
         case (false, .some(let ids)):
             return #Predicate<FeedItem> { item in
-                ids.contains(item.feed?.id ?? geenFeed)
+                if let feed = item.feed {
+                    ids.contains(feed.id)
+                } else {
+                    false
+                }
             }
         case (true, .none):
             return #Predicate<FeedItem> { item in item.isRead == false }

@@ -112,8 +112,8 @@ final class ArticleFilterTests: XCTestCase {
         XCTAssertTrue(try titels(hideRead: false, feedIDs: []).isEmpty)
     }
 
-    /// Een artikel zonder feed hoort buiten elke mapfilter te vallen. Dat is precies wat
-    /// de `?? geenFeed`-constructie in het predicaat regelt.
+    /// Een artikel zonder feed hoort buiten elke mapfilter te vallen. Dat is de `else`-tak
+    /// van het predicaat.
     func testArtikelZonderFeedValtBuitenEenMapfilter() throws {
         let feeds = maakTestdata()
         let wees = FeedItem(title: "zonder feed", pubDate: Date(timeIntervalSince1970: 1_700_000_000))
