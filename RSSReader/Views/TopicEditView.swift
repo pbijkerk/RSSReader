@@ -29,14 +29,14 @@ struct TopicEditView: View {
                 addKeywordSection
                 keywordListSection
             }
-            .navigationTitle(isEditing ? "Edit Topic" : "New Topic")
+            .navigationTitle(isEditing ? "Onderwerp bewerken" : "Nieuw onderwerp")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Annuleren") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
+                    Button("Bewaren") { save() }
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -47,41 +47,41 @@ struct TopicEditView: View {
     // MARK: - Sections
 
     private var nameSection: some View {
-        Section("Topic Name") {
-            TextField("e.g. Artificial Intelligence", text: $name)
+        Section("Naam") {
+            TextField("bijv. Kunstmatige intelligentie", text: $name)
         }
     }
 
     private var likedSection: some View {
         Section {
-            Toggle("Mark as Liked", isOn: $isLiked)
+            Toggle("Markeer als favoriet", isOn: $isLiked)
         } footer: {
-            Text("Liked topics are prioritised in your summaries.")
+            Text("Favoriete onderwerpen krijgen voorrang in je samenvattingen.")
         }
     }
 
     private var addKeywordSection: some View {
         Section {
             HStack {
-                TextField("Add keyword…", text: $newKeyword)
+                TextField("Trefwoord toevoegen…", text: $newKeyword)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .submitLabel(.done)
                     .onSubmit { addKeyword() }
-                Button("Add", action: addKeyword)
+                Button("Toevoegen", action: addKeyword)
                     .disabled(newKeyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         } header: {
-            Text("Keywords")
+            Text("Trefwoorden")
         } footer: {
-            Text("Articles containing these keywords will be grouped under this topic.")
+            Text("Artikelen met deze trefwoorden worden onder dit onderwerp gegroepeerd.")
         }
     }
 
     private var keywordListSection: some View {
         Section {
             if keywords.isEmpty {
-                Text("No keywords yet")
+                Text("Nog geen trefwoorden")
                     .foregroundStyle(.secondary)
                     .italic()
             } else {

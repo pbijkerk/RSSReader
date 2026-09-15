@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Gewijzigd
+- Onderwerpenbeheer (`TopicsManagementView`, `TopicEditView`) was nog volledig Engels; alle zichtbare tekst is nu Nederlands, met "favoriet" als consistente term voor `isLiked` (#61)
+
 ## [1.8.1] - 2026-09-15
 
 ### Gewijzigd
