@@ -7,6 +7,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## [Unreleased]
 
+### Gewijzigd
+- Stap 8 en 9 van `Workflow-feature.md`: taggen pas na het mergen van de release-PR, en het onderscheid tussen het `devicectl`-id en de hardware-UDID die `xcodebuild` wil
+
 ### Opgelost
 - Een artikel met een publicatiedatum eeuwen in de toekomst bleef na elke verversing terugkomen: het sorteerde bovenaan, viel binnen elk samenvattingsvenster en werd door de bewaarperiode nooit opgeruimd. De parser weigert nu een datum die meer dan een etmaal vóórloopt, en bestaande rijen worden bij de eerstvolgende verversing gecorrigeerd (#103)
 
