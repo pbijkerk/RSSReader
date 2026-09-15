@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Artikel-extractie en fact-check draaien alleen nog voor het artikel dat je bekijkt, niet voor de buurpagina's van de pagina-TabView; een artikel geldt ook pas als gelezen zodra het de zichtbare pagina is (#106)
 - Stap 8 en 9 van `Workflow-feature.md`: taggen pas na het mergen van de release-PR, en het onderscheid tussen het `devicectl`-id en de hardware-UDID die `xcodebuild` wil
 - Stap 9 van `Workflow-feature.md` beschrijft Xcode als aanbevolen route voor het installeren op het toestel; de terminalroute staat er als alternatief onder
 
