@@ -49,7 +49,9 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 ## 8. Release (alleen op expliciet verzoek)
 - Versie bumpen volgens SemVer: MINOR bij een feature, PATCH bij een fix.
 - `## [Unreleased]` in CHANGELOG.md omzetten naar `## [X.Y.Z] - JJJJ-MM-DD`.
-- Git-tag `vX.Y.Z` aanmaken en pushen.
+- Git-tag `vX.Y.Z` aanmaken en pushen — **pas nadat de release-PR op `main` is gemerged**.
+  Tag je daarvoor, dan wijst de tag naar een commit zonder de bump en bouw je een oude versie.
+  Controleer het met `git show vX.Y.Z:project.yml | grep MARKETING_VERSION`.
 - Voer nooit een release uit zonder expliciete bevestiging (zie Versiebeheer.md).
 
 ## 9. Installeren op de iPhone (alleen na een release, stap 8)
@@ -58,8 +60,16 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
 - Zonder App Store-distributie is een release pas af als de nieuwe versie op het toestel staat.
 - Regenereer eerst het project: stap 8 bumpt `MARKETING_VERSION` in `project.yml`, en zonder
   `xcodegen generate` bouw je een `.xcodeproj` met het oude versienummer.
-- Zoek het toestel op in plaats van een identifier over te typen; die verandert bij herkoppelen,
-  een ander toestel of een andere Mac. De regel moet `available (paired)` tonen.
+- Sluit het toestel met een kabel aan en ontgrendel het vóór de build. Zoekt Xcode alleen
+  over het netwerk, dan faalt de build met *"Timed out waiting for all destinations…"*.
+- **Twee verschillende identifiers, niet door elkaar halen.** `devicectl` werkt met zijn eigen
+  UUID (`A500BDFC-…`), `xcodebuild -destination id=` met de hardware-UDID van het toestel
+  (`00008110-…`). Geef je de eerste aan `xcodebuild`, dan meldt die *"CoreDeviceService was
+  unable to locate a device matching the requested device identifier"* — de foutmelding somt
+  dan wel de juiste UDID op onder *Available destinations*. Daarom hieronder: `xcodebuild` op
+  toestelnaam (dat scheelt het overtypen van een UDID) en `devicectl` op zijn eigen id. Zoek
+  dat id op in plaats van het over te typen; het verandert bij herkoppelen, een ander toestel
+  of een andere Mac. De regel moet `available (paired)` tonen.
 - Bouw en installeer:
   ```bash
   xcodegen generate
@@ -67,10 +77,12 @@ Voer deze stappen in volgorde uit zodra een feature af is. Sla geen stappen over
     | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)
   DERIVED=~/Library/Developer/Xcode/DerivedData/RSSReader-device
   xcodebuild -project RSSReader.xcodeproj -scheme RSSReader -configuration Release \
-    -destination "id=$DEVICE" -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
+    -destination 'platform=iOS,name=iPhone van Peter' \
+    -derivedDataPath "$DERIVED" -allowProvisioningUpdates build
   xcrun devicectl device install app --device "$DEVICE" \
     "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app"
   ```
+  Heet het toestel anders, pas dan de naam aan; `xcrun devicectl list devices` toont hem.
 - Controleer na afloop dat de geïnstalleerde build het verwachte versienummer heeft:
   `/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$DERIVED/Build/Products/Release-iphoneos/RSSReader.app/Info.plist"`
 - **Bouw niet binnen de projectmap.** Die staat in iCloud Drive, dat extended attributes op
