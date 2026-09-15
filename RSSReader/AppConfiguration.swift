@@ -24,6 +24,12 @@ enum AppConfiguration {
     /// van de bewaarperiode buiten de samenvatting blijven (#89).
     static let summaryWindow: TimeInterval = 48 * 3600
 
+    /// Hoeveel een publicatiedatum vóór mag lopen op de klok voordat hij ongeloofwaardig is.
+    /// Een uitgever met een afwijkende klok of een tijdzone die net verkeerd wordt opgegeven
+    /// scheelt hooguit uren; een datum die verder in de toekomst ligt komt uit een verkeerd
+    /// gelezen veld, niet uit de werkelijkheid.
+    static let maxFutureDateSkew: TimeInterval = 24 * 3600
+
     // MARK: - Retention
 
     /// Standaard aantal dagen dat artikelen bewaard blijven (als feed geen eigen instelling heeft)
