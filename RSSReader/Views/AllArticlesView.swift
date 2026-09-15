@@ -186,11 +186,7 @@ private struct ArticleListView<EmptyState: View>: View {
         self.onRefresh = onRefresh
         self.emptyState = emptyState
 
-        _items = Query(
-            filter: ArticleFilter.predicate(hideRead: hideRead, feedIDs: feedIDs),
-            sort: \FeedItem.pubDate,
-            order: .reverse
-        )
+        _items = Query(ArticleFilter.descriptor(hideRead: hideRead, feedIDs: feedIDs))
     }
 
     var body: some View {
@@ -257,6 +253,24 @@ private struct ArticleListView<EmptyState: View>: View {
 /// een `Bool` wil. De `if`-vorm moet daarom de hele body van de closure zijn — als
 /// deel van een grotere expressie is een `if` in Swift geen expressie.
 enum ArticleFilter {
+
+    /// De volledige beschrijving waarmee de artikelenlijst zijn artikelen ophaalt.
+    ///
+    /// `relationshipKeyPathsForPrefetching` is hier het punt. Elke kaart in de lijst leest
+    /// `item.feed` (voor de kleur, het bronlabel en de bias-indicatoren) en
+    /// `item.factCheckResults`. Zonder prefetching haalt SwiftData die per rij afzonderlijk
+    /// op: één databaseleesactie per relatie per zichtbare rij, synchroon op de main thread.
+    /// De meting bij #106 laat dat zien als `ArticleListView.body.get` → `libsqlite3` →
+    /// `pread`, met een main thread die wacht op schijf in plaats van rekent. Met
+    /// prefetching komen die relaties in één keer mee.
+    static func descriptor(hideRead: Bool, feedIDs: [UUID]?) -> FetchDescriptor<FeedItem> {
+        var descriptor = FetchDescriptor<FeedItem>(
+            predicate: predicate(hideRead: hideRead, feedIDs: feedIDs),
+            sortBy: [SortDescriptor(\FeedItem.pubDate, order: .reverse)]
+        )
+        descriptor.relationshipKeyPathsForPrefetching = [\FeedItem.feed, \FeedItem.factCheckResults]
+        return descriptor
+    }
 
     /// - Parameters:
     ///   - hideRead: gelezen artikelen weglaten.

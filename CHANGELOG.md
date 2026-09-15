@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- De artikelenlijst haalt `feed` en `factCheckResults` vooruit op in plaats van per rij afzonderlijk; dat scheelt een databaseleesactie per relatie per zichtbare rij (#106)
 - Het artikelenscherm filtert nu in de database in plaats van in het geheugen. Het haalde eerder elk artikel op en filterde daarna per artikel over `feed.folder`, wat duizenden losse database-acties op de main thread opleverde (#108)
 - Artikel-extractie en fact-check draaien alleen nog voor het artikel dat je bekijkt, niet voor de buurpagina's van de pagina-TabView; een artikel geldt ook pas als gelezen zodra het de zichtbare pagina is (#106)
 - Stap 8 en 9 van `Workflow-feature.md`: taggen pas na het mergen van de release-PR, en het onderscheid tussen het `devicectl`-id en de hardware-UDID die `xcodebuild` wil
