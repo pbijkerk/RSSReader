@@ -39,10 +39,12 @@ struct TopicsManagementView: View {
                 .foregroundStyle(.secondary)
             Text("Nog geen onderwerpen")
                 .font(.title2.bold())
-            Text("Onderwerpen die je in samenvattingen als favoriet markeert, verschijnen hier. Je kunt ook zelf onderwerpen toevoegen.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            Text(
+                "Onderwerpen die je in samenvattingen als favoriet markeert, verschijnen hier. Je kunt ook zelf onderwerpen toevoegen."
+            )
+            .multilineTextAlignment(.center)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
             Button("Onderwerp toevoegen") { showAddTopic = true }
                 .buttonStyle(.borderedProminent)
         }
