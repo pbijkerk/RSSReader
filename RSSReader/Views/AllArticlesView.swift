@@ -38,40 +38,40 @@ struct AllArticlesView: View {
                 onRefresh: { await refreshFeeds() },
                 emptyState: { emptyState }
             )
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    if !folders.isEmpty {
-                        filterBar
-                    }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if !folders.isEmpty {
+                    filterBar
                 }
-                .background(Theme.background.ignoresSafeArea())
-                .navigationTitle("Artikelen")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        if refreshService.isRefreshing {
-                            ProgressView()
-                        } else {
-                            Button("Vernieuwen", systemImage: "arrow.clockwise") {
-                                Task { await refreshFeeds() }
-                            }
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button("Feeds beheren", systemImage: "list.bullet.rectangle") {
-                                showFeedManagement = true
-                            }
-                        } label: {
-                            Image(systemName: "plus")
+            }
+            .background(Theme.background.ignoresSafeArea())
+            .navigationTitle("Artikelen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if refreshService.isRefreshing {
+                        ProgressView()
+                    } else {
+                        Button("Vernieuwen", systemImage: "arrow.clockwise") {
+                            Task { await refreshFeeds() }
                         }
                     }
                 }
-                .navigationDestination(isPresented: $showFeedManagement) {
-                    FeedListView(
-                        refreshService: refreshService,
-                        onRefreshComplete: onRefreshComplete
-                    )
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Feeds beheren", systemImage: "list.bullet.rectangle") {
+                            showFeedManagement = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
+            }
+            .navigationDestination(isPresented: $showFeedManagement) {
+                FeedListView(
+                    refreshService: refreshService,
+                    onRefreshComplete: onRefreshComplete
+                )
+            }
         }
     }
 
