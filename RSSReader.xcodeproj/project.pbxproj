@@ -44,6 +44,7 @@
 		A1D980F137AD384A8931E739 /* MastodonAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9D8C93D74D35F80D99FFA1 /* MastodonAccount.swift */; };
 		A6752328F81DF8D2EFDE96BF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9312ACF4202C413584AA86DA /* Assets.xcassets */; };
 		A813B4D3B857CADFC881F7CD /* TopicClusteringOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FC4BFFBC1AD6D161D08CFE /* TopicClusteringOrderTests.swift */; };
+		ACB0340E7482C98A34DD509A /* PublicationDateSanityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73B8020012F2781BF46BC37 /* PublicationDateSanityTests.swift */; };
 		ADEC4E4ACCA8BBB347082135 /* Feed.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B2F855DCD670437438628 /* Feed.swift */; };
 		AFF204F59AF57F5B985C5F4F /* RSSReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52113D3F8A1647AD2C55E1A2 /* RSSReaderTests.swift */; };
 		B5CD2DF8689A1E43068A441E /* SummaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A87078DD7CF82B951C07E7 /* SummaryListView.swift */; };
@@ -125,6 +126,7 @@
 		E3CE45A5CC10DAE8D217FE2C /* FactCheckChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactCheckChipView.swift; sourceTree = "<group>"; };
 		E475DB8554D542D76C47A0D5 /* FactCheckResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactCheckResult.swift; sourceTree = "<group>"; };
 		E5F19EC6A02B5ADC08591340 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E73B8020012F2781BF46BC37 /* PublicationDateSanityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicationDateSanityTests.swift; sourceTree = "<group>"; };
 		E8BEC4044D47D2CEFA4DA21A /* AddFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFeedView.swift; sourceTree = "<group>"; };
 		EC92428C7AA3B1A178A6CD52 /* SavedArticlesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedArticlesView.swift; sourceTree = "<group>"; };
 		ECD01B4DAB6E21F374F66E76 /* OPMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPMLParser.swift; sourceTree = "<group>"; };
@@ -156,6 +158,7 @@
 			isa = PBXGroup;
 			children = (
 				8019B171CF4E4E093570F809 /* OPMLParserTests.swift */,
+				E73B8020012F2781BF46BC37 /* PublicationDateSanityTests.swift */,
 				BC99EA585B4A6776C0162A38 /* RSSParserTests.swift */,
 				52113D3F8A1647AD2C55E1A2 /* RSSReaderTests.swift */,
 				1EF7C842139C0455EDC0F5A7 /* SummaryWindowTests.swift */,
@@ -349,6 +352,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				395F473FA965E3DB067320ED /* OPMLParserTests.swift in Sources */,
+				ACB0340E7482C98A34DD509A /* PublicationDateSanityTests.swift in Sources */,
 				13C9C17C4C1F3E162349A8EB /* RSSParserTests.swift in Sources */,
 				AFF204F59AF57F5B985C5F4F /* RSSReaderTests.swift in Sources */,
 				717C8A7A495EF3195743062E /* SummaryWindowTests.swift in Sources */,
