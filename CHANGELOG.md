@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Opgelost
+- Een artikel met een publicatiedatum eeuwen in de toekomst bleef na elke verversing terugkomen: het sorteerde bovenaan, viel binnen elk samenvattingsvenster en werd door de bewaarperiode nooit opgeruimd. De parser weigert nu een datum die meer dan een etmaal vóórloopt, en bestaande rijen worden bij de eerstvolgende verversing gecorrigeerd (#103)
+
 ## [1.8.0] - 2026-09-14
 
 ### Toegevoegd
