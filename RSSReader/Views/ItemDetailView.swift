@@ -565,8 +565,26 @@ struct ReaderWebView: UIViewRepresentable {
         wv.isOpaque = true
         wv.backgroundColor = UIColor(Theme.background)
         wv.scrollView.backgroundColor = UIColor(Theme.background)
+        // Een webview zonder geladen document tekent zichzelf wit: met `isOpaque = true`
+        // schildert WebKit, en de `backgroundColor` hierboven komt er niet doorheen. Sinds
+        // #107 laadt een buurpagina zijn HTML pas wanneer hij de zichtbare wordt, dus was
+        // die witte vlek tijdens het vegen zichtbaar — in beide kleurmodi, want het is
+        // WebKits wit en niet dat van de app. Een leeg document met dezelfde achtergrond
+        // dekt de periode tot de echte HTML er is.
+        wv.loadHTMLString(Self.leegDocument, baseURL: nil)
         return wv
     }
+
+    /// Dezelfde waarden als `--bg` in `ArticleHTMLBuilder` en `Theme.background`.
+    private static let leegDocument = """
+        <!doctype html><html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          html, body { margin: 0; height: 100%; background: #F4F3EF; }
+          @media (prefers-color-scheme: dark) { html, body { background: #121214; } }
+        </style>
+        </head><body></body></html>
+        """
 
     func updateUIView(_ wv: WKWebView, context: Context) {
         guard html != context.coordinator.lastHTML else { return }
