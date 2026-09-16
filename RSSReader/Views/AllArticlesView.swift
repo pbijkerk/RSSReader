@@ -207,13 +207,15 @@ private struct ArticleListView<EmptyState: View>: View {
 
     var body: some View {
         List {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+            ForEach(items, id: \.id) { item in
                 ZStack {
                     FeedItemCard(item: item)
-                    NavigationLink(
-                        destination: ArticlePageView(
-                            items: items, initialIndex: index, onReachEnd: onReachEnd)
-                    ) {
+                    // De ZStack met een onzichtbare link verbergt de disclosure-chevron
+                    // die een List aan een NavigationLink hangt. De link geeft een waarde
+                    // door in plaats van een destination: een destination-link bouwt zijn
+                    // bestemming meteen op, dus elke gerealiseerde rij construeerde een
+                    // volledige ArticlePageView met de hele lijst erin (#115).
+                    NavigationLink(value: item.id) {
                         EmptyView()
                     }
                     .opacity(0)
@@ -225,7 +227,7 @@ private struct ArticleListView<EmptyState: View>: View {
                 // dat de database er precies zoveel gaf als gevraagd; dan zijn er
                 // waarschijnlijk meer. Gaf hij er minder, dan is dit het einde.
                 .onAppear {
-                    if index == items.count - 1, items.count == limit {
+                    if item.id == items.last?.id, items.count == limit {
                         onReachEnd()
                     }
                 }
@@ -257,6 +259,14 @@ private struct ArticleListView<EmptyState: View>: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        // Eén bestemming voor de hele lijst in plaats van één per rij. De index wordt
+        // pas opgezocht wanneer er daadwerkelijk genavigeerd wordt; dat is één keer
+        // lineair zoeken bij een tik, in plaats van werk bij elke update.
+        .navigationDestination(for: UUID.self) { id in
+            if let index = items.firstIndex(where: { $0.id == id }) {
+                ArticlePageView(items: items, initialIndex: index, onReachEnd: onReachEnd)
+            }
+        }
         .refreshable { await onRefresh() }
         // Overlay in plaats van een vervangende view: de lijst blijft bestaan, dus
         // pull-to-refresh werkt ook wanneer er nog niets te tonen is.
