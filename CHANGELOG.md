@@ -5,7 +5,7 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
-## [Unreleased]
+## [1.9.0] - 2026-09-16
 
 ### Gewijzigd
 - De artikelenlijst haalt artikelen per 50 op en laadt bij tijdens het scrollen, in plaats van de hele bewaarperiode in één keer (#106)
