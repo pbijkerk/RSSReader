@@ -5,6 +5,11 @@ Alle noemenswaardige wijzigingen aan dit project worden in dit bestand bijgehoud
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/)
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [Unreleased]
+
+### Gewijzigd
+- De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
+
 ## [1.9.0] - 2026-09-16
 
 ### Gewijzigd
