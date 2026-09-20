@@ -20,6 +20,7 @@
 		37583A7A3CBB15CE8B050429 /* SummaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BACA815C540D05F89AA4877D /* SummaryDetailView.swift */; };
 		38B9D56CE8F26B7C2B8CEDE9 /* TopicClusteringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92B82D7E4C762A9ECA05CB92 /* TopicClusteringService.swift */; };
 		395F473FA965E3DB067320ED /* OPMLParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8019B171CF4E4E093570F809 /* OPMLParserTests.swift */; };
+		39F891B6C660D7492B763F1B /* AnthropicClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFBA54F6FD6B0A2AD9630B05 /* AnthropicClient.swift */; };
 		3C56D7B04AECA6AB3EAB58D9 /* MastodonSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9FA1160F1CD4F1A24F8877 /* MastodonSetupView.swift */; };
 		3E7BA848E1FE60543BC43ED1 /* TopicSourceRatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA9A6D1D5C110ECF9CD5BA8 /* TopicSourceRatingView.swift */; };
 		432E627121212D0DB7D449C9 /* FeedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B093F3B071BF152628219 /* FeedItem.swift */; };
@@ -132,6 +133,7 @@
 		E8BEC4044D47D2CEFA4DA21A /* AddFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFeedView.swift; sourceTree = "<group>"; };
 		EC92428C7AA3B1A178A6CD52 /* SavedArticlesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedArticlesView.swift; sourceTree = "<group>"; };
 		ECD01B4DAB6E21F374F66E76 /* OPMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPMLParser.swift; sourceTree = "<group>"; };
+		EFBA54F6FD6B0A2AD9630B05 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
 		F2F8D1A8F0C712A3618C68BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F37AEF5A0494FC6B1A251056 /* ClaudeKeyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeKeyValidator.swift; sourceTree = "<group>"; };
 		F706F1D0689160C666814841 /* RSSParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSParser.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 		D799D8CEFB4A52D135F8D293 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				EFBA54F6FD6B0A2AD9630B05 /* AnthropicClient.swift */,
 				074AB5466B63AE41A4FBDD75 /* ArticleExtractorService.swift */,
 				F37AEF5A0494FC6B1A251056 /* ClaudeKeyValidator.swift */,
 				6F3EB43EC69B54A21CE5BD8C /* EventClusteringService.swift */,
@@ -370,6 +373,7 @@
 			files = (
 				CEE457BA5EF0C7D9FC8D3176 /* AddFeedView.swift in Sources */,
 				5A08CA9E421BCC7CE7639A09 /* AllArticlesView.swift in Sources */,
+				39F891B6C660D7492B763F1B /* AnthropicClient.swift in Sources */,
 				4A8C772BB2311A23D9840E72 /* AppConfiguration.swift in Sources */,
 				8B00AE0EF6D6F58B261E06AD /* ArticleExtractorService.swift in Sources */,
 				C38FAF8D0B5D17180CBA6B19 /* BiasBarView.swift in Sources */,
