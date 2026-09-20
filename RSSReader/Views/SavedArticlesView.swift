@@ -11,6 +11,8 @@ struct SavedArticlesView: View {
     )
     private var savedItems: [FeedItem]
 
+    @State private var opslagFout: OpslagFoutmelding?
+
     var body: some View {
         NavigationStack {
             Group {
@@ -36,7 +38,8 @@ struct SavedArticlesView: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     item.isSaved = false
-                                    try? modelContext.save()
+                                    modelContext.saveOrReport(
+                                        "het artikel uit Bewaard te verwijderen", melding: &opslagFout)
                                 } label: {
                                     Label("Verwijder", systemImage: "bookmark.slash")
                                 }
@@ -50,6 +53,7 @@ struct SavedArticlesView: View {
             }
             .navigationTitle("Bewaard")
             .navigationBarTitleDisplayMode(.inline)
+            .opslagFoutmelding($opslagFout)
         }
     }
 }

@@ -29,6 +29,7 @@ struct ItemDetailView: View {
     @State private var showingVideoPlayer = false
     @State private var safariItem: IdentifiableURL? = nil
     @State private var readingProgress: Double = 0
+    @State private var opslagFout: OpslagFoutmelding?
     @StateObject private var extractor = ArticleExtractorService()
 
     private var articleURL: URL? {
@@ -73,6 +74,7 @@ struct ItemDetailView: View {
         .sheet(item: $safariItem) { item in
             SafariVideoPlayer(url: item.url).ignoresSafeArea()
         }
+        .opslagFoutmelding($opslagFout)
         // `task(id:)` en niet `task`: het werk start zodra deze pagina de zichtbare wordt,
         // en wordt afgebroken zodra je doorveegt. Een `.task` zonder id zou bij een
         // buurpagina één keer draaien en daarna nooit meer, ook niet als je er belandt.
@@ -86,7 +88,7 @@ struct ItemDetailView: View {
         .onChange(of: isActive, initial: true) { _, active in
             guard active, !item.isRead else { return }
             item.isRead = true
-            try? modelContext.save()
+            modelContext.saveOrLog("de gelezen-markering te bewaren")
         }
     }
 
@@ -221,7 +223,7 @@ struct ItemDetailView: View {
 
                 Button {
                     item.isSaved.toggle()
-                    try? modelContext.save()
+                    modelContext.saveOrReport("de bewaarstatus van het artikel te wijzigen", melding: &opslagFout)
                 } label: {
                     Image(systemName: item.isSaved ? "bookmark.fill" : "bookmark")
                 }

@@ -8,6 +8,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ## [Unreleased]
 
 ### Gewijzigd
+- Een mislukte SwiftData-opslag verdwijnt niet langer stil: alle 28 opslagplekken lopen via één helper die de fout logt, en bij een expliciete actie (bewaren, verwijderen, mappen, onderwerpen, feedinstellingen, OPML-import) toont het scherm een melding (#123)
 - De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
 
 ## [1.9.0] - 2026-09-16

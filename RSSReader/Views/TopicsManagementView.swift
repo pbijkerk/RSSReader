@@ -7,6 +7,7 @@ struct TopicsManagementView: View {
 
     @State private var showAddTopic = false
     @State private var topicToEdit: Topic?
+    @State private var opslagFout: OpslagFoutmelding?
 
     var body: some View {
         Group {
@@ -30,6 +31,7 @@ struct TopicsManagementView: View {
         .sheet(item: $topicToEdit) { topic in
             TopicEditView(topic: topic)
         }
+        .opslagFoutmelding($opslagFout)
     }
 
     private var emptyState: some View {
@@ -60,7 +62,7 @@ struct TopicsManagementView: View {
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             modelContext.delete(topic)
-                            try? modelContext.save()
+                            modelContext.saveOrReport("het onderwerp te verwijderen", melding: &opslagFout)
                         } label: {
                             Label("Verwijderen", systemImage: "trash")
                         }
@@ -68,7 +70,7 @@ struct TopicsManagementView: View {
                     .swipeActions(edge: .leading) {
                         Button {
                             topic.isLiked.toggle()
-                            try? modelContext.save()
+                            modelContext.saveOrReport("het onderwerp te wijzigen", melding: &opslagFout)
                         } label: {
                             Label(
                                 topic.isLiked ? "Favoriet verwijderen" : "Favoriet maken",

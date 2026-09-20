@@ -13,6 +13,7 @@ struct FolderManagementView: View {
     @State private var folderToDelete: FeedFolder?
     @State private var showDeleteConfirm = false
     @State private var editMode: EditMode = .inactive
+    @State private var opslagFout: OpslagFoutmelding?
 
     var body: some View {
         NavigationStack {
@@ -86,6 +87,7 @@ struct FolderManagementView: View {
                     Text("Verwijder de lege folder \"\(folder.name)\"?")
                 }
             }
+            .opslagFoutmelding($opslagFout)
         }
     }
 
@@ -95,7 +97,7 @@ struct FolderManagementView: View {
         for (index, folder) in reordered.enumerated() {
             folder.sortOrder = index
         }
-        try? modelContext.save()
+        modelContext.saveOrReport("de volgorde van de folders te bewaren", melding: &opslagFout)
     }
 
     private func addFolder() {
@@ -104,14 +106,14 @@ struct FolderManagementView: View {
         let maxOrder = folders.map(\.sortOrder).max() ?? -1
         let folder = FeedFolder(name: name, sortOrder: maxOrder + 1, isSystem: false)
         modelContext.insert(folder)
-        try? modelContext.save()
+        modelContext.saveOrReport("de folder toe te voegen", melding: &opslagFout)
     }
 
     private func applyRename() {
         let name = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !name.isEmpty {
             folderToRename?.name = name
-            try? modelContext.save()
+            modelContext.saveOrReport("de folder te hernoemen", melding: &opslagFout)
         }
         folderToRename = nil
     }
@@ -119,7 +121,7 @@ struct FolderManagementView: View {
     private func deleteFolder(_ folder: FeedFolder) {
         // deleteRule: .nullify handles setting feed.folder = nil automatically
         modelContext.delete(folder)
-        try? modelContext.save()
+        modelContext.saveOrReport("de folder te verwijderen", melding: &opslagFout)
     }
 }
 

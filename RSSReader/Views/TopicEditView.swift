@@ -11,6 +11,7 @@ struct TopicEditView: View {
     @State private var keywordsText = ""
     @State private var isLiked = true
     @State private var newKeyword = ""
+    @State private var opslagFout: OpslagFoutmelding?
 
     private var isEditing: Bool { topic != nil }
 
@@ -41,6 +42,7 @@ struct TopicEditView: View {
                 }
             }
             .onAppear { loadTopic() }
+            .opslagFoutmelding($opslagFout)
         }
     }
 
@@ -144,7 +146,7 @@ struct TopicEditView: View {
             )
             modelContext.insert(newTopic)
         }
-        try? modelContext.save()
+        guard modelContext.saveOrReport("het onderwerp te bewaren", melding: &opslagFout) else { return }
         dismiss()
     }
 }

@@ -189,6 +189,8 @@ private struct ArticleListView<EmptyState: View>: View {
     private let onRefresh: () async -> Void
     private let emptyState: () -> EmptyState
 
+    @State private var opslagFout: OpslagFoutmelding?
+
     init(
         hideRead: Bool,
         feedIDs: [UUID]?,
@@ -234,7 +236,7 @@ private struct ArticleListView<EmptyState: View>: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button {
                         item.isRead.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrLog("de gelezen-markering te bewaren")
                     } label: {
                         Label(
                             item.isRead ? "Ongelezen" : "Gelezen",
@@ -246,7 +248,7 @@ private struct ArticleListView<EmptyState: View>: View {
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button {
                         item.isSaved.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrReport("de bewaarstatus van het artikel te wijzigen", melding: &opslagFout)
                     } label: {
                         Label(
                             item.isSaved ? "Niet bewaard" : "Bewaar",
@@ -275,6 +277,7 @@ private struct ArticleListView<EmptyState: View>: View {
                 emptyState()
             }
         }
+        .opslagFoutmelding($opslagFout)
     }
 }
 
