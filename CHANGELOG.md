@@ -9,6 +9,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ### Gewijzigd
 - De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
+- De aanroep van de Anthropic API staat nu in een eigen `AnthropicClient`; `TopicClusteringService` houdt clustering en samenvattingsbeleid, inclusief de terugval op de lokale samenvatting. Gedrag ongewijzigd (#125)
 
 ## [1.9.0] - 2026-09-16
 

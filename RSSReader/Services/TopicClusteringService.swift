@@ -105,7 +105,8 @@ struct TopicCluster {
 
 /// Snapshot of a FeedItem's text — safe to pass across actor boundaries.
 /// `id` draagt FeedItem.id zodat bron-ids stabiel zijn (geen positienummer).
-private struct ItemSnapshot: Sendable {
+/// Tevens het invoercontract richting `AnthropicClient`.
+struct ItemSnapshot: Sendable {
     let id: UUID
     let title: String
     let plainDescription: String
@@ -126,6 +127,10 @@ class TopicClusteringService {
         subsystem: AppConfiguration.LogSubsystem.main,
         category: AppConfiguration.LogSubsystem.Category.clustering
     )
+
+    /// De HTTP/JSON-laag richting de Anthropic API; bewust een concrete waarde
+    /// (geen protocol of injectie) tot #14 een vastgelegd antwoord nodig heeft.
+    private let anthropicClient = AnthropicClient()
 
     private let defaultTopics: [(name: String, keywords: [String])] = [
         (
@@ -512,173 +517,27 @@ class TopicClusteringService {
         }
     }
 
+    /// Vraagt een AI-samenvatting op bij `AnthropicClient` en valt terug op de
+    /// lokale samenvatting zodra die geen bruikbaar antwoord levert (R8). De
+    /// client doet het transport; de keuze van lengte en taal blijft hier.
     private func generateSummaryWithClaude(
         topicName: String,
         snapshots: [ItemSnapshot],
         apiKey: String
     ) async -> [SummaryStatement] {
         let length = currentSummaryLength()
-        // Beperk tot de eerste N artikelen; bewaar deze snapshots zodat het
-        // 1-based bronnummer dat Claude teruggeeft naar FeedItem.id te mappen is.
-        let usedSnapshots = Array(snapshots.prefix(AppConfiguration.maxArticlesPerSummary))
-        let articleList =
-            usedSnapshots
-            .enumerated()
-            .map { idx, s in
-                let desc = String(s.plainDescription.prefix(300))
-                return "[\(idx + 1)] Title: \(s.title)\(desc.isEmpty ? "" : "\n    Description: \(desc)")"
-            }
-            .joined(separator: "\n\n")
-
         let isEnglish =
             (UserDefaults.standard.string(
                 forKey: AppConfiguration.UserDefaultsKeys.summaryLanguage) ?? "nl") == "en"
-        let instruction = isEnglish ? length.sentenceInstruction.en : length.sentenceInstruction.nl
 
-        // Elk aangeboden artikel is een distinct bron. Bij >= 2 bronnen stuurt de
-        // prompt expliciet op synthese: de belangrijkste beweringen leiden met door
-        // meerdere bronnen bevestigde ontwikkelingen (meerdere bron-ids). Enkelvoudige
-        // bronnen blijven geldig — er wordt niet gefilterd op bronaantal (R10/R11).
-        let synthesisGuidance =
-            usedSnapshots.count >= 2
-            ? """
-            Multiple sources are available for this topic. Lead with the most \
-            important developments that are confirmed by two OR MORE of the \
-            articles above, and cite ALL their source numbers together (e.g. \
-            [1,2]) so each such statement carries multiple source numbers. \
-            Prioritise these corroborated developments first. Still include \
-            noteworthy details that appear in only a single article, citing that \
-            one source number — never drop a single-source item.
-            """
-            : """
-            Only one source is available for this topic, so cite that single \
-            source number for every statement.
-            """
-
-        let prompt = """
-            You are summarizing news articles grouped by topic. The topic is: "\(topicName)"
-
-            Each article is prefixed with a bracketed source number, e.g. [1], [2].
-
-            Here are the articles:
-            \(articleList)
-
-            \(instruction)
-
-            Break the summary into individual statements. Synthesize across articles: \
-            when a statement is supported by multiple articles, cite ALL the relevant \
-            source numbers; when it comes from a single article, cite only that one \
-            number. \(synthesisGuidance) Every statement MUST cite at least one source \
-            number of the article(s) it is based on. Do not invent source numbers; only \
-            use numbers that appear above.
-
-            Respond with ONLY a JSON object, no prose and no markdown fences, in exactly \
-            this shape:
-            {"statements":[{"text":"<one sentence>","sources":[1,2]}]}
-            """
-
-        struct Msg: Encodable {
-            let role: String
-            let content: String
-        }
-        struct Req: Encodable {
-            let model: String
-            let max_tokens: Int
-            let messages: [Msg]
-        }
-        struct RCnt: Decodable { let text: String }
-        struct Res: Decodable { let content: [RCnt] }
-
-        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
-            logger.error("Invalid Claude API URL")
-            return localSummary(topicName: topicName, snapshots: snapshots)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-
-        do {
-            request.httpBody = try JSONEncoder().encode(
-                Req(
-                    model: "claude-haiku-4-5-20251001",
-                    max_tokens: length.maxTokens,
-                    messages: [Msg(role: "user", content: prompt)]
-                )
-            )
-            let (data, httpResponse) = try await URLSession.shared.data(for: request)
-
-            guard let http = httpResponse as? HTTPURLResponse,
-                (200...299).contains(http.statusCode)
-            else {
-                let code = (httpResponse as? HTTPURLResponse)?.statusCode ?? -1
-                logger.error("Claude API returned status \(code) for topic: \(topicName)")
-                return localSummary(topicName: topicName, snapshots: snapshots)
-            }
-
-            let response = try JSONDecoder().decode(Res.self, from: data)
-
-            guard let rawText = response.content.first?.text else {
-                logger.warning("Empty Claude response for topic: \(topicName)")
-                return localSummary(topicName: topicName, snapshots: snapshots)
-            }
-
-            let statements = parseStatements(from: rawText, snapshots: usedSnapshots)
-            guard !statements.isEmpty else {
-                logger.warning("No usable statements decoded for topic: \(topicName)")
-                return localSummary(topicName: topicName, snapshots: snapshots)
-            }
-
-            logger.info("Claude summary generated for \(topicName): \(statements.count) statement(s)")
-            return statements
-        } catch {
-            logger.error("Claude API call failed for \(topicName): \(error.localizedDescription)")
-            return localSummary(topicName: topicName, snapshots: snapshots)
-        }
-    }
-
-    /// Decodeert Claude's JSON-respons naar beweringen en mapt de 1-based
-    /// bronnummers naar stabiele FeedItem.id's. Beweringen zonder geldige bron
-    /// worden weggelaten zodat elke bewering >= 1 bron-id houdt.
-    private func parseStatements(
-        from rawText: String,
-        snapshots: [ItemSnapshot]
-    ) -> [SummaryStatement] {
-        struct ClaudeStatement: Decodable {
-            let text: String
-            let sources: [Int]
-        }
-        struct ClaudeSummary: Decodable { let statements: [ClaudeStatement] }
-
-        // Verwijder eventuele markdown-fences en isoleer het JSON-object.
-        var cleaned = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        cleaned = cleaned.replacingOccurrences(of: "```json", with: "")
-            .replacingOccurrences(of: "```", with: "")
-        guard let start = cleaned.firstIndex(of: "{"),
-            let end = cleaned.lastIndex(of: "}")
-        else {
-            return []
-        }
-        let jsonSlice = String(cleaned[start...end])
-
-        guard let data = jsonSlice.data(using: .utf8),
-            let decoded = try? JSONDecoder().decode(ClaudeSummary.self, from: data)
-        else {
-            return []
-        }
-
-        return decoded.statements.compactMap { st -> SummaryStatement? in
-            // 1-based bronnummer → FeedItem.id; ongeldige nummers negeren.
-            let ids = st.sources.compactMap { num -> UUID? in
-                let idx = num - 1
-                guard snapshots.indices.contains(idx) else { return nil }
-                return snapshots[idx].id
-            }
-            // Failable init weigert lege tekst of ontbrekende bron (R11).
-            return SummaryStatement(text: st.text, sourceItemIDs: ids)
-        }
+        let statements = await anthropicClient.generateSummary(
+            topicName: topicName,
+            snapshots: snapshots,
+            apiKey: apiKey,
+            length: length,
+            isEnglish: isEnglish
+        )
+        return statements ?? localSummary(topicName: topicName, snapshots: snapshots)
     }
 
     /// Tokeniseert `text` op woordgrenzen (Apple `NLTokenizer`, consistent met
