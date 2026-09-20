@@ -16,6 +16,7 @@ struct OPMLImportView: View {
     @State private var isImporting = false
     @State private var importComplete = false
     @State private var errorMessage: String?
+    @State private var opslagFout: OpslagFoutmelding?
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,7 @@ struct OPMLImportView: View {
             ) { result in
                 handleFilePickerResult(result)
             }
+            .opslagFoutmelding($opslagFout)
         }
     }
 
@@ -178,9 +180,12 @@ struct OPMLImportView: View {
             await refreshService.refresh(feed: feed, context: modelContext)
         }
 
-        try? modelContext.save()
+        let bewaard = modelContext.saveOrReport("de feeds te importeren", melding: &opslagFout)
         isImporting = false
         onImported()
+        // Bij een mislukte import blijft het scherm open, zodat de melding leesbaar is
+        // en de gebruiker het opnieuw kan proberen.
+        guard bewaard else { return }
         dismiss()
     }
 

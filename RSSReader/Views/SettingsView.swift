@@ -71,6 +71,7 @@ struct SettingsView: View {
     @State private var showGoogleKey = false
     @State private var showMastodonSetup = false
     @State private var showingClaudeConsole = false
+    @State private var opslagFout: OpslagFoutmelding?
 
     // MARK: - Percentage-state (uniforme tekstgrootte-regelaars)
     //
@@ -127,6 +128,7 @@ struct SettingsView: View {
             scheduleClaudeKeyValidation(debounce: true)
         }
         .onChange(of: googleFactCheckAPIKey) { persistGoogleKey() }
+        .opslagFoutmelding($opslagFout)
     }
 
     // MARK: - Laden & persisteren
@@ -351,7 +353,7 @@ struct SettingsView: View {
                     if let feed = account.feed { modelContext.delete(feed) }
                     modelContext.delete(account)
                 }
-                try? modelContext.save()
+                modelContext.saveOrReport("het Mastodon-account te verwijderen", melding: &opslagFout)
             }
 
             Button {

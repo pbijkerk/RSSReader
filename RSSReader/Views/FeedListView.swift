@@ -17,6 +17,7 @@ struct FeedListView: View {
     @AppStorage("uncategorizedExpanded") private var uncategorizedExpanded = true
     @State private var feedForSettings: Feed? = nil
     @State private var editMode: EditMode = .inactive
+    @State private var opslagFout: OpslagFoutmelding?
 
     var uncategorized: [Feed] {
         feeds.filter { $0.folder == nil }
@@ -87,6 +88,7 @@ struct FeedListView: View {
         } message: { feed in
             Text("Wil je \"\(feed.title)\" en alle artikelen verwijderen?")
         }
+        .opslagFoutmelding($opslagFout)
     }
 
     private var emptyState: some View {
@@ -147,7 +149,7 @@ struct FeedListView: View {
             get: { folder.isExpanded },
             set: {
                 folder.isExpanded = $0
-                try? modelContext.save()
+                modelContext.saveOrLog("de uitklapstand van de folder te bewaren")
             }
         )
         let sortedFeeds = folder.feeds.sorted { $0.title < $1.title }
@@ -197,7 +199,7 @@ struct FeedListView: View {
             Menu("Verplaats naar folder") {
                 Button {
                     feed.folder = nil
-                    try? modelContext.save()
+                    modelContext.saveOrReport("de feed uit de folder te halen", melding: &opslagFout)
                 } label: {
                     Label("Overig (geen folder)", systemImage: "tray")
                 }
@@ -205,7 +207,7 @@ struct FeedListView: View {
                 ForEach(folders) { folder in
                     Button {
                         feed.folder = folder
-                        try? modelContext.save()
+                        modelContext.saveOrReport("de feed naar de folder te verplaatsen", melding: &opslagFout)
                     } label: {
                         Label(folder.name, systemImage: folder.icon)
                     }
@@ -233,7 +235,7 @@ struct FeedListView: View {
 
     private func delete(feed: Feed) {
         modelContext.delete(feed)
-        try? modelContext.save()
+        modelContext.saveOrReport("de feed te verwijderen", melding: &opslagFout)
     }
 
     private func moveFolders(from source: IndexSet, to destination: Int) {
@@ -242,7 +244,7 @@ struct FeedListView: View {
         for (index, folder) in reordered.enumerated() {
             folder.sortOrder = index
         }
-        try? modelContext.save()
+        modelContext.saveOrReport("de volgorde van de folders te bewaren", melding: &opslagFout)
     }
 }
 

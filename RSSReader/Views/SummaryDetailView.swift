@@ -12,6 +12,7 @@ struct SummaryDetailView: View {
     @State private var showTopicPrompt = false
     @State private var topicAlreadySaved = false
     @State private var savedTopic: Topic?
+    @State private var opslagFout: OpslagFoutmelding?
 
     var body: some View {
         ScrollView {
@@ -43,6 +44,7 @@ struct SummaryDetailView: View {
                 topicPromptBanner
             }
         }
+        .opslagFoutmelding($opslagFout)
     }
 
     private var topicHeader: some View {
@@ -152,7 +154,7 @@ struct SummaryDetailView: View {
             isUserDefined: false
         )
         modelContext.insert(topic)
-        try? modelContext.save()
+        guard modelContext.saveOrReport("het onderwerp te bewaren", melding: &opslagFout) else { return }
         topicAlreadySaved = true
         savedTopic = topic
     }
@@ -160,7 +162,7 @@ struct SummaryDetailView: View {
     private func removeTopic() {
         if let topic = savedTopic {
             modelContext.delete(topic)
-            try? modelContext.save()
+            guard modelContext.saveOrReport("het onderwerp te verwijderen", melding: &opslagFout) else { return }
             topicAlreadySaved = false
             savedTopic = nil
         }

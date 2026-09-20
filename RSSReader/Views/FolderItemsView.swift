@@ -10,6 +10,7 @@ struct FolderItemsView: View {
     @State private var eventClusters: [EventCluster] = []
     @State private var expandedClusters: Set<UUID> = []
     @State private var isClustering = false
+    @State private var opslagFout: OpslagFoutmelding?
 
     enum ViewMode { case timeline, events }
 
@@ -46,6 +47,7 @@ struct FolderItemsView: View {
         .task(id: viewMode) {
             if viewMode == .events { await buildClusters() }
         }
+        .opslagFoutmelding($opslagFout)
     }
 
     // MARK: - Timeline
@@ -127,7 +129,7 @@ struct FolderItemsView: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {
                 item.isRead.toggle()
-                try? modelContext.save()
+                modelContext.saveOrLog("de gelezen-markering te bewaren")
             } label: {
                 Label(
                     item.isRead ? "Ongelezen" : "Gelezen",
@@ -138,7 +140,7 @@ struct FolderItemsView: View {
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {
                 item.isSaved.toggle()
-                try? modelContext.save()
+                modelContext.saveOrReport("de bewaarstatus van het artikel te wijzigen", melding: &opslagFout)
             } label: {
                 Label(
                     item.isSaved ? "Niet bewaard" : "Bewaar",

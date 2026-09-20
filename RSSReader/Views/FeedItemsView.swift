@@ -7,6 +7,8 @@ struct FeedItemsView: View {
     let feed: Feed
     var refreshService: FeedRefreshService
 
+    @State private var opslagFout: OpslagFoutmelding?
+
     var sortedItems: [FeedItem] {
         feed.items
             .filter { hideReadArticles ? !$0.isRead : true }
@@ -30,7 +32,7 @@ struct FeedItemsView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button {
                         item.isRead.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrLog("de gelezen-markering te bewaren")
                     } label: {
                         Label(
                             item.isRead ? "Ongelezen" : "Gelezen",
@@ -42,7 +44,7 @@ struct FeedItemsView: View {
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button {
                         item.isSaved.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrReport("de bewaarstatus van het artikel te wijzigen", melding: &opslagFout)
                     } label: {
                         Label(
                             item.isSaved ? "Niet bewaard" : "Bewaar",
@@ -54,7 +56,7 @@ struct FeedItemsView: View {
                 .contextMenu {
                     Button {
                         item.isSaved.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrReport("de bewaarstatus van het artikel te wijzigen", melding: &opslagFout)
                     } label: {
                         Label(
                             item.isSaved ? "Verwijder uit bewaard" : "Bewaar",
@@ -62,7 +64,7 @@ struct FeedItemsView: View {
                     }
                     Button {
                         item.isRead.toggle()
-                        try? modelContext.save()
+                        modelContext.saveOrLog("de gelezen-markering te bewaren")
                     } label: {
                         Label(
                             item.isRead ? "Markeer als ongelezen" : "Markeer als gelezen",
@@ -82,6 +84,7 @@ struct FeedItemsView: View {
         }
         .navigationTitle(feed.title)
         .navigationBarTitleDisplayMode(.inline)
+        .opslagFoutmelding($opslagFout)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Refresh", systemImage: "arrow.clockwise") {

@@ -188,6 +188,7 @@ enum AppConfiguration {
             static let mastodon = "mastodon"
             static let feed = "feed"
             static let extraction = "extraction"
+            static let persistence = "persistence"
         }
     }
 }

@@ -25,6 +25,7 @@ struct FeedSettingsView: View {
     /// Lokale kopie van retentionDays voor de Picker (Int? werkt niet direct als Picker-selection).
     @State private var selectedDays: Int? = nil
     @State private var includedInSummary = true
+    @State private var opslagFout: OpslagFoutmelding?
 
     /// Draait een nieuwe clustering-ronde zodat het effect van de schakelaar direct
     /// zichtbaar is op Vandaag.
@@ -105,6 +106,7 @@ struct FeedSettingsView: View {
                 selectedDays = feed.retentionDays
                 includedInSummary = feed.includedInSummary
             }
+            .opslagFoutmelding($opslagFout)
         }
     }
 
@@ -115,7 +117,7 @@ struct FeedSettingsView: View {
         feed.includedInSummary = includedInSummary
         // Onmiddellijk opruimen als een kortere periode is ingesteld
         FeedRefreshService.pruneOldItems(feed: feed, context: modelContext)
-        try? modelContext.save()
+        guard modelContext.saveOrReport("de feedinstellingen te bewaren", melding: &opslagFout) else { return }
         dismiss()
 
         // Pas na het opslaan: de samenvatting hoort de nieuwe instelling te weerspiegelen.
