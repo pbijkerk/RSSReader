@@ -2,6 +2,11 @@ name: Claude Code
 
 # Reageert alleen wanneer je @claude noemt in een issue, een PR-reactie of een review.
 # De opdracht is je eigen tekst; er is geen vaste prompt.
+#
+# De repo is publiek. Zonder afzendercontrole kan elke GitHub-gebruiker deze workflow
+# starten door "@claude" in een issue of reactie te zetten, op kosten van het
+# CLAUDE_CODE_OAUTH_TOKEN hieronder. Daarom eist elke tak van de `if` dat de afzender
+# de eigenaar van de repo is (`author_association == 'OWNER'`).
 on:
   issue_comment:
     types: [created]
@@ -15,10 +20,10 @@ on:
 jobs:
   claude:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issue_comment' && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && github.event.review.author_association == 'OWNER' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.issue.author_association == 'OWNER' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     # Bewust alleen leesrechten: hij analyseert en antwoordt, maar pusht niets.
     # `actions: read` laat hem de CI-resultaten van een PR lezen.
