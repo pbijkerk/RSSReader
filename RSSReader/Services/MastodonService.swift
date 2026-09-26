@@ -342,12 +342,13 @@ class MastodonService {
 
         logger.info("Fetched \(statuses.count) new statuses for \(account.username)")
 
-        let existingGUIDs = Set(feed.items.compactMap { $0.guid })
+        let existingGUIDs = Set(
+            FeedRefreshService.existingKeys(of: feed, context: context).compactMap { $0.guid }
+        )
         var newItemsCount = 0
 
         for status in statuses where !existingGUIDs.contains(status.id) {
             let item = mapToFeedItem(status: status, feed: feed)
-            feed.items.append(item)
             context.insert(item)
             newItemsCount += 1
         }
