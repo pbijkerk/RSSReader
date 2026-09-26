@@ -204,11 +204,39 @@ class TopicClusteringService {
         window: TimeInterval = AppConfiguration.summaryWindow,
         now: Date = Date()
     ) -> [FeedItem] {
-        let cutoff = now.addingTimeInterval(-window)
+        let cutoff = summaryWindowCutoff(window: window, now: now)
         return items.filter { item in
             guard let date = item.effectiveDate else { return false }
             return date >= cutoff
         }
+    }
+
+    /// De ondergrens van het recentheidsvenster. Eén definitie voor zowel de filter in
+    /// het geheugen als het predicaat hieronder, zodat die twee niet uit elkaar lopen.
+    static func summaryWindowCutoff(
+        window: TimeInterval = AppConfiguration.summaryWindow,
+        now: Date = Date()
+    ) -> Date {
+        now.addingTimeInterval(-window)
+    }
+
+    /// De artikelen voor de samenvatting in één query: alleen feeds die meetellen, en
+    /// alleen binnen het venster (#120). Eerder werden alle artikelen van die feeds
+    /// afzonderlijk geladen en pas daarna gefilterd.
+    /// Het predicaat is `effectiveDate` uitgeschreven; een rij zonder `pubDate` én
+    /// `fetchedAt` valt erbuiten, net als in `withinSummaryWindow`.
+    static func summaryItemsDescriptor(
+        window: TimeInterval = AppConfiguration.summaryWindow,
+        now: Date = Date()
+    ) -> FetchDescriptor<FeedItem> {
+        let cutoff = summaryWindowCutoff(window: window, now: now)
+        let distantPast = Date.distantPast
+        return FetchDescriptor<FeedItem>(
+            predicate: #Predicate { item in
+                item.feed?.includedInSummary == true
+                    && (item.pubDate ?? item.fetchedAt ?? distantPast) >= cutoff
+            }
+        )
     }
 
     func cluster(

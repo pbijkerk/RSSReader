@@ -123,7 +123,7 @@ class FeedRefreshService {
     }
 
     /// All writes to SwiftData happen here, synchronously on MainActor.
-    private func applyParsedFeed(_ parsed: ParsedFeed, to feed: Feed, context: ModelContext) {
+    func applyParsedFeed(_ parsed: ParsedFeed, to feed: Feed, context: ModelContext) {
         if feed.title == "New Feed" || feed.title.isEmpty, !parsed.title.isEmpty {
             feed.title = parsed.title
         }
@@ -133,10 +133,12 @@ class FeedRefreshService {
             feed.feedDescription = parsed.description
         }
 
-        let existingGuids = Set(feed.items.compactMap { $0.guid })
-        let existingLinks = Set(feed.items.compactMap { $0.link })
-        let existingTitles = Set(feed.items.map { $0.title })
+        let existing = Self.existingKeys(of: feed, context: context)
+        let existingGuids = Set(existing.compactMap { $0.guid })
+        let existingLinks = Set(existing.compactMap { $0.link })
+        let existingTitles = Set(existing.map { $0.title })
 
+        var newItems: [FeedItem] = []
         for parsedItem in parsed.items {
             let isNew: Bool
             if !parsedItem.guid.isEmpty {
@@ -160,13 +162,18 @@ class FeedRefreshService {
                 imageURL: parsedItem.imageURL
             )
             item.feed = feed
-            feed.items.append(item)
             context.insert(item)
+            newItems.append(item)
+        }
+        // Eén append voor alle nieuwe artikelen, zodat de relatie één keer wijzigt en
+        // waarnemers van `feed.items` bijwerken.
+        if !newItems.isEmpty {
+            feed.items.append(contentsOf: newItems)
         }
 
         // Rijen die vóór deze controle zijn opgeslagen dragen hun onwaarschijnlijke datum
         // nog; zonder deze stap blijven ze bovenaan staan tot de gebruiker de feed verwijdert.
-        Self.clearImplausibleDates(feed: feed)
+        Self.clearImplausibleDates(feed: feed, context: context)
 
         // Verwijder artikelen die ouder zijn dan de bewaarperiode
         Self.pruneOldItems(feed: feed, context: context)
@@ -185,12 +192,49 @@ class FeedRefreshService {
         }
     }
 
+    /// De bestaande artikelen van een feed in één query (#119). Via `feed.items` werd elk
+    /// artikel afzonderlijk uit SQLite gehaald: bij 57 feeds duizenden losse queries per
+    /// verversing. Bewust volledige rijen, geen `propertiesToFetch`: de `append` op
+    /// `feed.items` hieronder laadt anders alsnog elk artikel apart. Die append is nodig,
+    /// want alleen een wijziging via `feed.items` laat schermen die de relatie tonen
+    /// (zoals `FeedItemsView`) opnieuw tekenen.
+    /// Mislukt de fetch, dan valt dit terug op `feed.items`: liever traag dan dat elk
+    /// bestaand artikel als nieuw wordt gezien en dubbel binnenkomt.
+    static func existingKeys(of feed: Feed, context: ModelContext) -> [FeedItem] {
+        let feedID = feed.id
+        let descriptor = FetchDescriptor<FeedItem>(predicate: #Predicate { $0.feed?.id == feedID })
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            Self.logger.error("Fetch van bestaande artikelen mislukt voor \(feed.title): \(error.localizedDescription)")
+            return feed.items
+        }
+    }
+
     /// Wist een publicatiedatum die ver in de toekomst ligt. De parser weert zulke datums
     /// sinds #103, maar artikelen die er al mee in de database staan komen anders bij elke
     /// verversing terug: ze sorteren bovenaan en de bewaarperiode raakt ze nooit.
     /// Het artikel zelf blijft staan en valt terug op `fetchedAt`.
-    static func clearImplausibleDates(feed: Feed, now: Date = Date()) {
-        for item in feed.items {
+    /// Haalt alleen de betrokken artikelen op in plaats van de hele feed te doorlopen (#119);
+    /// de grens is dezelfde als in `RSSParser.isPlausiblePublicationDate`.
+    static func clearImplausibleDates(feed: Feed, context: ModelContext, now: Date = Date()) {
+        let feedID = feed.id
+        let limit = now.addingTimeInterval(AppConfiguration.maxFutureDateSkew)
+        let distantPast = Date.distantPast
+        let descriptor = FetchDescriptor<FeedItem>(
+            predicate: #Predicate { item in
+                item.feed?.id == feedID && (item.pubDate ?? distantPast) > limit
+            }
+        )
+        let items: [FeedItem]
+        do {
+            items = try context.fetch(descriptor)
+        } catch {
+            Self.logger.error(
+                "Fetch van onwaarschijnlijke datums mislukt voor \(feed.title): \(error.localizedDescription)")
+            return
+        }
+        for item in items {
             guard let date = item.pubDate,
                 !RSSParser.isPlausiblePublicationDate(date, now: now)
             else { continue }
@@ -222,17 +266,39 @@ class FeedRefreshService {
         // `effectiveDate` valt terug op `fetchedAt`, zodat een artikel zonder publicatie-
         // datum ook opruimbaar is. Rijen van vóór #89 hebben geen van beide; die blijven
         // staan (`.distantFuture`), zodat er niets onverwachts verdwijnt.
-        let toDelete = feed.items.filter {
-            ($0.effectiveDate ?? .distantFuture) < cutoff && !$0.isSaved
+        // Het predicaat is `effectiveDate` uitgeschreven, zodat alleen de te verwijderen
+        // artikelen worden opgehaald in plaats van de hele feed (#119).
+        let feedID = feed.id
+        let distantFuture = Date.distantFuture
+        var descriptor = FetchDescriptor<FeedItem>(
+            predicate: #Predicate { item in
+                item.feed?.id == feedID && !item.isSaved
+                    && (item.pubDate ?? item.fetchedAt ?? distantFuture) < cutoff
+            }
+        )
+        // De cascade naar factchecks laadt anders per verwijderd artikel een eigen query.
+        descriptor.relationshipKeyPathsForPrefetching = [\.factCheckResults]
+        let toDelete: [FeedItem]
+        do {
+            toDelete = try context.fetch(descriptor)
+        } catch {
+            Self.logger.error("Fetch voor opruimen mislukt voor \(feed.title): \(error.localizedDescription)")
+            return
         }
 
         if !toDelete.isEmpty {
             Self.logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
         }
 
+        // Vergelijken op `persistentModelID`: dat kent SwiftData zonder de rij te laden.
+        // Bij verversen zijn de artikelen al geladen door `existingKeys`; de `removeAll`
+        // is nodig zodat schermen die `feed.items` tonen bijwerken.
+        let deletedIDs = Set(toDelete.map(\.persistentModelID))
         for item in toDelete {
-            feed.items.removeAll { $0.id == item.id }
             context.delete(item)
+        }
+        if !deletedIDs.isEmpty {
+            feed.items.removeAll { deletedIDs.contains($0.persistentModelID) }
         }
     }
 

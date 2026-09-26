@@ -208,11 +208,15 @@ struct ItemDetailView: View {
         safariItem = IdentifiableURL(url: url)
     }
 
+    /// De URL hoort alleen te gelden voor de knoppen die hem nodig hebben. Eerder stond de
+    /// hele groep achter `let url = articleURL`, waardoor een artikel zonder link — een
+    /// Mastodon-bericht zonder externe verwijzing — helemaal geen knoppen kreeg, ook geen
+    /// bewaarknop (#118). Juist zo'n bericht wil je kunnen bewaren.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        if isActive, let url = articleURL {
+        if isActive {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if extractionFailed {
+                if extractionFailed, articleURL != nil {
                     Button {
                         Task { await extractFromWeb() }
                     } label: {
@@ -229,14 +233,16 @@ struct ItemDetailView: View {
                 }
                 .accessibilityLabel(item.isSaved ? "Verwijder uit bewaard" : "Bewaar artikel")
 
-                Button {
-                    safariItem = IdentifiableURL(url: url)
-                } label: {
-                    Label("Open in browser", systemImage: "safari")
-                }
+                if let url = articleURL {
+                    Button {
+                        safariItem = IdentifiableURL(url: url)
+                    } label: {
+                        Label("Open in browser", systemImage: "safari")
+                    }
 
-                ShareLink(item: url) {
-                    Label("Delen", systemImage: "square.and.arrow.up")
+                    ShareLink(item: url) {
+                        Label("Delen", systemImage: "square.and.arrow.up")
+                    }
                 }
             }
         }

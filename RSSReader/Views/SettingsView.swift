@@ -158,8 +158,11 @@ struct SettingsView: View {
     }
 
     private func persistClaudeKey() {
-        KeychainService.save(claudeAPIKey, forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
+        // De legacykopie pas weghalen als de Keychain de nieuwe waarde echt heeft; anders
+        // is bij een mislukte write de sleutel op beide plekken weg (#124).
+        if KeychainService.save(claudeAPIKey, forKey: AppConfiguration.KeychainKeys.claudeAPIKey) {
+            UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
+        }
     }
 
     private func persistGoogleKey() {

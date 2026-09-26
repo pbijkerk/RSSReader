@@ -6,6 +6,7 @@ struct RSSReaderApp: App {
     let modelContainer: ModelContainer
 
     init() {
+        ClaudeKeyMigration.migrateIfNeeded()
         do {
             let schema = Schema([
                 Feed.self, FeedItem.self, Topic.self, TopicSummary.self, FeedFolder.self, MastodonAccount.self,
