@@ -12,6 +12,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
 - De aanroep van de Anthropic API staat nu in een eigen `AnthropicClient`; `TopicClusteringService` houdt clustering en samenvattingsbeleid, inclusief de terugval op de lokale samenvatting. Gedrag ongewijzigd (#125)
 
+### Opgelost
+- De bewaarknop in het artikelscherm verdween mee zodra een artikel geen link had (bijvoorbeeld een Mastodon-bericht zonder externe verwijzing), terwijl bewaren geen URL nodig heeft; alleen "open in browser" en "delen" blijven nu achter de link hangen (#118)
+
 ## [1.9.0] - 2026-09-16
 
 ### Gewijzigd
