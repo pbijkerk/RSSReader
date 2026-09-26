@@ -13,6 +13,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - De aanroep van de Anthropic API staat nu in een eigen `AnthropicClient`; `TopicClusteringService` houdt clustering en samenvattingsbeleid, inclusief de terugval op de lokale samenvatting. Gedrag ongewijzigd (#125)
 
 ### Opgelost
+- De bewaarknop in het artikelscherm verdween mee zodra een artikel geen link had (bijvoorbeeld een Mastodon-bericht zonder externe verwijzing), terwijl bewaren geen URL nodig heeft; alleen "open in browser" en "delen" blijven nu achter de link hangen (#118)
 - De Claude-sleutel kan niet meer verloren gaan bij een mislukte Keychain-write: de Keychain werkt een bestaande waarde bij in plaats van die eerst te verwijderen, de oude kopie in de instellingen verdwijnt pas na een geslaagde write, en een nog niet verhuisde sleutel wordt bij het opstarten eenmalig naar de Keychain gemigreerd (#124)
 
 ## [1.9.0] - 2026-09-16
