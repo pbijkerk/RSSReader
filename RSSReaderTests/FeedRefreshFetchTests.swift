@@ -122,7 +122,9 @@ final class FeedRefreshFetchTests: XCTestCase {
         let (feed, context) = try opgeslagenFeed(items: [
             FeedItem(title: "Oud", pubDate: nu.addingTimeInterval(-40 * 24 * 3600)),
             FeedItem(title: "Oud zonder pubDate", pubDate: nil, fetchedAt: nu.addingTimeInterval(-40 * 24 * 3600)),
-            FeedItem(title: "Oud gepubliceerd, vers opgehaald", pubDate: nu.addingTimeInterval(-40 * 24 * 3600), fetchedAt: nu),
+            FeedItem(
+                title: "Oud gepubliceerd, vers opgehaald", pubDate: nu.addingTimeInterval(-40 * 24 * 3600),
+                fetchedAt: nu),
             FeedItem(title: "Vers", pubDate: nu.addingTimeInterval(-3600)),
             FeedItem(title: "Rij van vóór #89", pubDate: nil, fetchedAt: nil),
             {
@@ -169,7 +171,11 @@ final class FeedRefreshFetchTests: XCTestCase {
     func testNieuweArtikelenMeldenZichBijWaarnemersVanFeedItems() throws {
         let (feed, context) = try opgeslagenFeed(items: [FeedItem(title: "Bestaand", guid: "b")])
         var gewijzigd = false
-        withObservationTracking { _ = feed.items.count } onChange: { gewijzigd = true }
+        withObservationTracking {
+            _ = feed.items.count
+        } onChange: {
+            gewijzigd = true
+        }
 
         var parsed = ParsedFeed()
         parsed.items = [ParsedFeedItem(title: "Nieuw", guid: "n")]
@@ -185,7 +191,11 @@ final class FeedRefreshFetchTests: XCTestCase {
         ])
         feed.retentionDays = 7
         var gewijzigd = false
-        withObservationTracking { _ = feed.items.count } onChange: { gewijzigd = true }
+        withObservationTracking {
+            _ = feed.items.count
+        } onChange: {
+            gewijzigd = true
+        }
 
         FeedRefreshService.pruneOldItems(feed: feed, context: context, now: nu)
 

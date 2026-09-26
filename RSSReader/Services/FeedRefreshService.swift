@@ -230,7 +230,8 @@ class FeedRefreshService {
         do {
             items = try context.fetch(descriptor)
         } catch {
-            Self.logger.error("Fetch van onwaarschijnlijke datums mislukt voor \(feed.title): \(error.localizedDescription)")
+            Self.logger.error(
+                "Fetch van onwaarschijnlijke datums mislukt voor \(feed.title): \(error.localizedDescription)")
             return
         }
         for item in items {
