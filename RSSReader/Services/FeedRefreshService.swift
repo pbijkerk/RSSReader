@@ -138,6 +138,7 @@ class FeedRefreshService {
         let existingLinks = Set(existing.compactMap { $0.link })
         let existingTitles = Set(existing.map { $0.title })
 
+        var newItems: [FeedItem] = []
         for parsedItem in parsed.items {
             let isNew: Bool
             if !parsedItem.guid.isEmpty {
@@ -160,10 +161,14 @@ class FeedRefreshService {
                 enclosureMIMEType: parsedItem.enclosureMIMEType,
                 imageURL: parsedItem.imageURL
             )
-            // Alleen de kant van het artikel zetten: SwiftData werkt de inverse zelf bij.
-            // `feed.items.append` laadt eerst elk bestaand artikel afzonderlijk (#119).
             item.feed = feed
             context.insert(item)
+            newItems.append(item)
+        }
+        // Eén append voor alle nieuwe artikelen, zodat de relatie één keer wijzigt en
+        // waarnemers van `feed.items` bijwerken.
+        if !newItems.isEmpty {
+            feed.items.append(contentsOf: newItems)
         }
 
         // Rijen die vóór deze controle zijn opgeslagen dragen hun onwaarschijnlijke datum
@@ -187,15 +192,17 @@ class FeedRefreshService {
         }
     }
 
-    /// De bestaande artikelen van een feed, met alleen de velden die de dubbelcontrole
-    /// nodig heeft, in één query (#119). Via `feed.items` werd elk artikel afzonderlijk
-    /// uit SQLite gehaald: bij 57 feeds duizenden losse queries per verversing.
+    /// De bestaande artikelen van een feed in één query (#119). Via `feed.items` werd elk
+    /// artikel afzonderlijk uit SQLite gehaald: bij 57 feeds duizenden losse queries per
+    /// verversing. Bewust volledige rijen, geen `propertiesToFetch`: de `append` op
+    /// `feed.items` hieronder laadt anders alsnog elk artikel apart. Die append is nodig,
+    /// want alleen een wijziging via `feed.items` laat schermen die de relatie tonen
+    /// (zoals `FeedItemsView`) opnieuw tekenen.
     /// Mislukt de fetch, dan valt dit terug op `feed.items`: liever traag dan dat elk
     /// bestaand artikel als nieuw wordt gezien en dubbel binnenkomt.
     static func existingKeys(of feed: Feed, context: ModelContext) -> [FeedItem] {
         let feedID = feed.id
-        var descriptor = FetchDescriptor<FeedItem>(predicate: #Predicate { $0.feed?.id == feedID })
-        descriptor.propertiesToFetch = [\.guid, \.link, \.title]
+        let descriptor = FetchDescriptor<FeedItem>(predicate: #Predicate { $0.feed?.id == feedID })
         do {
             return try context.fetch(descriptor)
         } catch {
@@ -282,14 +289,15 @@ class FeedRefreshService {
             Self.logger.debug("Pruning \(toDelete.count) old items from \(feed.title)")
         }
 
-        // Alleen verwijderen; `feed.items.removeAll` zou elk artikel van de feed laden (#119).
-        // `processPendingChanges` haalt de verwijderde artikelen ook direct uit de relatie,
-        // voor aanroepers die de feed vóór het opslaan nog lezen.
+        // Vergelijken op `persistentModelID`: dat kent SwiftData zonder de rij te laden.
+        // Bij verversen zijn de artikelen al geladen door `existingKeys`; de `removeAll`
+        // is nodig zodat schermen die `feed.items` tonen bijwerken.
+        let deletedIDs = Set(toDelete.map(\.persistentModelID))
         for item in toDelete {
             context.delete(item)
         }
-        if !toDelete.isEmpty {
-            context.processPendingChanges()
+        if !deletedIDs.isEmpty {
+            feed.items.removeAll { deletedIDs.contains($0.persistentModelID) }
         }
     }
 

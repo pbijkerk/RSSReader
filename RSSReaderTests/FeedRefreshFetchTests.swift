@@ -161,4 +161,35 @@ final class FeedRefreshFetchTests: XCTestCase {
         XCTAssertEqual(items["Net binnen de speling"]?.pubDate, netBinnenSpeling)
         XCTAssertEqual(items["Gewoon"]?.pubDate, nu.addingTimeInterval(-3600))
     }
+
+    // MARK: - Waarnemers van feed.items
+
+    /// Schermen als `FeedItemsView` tonen `feed.items` en tekenen alleen opnieuw als die
+    /// relatie wijzigt. Alleen `item.feed` zetten werkt de data bij maar geeft geen seintje.
+    func testNieuweArtikelenMeldenZichBijWaarnemersVanFeedItems() throws {
+        let (feed, context) = try opgeslagenFeed(items: [FeedItem(title: "Bestaand", guid: "b")])
+        var gewijzigd = false
+        withObservationTracking { _ = feed.items.count } onChange: { gewijzigd = true }
+
+        var parsed = ParsedFeed()
+        parsed.items = [ParsedFeedItem(title: "Nieuw", guid: "n")]
+        FeedRefreshService().applyParsedFeed(parsed, to: feed, context: context)
+
+        XCTAssertTrue(gewijzigd)
+        XCTAssertEqual(feed.items.count, 2)
+    }
+
+    func testOpruimenMeldtZichBijWaarnemersVanFeedItems() throws {
+        let (feed, context) = try opgeslagenFeed(items: [
+            FeedItem(title: "Oud", pubDate: nu.addingTimeInterval(-90 * 24 * 3600))
+        ])
+        feed.retentionDays = 7
+        var gewijzigd = false
+        withObservationTracking { _ = feed.items.count } onChange: { gewijzigd = true }
+
+        FeedRefreshService.pruneOldItems(feed: feed, context: context, now: nu)
+
+        XCTAssertTrue(gewijzigd)
+        XCTAssertTrue(feed.items.isEmpty)
+    }
 }
