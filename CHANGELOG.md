@@ -12,6 +12,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
 - De aanroep van de Anthropic API staat nu in een eigen `AnthropicClient`; `TopicClusteringService` houdt clustering en samenvattingsbeleid, inclusief de terugval op de lokale samenvatting. Gedrag ongewijzigd (#125)
 - Verversen haalt de bestaande artikelen van een feed niet langer één voor één uit de database: dubbelcontrole, datumherstel en opruimen gebruiken elk één gebundelde query. In een meting met 300 artikelen daalt het aantal leesqueries van 301 naar 13 (#119)
+- De samenvatting haalt alleen de artikelen binnen het 48-uursvenster van meetellende feeds op, in één query, in plaats van eerst alle artikelen afzonderlijk te laden. In een meting met 600 artikelen daalt het aantal leesqueries van 402 naar 3 (#120)
 
 ### Opgelost
 - De bewaarknop in het artikelscherm verdween mee zodra een artikel geen link had (bijvoorbeeld een Mastodon-bericht zonder externe verwijzing), terwijl bewaren geen URL nodig heeft; alleen "open in browser" en "delen" blijven nu achter de link hangen (#118)

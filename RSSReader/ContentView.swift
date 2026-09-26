@@ -62,9 +62,16 @@ struct ContentView: View {
         // wel gewoon zichtbaar in Artikelen en Bewaard.
         // Alleen artikelen binnen het recentheidsvenster: een samenvatting van "Vandaag"
         // hoort niet uit de volle bewaarperiode te putten (#89).
-        let recenteItems = TopicClusteringService.withinSummaryWindow(
-            feeds.filter { $0.includedInSummary }.flatMap { $0.items }
-        )
+        // Eén query met venster en feedkeuze in het predicaat (#120). Mislukt die, dan de
+        // oude route: trager, maar de samenvatting blijft werken.
+        let recenteItems: [FeedItem]
+        do {
+            recenteItems = try modelContext.fetch(TopicClusteringService.summaryItemsDescriptor())
+        } catch {
+            recenteItems = TopicClusteringService.withinSummaryWindow(
+                feeds.filter { $0.includedInSummary }.flatMap { $0.items }
+            )
+        }
         let apiKey =
             KeychainService.load(forKey: AppConfiguration.KeychainKeys.claudeAPIKey)
             ?? UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.claudeAPIKey)
