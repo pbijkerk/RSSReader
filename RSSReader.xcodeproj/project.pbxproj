@@ -64,6 +64,7 @@
 		D28CEACB8410B32DAF025E2B /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A85EF6A75BD1116694A4F8B /* ItemDetailView.swift */; };
 		DA44371F825E18783C0A79C4 /* FolderItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DCE5E785FF7EE41E11713D /* FolderItemsView.swift */; };
 		DB2E754FE503311902D21A9B /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786FA3600FE09498F1AB870B /* VideoPlayerView.swift */; };
+		DCDA4B4AFD22AC38F5925F9A /* FeedBadgeCountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10834E72E78C2343D27036A /* FeedBadgeCountTests.swift */; };
 		DE0F7DE9452522FBD160CC49 /* TopicEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6735B0D697C7DAF1A5E2AD4 /* TopicEditView.swift */; };
 		E77804A118124BDEF2EDEF42 /* StoryGroupHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3189F18F3DCB882F71F2BF5A /* StoryGroupHeaderView.swift */; };
 		F5B2D9F4D3FCB15482E7E391 /* MastodonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C61248F4118795E1DB64B2 /* MastodonService.swift */; };
@@ -116,6 +117,7 @@
 		A141C3F01C3973984C38479E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA9D8C93D74D35F80D99FFA1 /* MastodonAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MastodonAccount.swift; sourceTree = "<group>"; };
 		AF6B0B46A075D603D2D194D5 /* source_ratings.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = source_ratings.json; sourceTree = "<group>"; };
+		B10834E72E78C2343D27036A /* FeedBadgeCountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBadgeCountTests.swift; sourceTree = "<group>"; };
 		B6735B0D697C7DAF1A5E2AD4 /* TopicEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicEditView.swift; sourceTree = "<group>"; };
 		BACA815C540D05F89AA4877D /* SummaryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryDetailView.swift; sourceTree = "<group>"; };
 		BC99EA585B4A6776C0162A38 /* RSSParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSParserTests.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 			children = (
 				203B55E0C2C03F59CB278C9F /* ArticleFilterTests.swift */,
 				D1F47BFD69BE40060E681D0A /* ClaudeKeyMigrationTests.swift */,
+				B10834E72E78C2343D27036A /* FeedBadgeCountTests.swift */,
 				4BD4F57E7E592739F15378AF /* FeedRefreshFetchTests.swift */,
 				8019B171CF4E4E093570F809 /* OPMLParserTests.swift */,
 				E73B8020012F2781BF46BC37 /* PublicationDateSanityTests.swift */,
@@ -371,6 +374,7 @@
 			files = (
 				01688025BCBFD3E356E5D8F8 /* ArticleFilterTests.swift in Sources */,
 				5E498669D3E203EDD4C3156C /* ClaudeKeyMigrationTests.swift in Sources */,
+				DCDA4B4AFD22AC38F5925F9A /* FeedBadgeCountTests.swift in Sources */,
 				6540C690155DD8BFA69AFE5D /* FeedRefreshFetchTests.swift in Sources */,
 				395F473FA965E3DB067320ED /* OPMLParserTests.swift in Sources */,
 				ACB0340E7482C98A34DD509A /* PublicationDateSanityTests.swift in Sources */,
