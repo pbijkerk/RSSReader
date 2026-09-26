@@ -170,4 +170,56 @@ final class SummaryWindowTests: XCTestCase {
 
         XCTAssertEqual(feed.items.map(\.title), ["Bewaard"])
     }
+
+    // MARK: - Eén query voor de samenvatting (#120)
+
+    /// De fetch hoort precies de artikelen op te leveren die de oude route (alle artikelen
+    /// van de meetellende feeds, daarna `withinSummaryWindow`) opleverde.
+    func testFetchLevertDezelfdeArtikelenAlsDeFilter() throws {
+        let schrijf = ModelContext(container)
+        let meetellend = Feed(url: "https://example.com/rss", title: "Meetellend")
+        let uitgesloten = Feed(url: "https://ander.example.com/rss", title: "Uitgesloten")
+        uitgesloten.includedInSummary = false
+        schrijf.insert(meetellend)
+        schrijf.insert(uitgesloten)
+
+        let gevallen: [(Feed, String, Date?, Date?)] = [
+            (meetellend, "Recent", urenGeleden(2), urenGeleden(1)),
+            (meetellend, "Precies op de grens", urenGeleden(48), nil),
+            (meetellend, "Net buiten", urenGeleden(48.01), nil),
+            (meetellend, "Oud gepubliceerd, vers opgehaald", urenGeleden(100), urenGeleden(1)),
+            (meetellend, "Zonder pubDate, recent opgehaald", nil, urenGeleden(3)),
+            (meetellend, "Zonder pubDate, lang geleden opgehaald", nil, urenGeleden(72)),
+            (meetellend, "Rij van vóór #89", nil, nil),
+            (uitgesloten, "Recent maar uitgesloten", urenGeleden(1), urenGeleden(1)),
+        ]
+        for (feed, titel, pubDate, fetchedAt) in gevallen {
+            let item = FeedItem(title: titel, pubDate: pubDate, fetchedAt: fetchedAt)
+            item.feed = feed
+            feed.items.append(item)
+            schrijf.insert(item)
+        }
+        // Een artikel zonder feed hoort nergens mee te tellen.
+        schrijf.insert(FeedItem(title: "Zonder feed", pubDate: urenGeleden(1)))
+        try schrijf.save()
+
+        let lees = ModelContext(container)
+        let viaFetch = try lees.fetch(TopicClusteringService.summaryItemsDescriptor(now: nu))
+        let alleFeeds = try lees.fetch(FetchDescriptor<Feed>())
+        let viaFilter = TopicClusteringService.withinSummaryWindow(
+            alleFeeds.filter { $0.includedInSummary }.flatMap { $0.items },
+            now: nu
+        )
+
+        XCTAssertEqual(viaFetch.map(\.title).sorted(), viaFilter.map(\.title).sorted())
+        XCTAssertEqual(
+            viaFetch.map(\.title).sorted(),
+            ["Precies op de grens", "Recent", "Zonder pubDate, recent opgehaald"])
+    }
+
+    func testFilterEnPredicaatGebruikenDezelfdeGrens() {
+        XCTAssertEqual(
+            TopicClusteringService.summaryWindowCutoff(now: nu),
+            nu.addingTimeInterval(-AppConfiguration.summaryWindow))
+    }
 }

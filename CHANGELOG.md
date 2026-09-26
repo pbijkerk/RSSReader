@@ -11,6 +11,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - Een mislukte SwiftData-opslag verdwijnt niet langer stil: alle 28 opslagplekken lopen via één helper die de fout logt, en bij een expliciete actie (bewaren, verwijderen, mappen, onderwerpen, feedinstellingen, OPML-import) toont het scherm een melding (#123)
 - De artikelenlijst bouwt niet langer bij elke view-update een array over de hele geladen lijst, en bouwt de bestemming van een rij pas op wanneer je erop tikt in plaats van vooraf (#115)
 - De aanroep van de Anthropic API staat nu in een eigen `AnthropicClient`; `TopicClusteringService` houdt clustering en samenvattingsbeleid, inclusief de terugval op de lokale samenvatting. Gedrag ongewijzigd (#125)
+- De samenvatting haalt alleen de artikelen binnen het 48-uursvenster van meetellende feeds op, in één query, in plaats van eerst alle artikelen afzonderlijk te laden. In een meting met 600 artikelen daalt het aantal leesqueries van 402 naar 3 (#120)
 
 ## [1.9.0] - 2026-09-16
 
