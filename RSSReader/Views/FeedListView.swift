@@ -1,4 +1,6 @@
 import SwiftUI
+import Combine
+import CoreData
 import SwiftData
 
 struct FeedListView: View {
@@ -18,6 +20,11 @@ struct FeedListView: View {
     @State private var feedForSettings: Feed? = nil
     @State private var editMode: EditMode = .inactive
     @State private var opslagFout: OpslagFoutmelding?
+    @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
+    /// Teller per feed, via `FeedBadgeCounter` in plaats van `feed.items` (#121).
+    @State private var badgeCounts: [UUID: Int] = [:]
+    @State private var isVisible = false
+    @State private var badgeUpdateTask: Task<Void, Never>?
 
     var uncategorized: [Feed] {
         feeds.filter { $0.folder == nil }
@@ -89,6 +96,40 @@ struct FeedListView: View {
             Text("Wil je \"\(feed.title)\" en alle artikelen verwijderen?")
         }
         .opslagFoutmelding($opslagFout)
+        // Alleen bijwerken zolang de lijst in beeld is; bij terugkeer opnieuw tellen.
+        .onAppear {
+            isVisible = true
+            updateBadgeCounts()
+        }
+        .onDisappear {
+            isVisible = false
+            badgeUpdateTask?.cancel()
+        }
+        .onChange(of: feedCountMode) { updateBadgeCounts() }
+        .onChange(of: feeds.count) { updateBadgeCounts() }
+        // `ModelContext.didSave` komt op iOS 17 niet door; de onderliggende Core Data-
+        // melding wel. Die komt soms meermaals per opslag, vandaar de samenvoeging.
+        .onReceive(
+            NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            if isVisible { scheduleBadgeUpdate() }
+        }
+    }
+
+    private func scheduleBadgeUpdate() {
+        badgeUpdateTask?.cancel()
+        badgeUpdateTask = Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else { return }
+            updateBadgeCounts()
+        }
+    }
+
+    private func updateBadgeCounts() {
+        badgeCounts = FeedBadgeCounter.counts(
+            for: feeds, unreadOnly: feedCountMode == "unread", context: modelContext
+        )
     }
 
     private var emptyState: some View {
@@ -174,7 +215,7 @@ struct FeedListView: View {
     @ViewBuilder
     private func feedRow(_ feed: Feed) -> some View {
         NavigationLink(destination: FeedItemsView(feed: feed, refreshService: refreshService)) {
-            FeedRowView(feed: feed)
+            FeedRowView(feed: feed, badgeCount: badgeCounts[feed.id])
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
@@ -312,17 +353,13 @@ struct SectionHeaderView: View {
 
 struct FeedRowView: View {
     let feed: Feed
+    /// Berekend door `FeedListView` met een `fetchCount`; `nil` zolang die nog niet klaar is.
+    let badgeCount: Int?
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedCountMode) private var feedCountMode = "total"
     @AppStorage(AppConfiguration.UserDefaultsKeys.feedListScale) private var feedListScale = AppConfiguration
         .defaultFeedListScale
 
     private var brand: Color { Theme.brandColor(for: feed.title.isEmpty ? feed.url : feed.title) }
-
-    private var badgeCount: Int {
-        feedCountMode == "unread"
-            ? feed.items.filter { !$0.isRead }.count
-            : feed.items.count
-    }
 
     private var faviconSize: CGFloat { 30 * feedListScale }
     private var faviconRadius: CGFloat { 7 * feedListScale }
@@ -360,7 +397,7 @@ struct FeedRowView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                if feedCountMode == "total" || badgeCount > 0 {
+                if let badgeCount, feedCountMode == "total" || badgeCount > 0 {
                     Text("\(badgeCount)")
                         .font(badgeFont)
                         .foregroundStyle(.white)
@@ -376,5 +413,24 @@ struct FeedRowView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+/// Telt de artikelen per feed met `fetchCount` (#121). `FeedRowView` las hiervoor
+/// `feed.items`, wat per feed de hele relatie laadde en in de stand "ongelezen" ook elk
+/// artikel afzonderlijk, en dat bij elke wijziging opnieuw voor alle feeds.
+enum FeedBadgeCounter {
+    static func counts(for feeds: [Feed], unreadOnly: Bool, context: ModelContext) -> [UUID: Int] {
+        var result: [UUID: Int] = [:]
+        for feed in feeds {
+            let feedID = feed.id
+            let descriptor =
+                unreadOnly
+                ? FetchDescriptor<FeedItem>(predicate: #Predicate { $0.feed?.id == feedID && !$0.isRead })
+                : FetchDescriptor<FeedItem>(predicate: #Predicate { $0.feed?.id == feedID })
+            // Een mislukte telling laat de badge weg in plaats van een verkeerd getal te tonen.
+            result[feedID] = try? context.fetchCount(descriptor)
+        }
+        return result
     }
 }
