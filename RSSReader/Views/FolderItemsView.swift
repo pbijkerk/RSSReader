@@ -32,6 +32,9 @@ struct FolderItemsView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
+        .navigationDestination(for: MapArtikel.self) { artikel in
+            VastgelegdeArtikelPagina(id: artikel.id, items: artikel.lijst)
+        }
         .navigationTitle(folder.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -118,7 +121,8 @@ struct FolderItemsView: View {
     private func itemRow(item: FeedItem, allItems: [FeedItem], index: Int) -> some View {
         ZStack {
             FeedItemCard(item: item)
-            NavigationLink(destination: ArticlePageView(items: allItems, initialIndex: index)) {
+            // Een waarde in plaats van een destination: zie `FeedItemsView` (#139).
+            NavigationLink(value: MapArtikel(id: item.id, lijst: allItems)) {
                 EmptyView()
             }
             .opacity(0)
@@ -163,4 +167,12 @@ struct FolderItemsView: View {
             expandedClusters = [first.id]
         }
     }
+}
+
+/// Navigatiewaarde voor een artikel uit `FolderItemsView`; eigen type om dezelfde reden
+/// als `FeedArtikel`. Draagt de lijst waar het artikel uit komt mee: de tijdlijn of de
+/// artikelen van de opengeklapte gebeurtenissen.
+struct MapArtikel: Hashable {
+    let id: UUID
+    let lijst: [FeedItem]
 }

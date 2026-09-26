@@ -20,8 +20,10 @@ struct FeedItemsView: View {
             ForEach(Array(sortedItems.enumerated()), id: \.element.id) { index, item in
                 ZStack {
                     FeedItemCard(item: item)
-                    // Onzichtbare NavigationLink zonder disclosure-chevron
-                    NavigationLink(destination: ArticlePageView(items: sortedItems, initialIndex: index)) {
+                    // Onzichtbare NavigationLink zonder disclosure-chevron. Een waarde in
+                    // plaats van een destination: die link hoort bij de rij, en verdwijnt
+                    // de rij (gelezen verbergen), dan verdwijnt ook het geopende artikel (#139).
+                    NavigationLink(value: FeedArtikel(id: item.id)) {
                         EmptyView()
                     }
                     .opacity(0)
@@ -79,6 +81,9 @@ struct FeedItemsView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
+        .navigationDestination(for: FeedArtikel.self) { artikel in
+            VastgelegdeArtikelPagina(id: artikel.id, items: sortedItems)
+        }
         .refreshable {
             await refreshService.refresh(feed: feed, context: modelContext)
         }
@@ -267,6 +272,48 @@ struct FeedItemCard: View {
     private static func relativeTime(for date: Date) -> String {
         guard abs(date.timeIntervalSinceNow) >= 60 else { return "Zojuist" }
         return relativeDateFormatter.localizedString(for: date, relativeTo: .now)
+    }
+}
+
+/// Navigatiewaarde voor een artikel uit `FeedItemsView`. Een eigen type in plaats van
+/// `UUID`, zodat de bestemming niet botst met die van de artikelenlijst als beide in
+/// dezelfde navigatiestapel staan.
+struct FeedArtikel: Hashable {
+    let id: UUID
+}
+
+/// Het artikelscherm met de lijst zoals die was op het moment van openen (#139).
+///
+/// Openen markeert een artikel als gelezen. Met "gelezen verbergen" aan haalt de lijst
+/// zich daarna opnieuw op zonder dat artikel, en een bestemming die het in de actuele
+/// lijst opzoekt vindt het niet meer: een leeg scherm. Deze view legt de lijst bij het
+/// openen vast in `@State` (die bewaart alleen de eerste waarde) en vult hem aan met
+/// artikelen die er later bijkomen, zodat bijladen tijdens het vegen blijft werken.
+struct VastgelegdeArtikelPagina: View {
+    let id: UUID
+    let actueel: [FeedItem]
+    var onReachEnd: (() -> Void)?
+    @State private var vastgelegd: [FeedItem]
+
+    init(id: UUID, items: [FeedItem], onReachEnd: (() -> Void)? = nil) {
+        self.id = id
+        self.actueel = items
+        self.onReachEnd = onReachEnd
+        _vastgelegd = State(initialValue: items)
+    }
+
+    var body: some View {
+        let lijst = Self.aangevuld(vastgelegd, met: actueel)
+        if let index = lijst.firstIndex(where: { $0.id == id }) {
+            ArticlePageView(items: lijst, initialIndex: index, onReachEnd: onReachEnd)
+        }
+    }
+
+    /// De vastgelegde lijst, met daarachter de artikelen uit de actuele lijst die er nog
+    /// niet in staan (bijgeladen pagina's). Wat intussen uit de actuele lijst viel, blijft.
+    static func aangevuld(_ vastgelegd: [FeedItem], met actueel: [FeedItem]) -> [FeedItem] {
+        let bekend = Set(vastgelegd.map(\.id))
+        return vastgelegd + actueel.filter { !bekend.contains($0.id) }
     }
 }
 
