@@ -124,7 +124,7 @@ final class PublicationDateSanityTests: XCTestCase {
             context.insert(item)
         }
 
-        FeedRefreshService.clearImplausibleDates(feed: feed, now: nu)
+        FeedRefreshService.clearImplausibleDates(feed: feed, context: context, now: nu)
 
         XCTAssertNil(ver.pubDate, "De onwaarschijnlijke datum hoort gewist te zijn")
         XCTAssertNotNil(ver.fetchedAt, "Zonder pubDate moet fetchedAt de klok leveren")
@@ -149,7 +149,7 @@ final class PublicationDateSanityTests: XCTestCase {
             TopicClusteringService.withinSummaryWindow([ver], now: nu).isEmpty,
             "Vóór de correctie valt het artikel binnen elk venster")
 
-        FeedRefreshService.clearImplausibleDates(feed: feed, now: nu)
+        FeedRefreshService.clearImplausibleDates(feed: feed, context: context, now: nu)
 
         XCTAssertTrue(
             TopicClusteringService.withinSummaryWindow([ver], now: nu).isEmpty,
