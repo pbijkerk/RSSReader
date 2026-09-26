@@ -342,17 +342,22 @@ class MastodonService {
 
         logger.info("Fetched \(statuses.count) new statuses for \(account.username)")
 
-        let existingGUIDs = Set(feed.items.compactMap { $0.guid })
-        var newItemsCount = 0
+        let existingGUIDs = Set(
+            FeedRefreshService.existingKeys(of: feed, context: context).compactMap { $0.guid }
+        )
+        var newItems: [FeedItem] = []
 
         for status in statuses where !existingGUIDs.contains(status.id) {
             let item = mapToFeedItem(status: status, feed: feed)
-            feed.items.append(item)
             context.insert(item)
-            newItemsCount += 1
+            newItems.append(item)
+        }
+        // Eén append, zodat schermen die `feed.items` tonen bijwerken (zie `existingKeys`).
+        if !newItems.isEmpty {
+            feed.items.append(contentsOf: newItems)
         }
 
-        logger.debug("Added \(newItemsCount) new items to feed")
+        logger.debug("Added \(newItems.count) new items to feed")
 
         // Cursor naar meest recente status (index 0 = nieuwste)
         if let newestID = statuses.first?.id {
